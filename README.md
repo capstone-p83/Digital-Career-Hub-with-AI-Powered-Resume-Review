@@ -16,7 +16,7 @@ Tech stack:
 Digital-Career-Hub-with-AI-Powered-Resume-Review
 ├── backend
 │   ├── config
-│   │   └── db.js                # database connection
+│   │   └── db.js # database connection, not build
 │   ├── src
 │   │   └── server.js            # backend server entry
 │   ├── package.json
@@ -161,20 +161,13 @@ Example:
 
 ```
 PORT=5001
-DATABASE_URL=your_database_connection_string
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=yourpassword
+DB_NAME=digital_career_hub
 ```
-
-Create frontend environment file:
-
-```
-frontend/.env.local
-```
-
-Example:
-
-```
-NEXT_PUBLIC_API_URL=http://localhost:5001
-```
+Because the database hasn't been built, just copy the details above into the backend/.env
 
 ---
 
@@ -251,7 +244,7 @@ Frontend : 3000
 Backend  : 5001
 ```
 
-Check if ports are free.
+Check if ports are free before run the app.
 
 Mac / Linux:
 
