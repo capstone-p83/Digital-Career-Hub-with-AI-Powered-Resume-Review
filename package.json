@@ -1,0 +1,17 @@
+{
+  "name": "digital-career-hub-with-ai-powered-resume-review",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm run dev --prefix frontend",
+    "start-backend": "npm run start --prefix backend",
+    "start-frontend": "npm run start --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
