@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
-import { RESOURCES } from '../constants';
+import { useAppContext } from '../../context/AppContext';
+import { RESOURCES } from '../../constants';
 import { BookOpen, Play, FileText, Search, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -60,7 +62,7 @@ const ResourceHub = () => {
             className={`px-6 py-2 rounded-full text-sm font-semibold transition-all capitalize ${
               activeCategory === cat 
                 ? 'bg-emerald-600 text-white' 
-                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-emerald-600'
             }`}
           >
             {cat}

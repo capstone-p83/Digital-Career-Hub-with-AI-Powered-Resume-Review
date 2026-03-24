@@ -1,17 +1,20 @@
+'use client';
+
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { LogIn, UserPlus, Mail, Lock, ArrowRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
   const { setUser } = useAppContext();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Simulate login
     setUser({ id: '1', name: 'John Doe', email: 'john@example.com' });
-    navigate('/dashboard');
+    router.push('/dashboard');
   };
 
   return (
@@ -85,7 +88,7 @@ const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
             <p className="text-zinc-500 text-sm">
               {mode === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
               <Link
-                to={mode === 'login' ? '/register' : '/login'}
+                href={mode === 'login' ? '/register' : '/login'}
                 className="text-emerald-600 font-bold hover:underline"
               >
                 {mode === 'login' ? 'Sign Up' : 'Login'}

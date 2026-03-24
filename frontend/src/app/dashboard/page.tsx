@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../../context/AppContext';
 import { User, Mail, Briefcase, History, FileText, Settings } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -35,7 +37,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <button className="w-full mt-8 bg-zinc-100 text-zinc-900 py-3 rounded-xl font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center space-x-2">
+            <button className="w-full mt-8 bg-zinc-100 text-zinc-900 py-3 rounded-xl font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center space-x-2 hover:text-emerald-600">
               <Settings className="w-4 h-4" />
               <span>Edit Profile</span>
             </button>

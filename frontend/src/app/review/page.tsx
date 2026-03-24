@@ -1,8 +1,10 @@
+'use client';
+
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../../context/AppContext';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { analyzeResume } from '../services/aiService';
+import { analyzeResume } from '../../services/aiService';
 
 const ResumeReview = () => {
   const { t, language } = useAppContext();
