@@ -87,4 +87,75 @@ router.get("/admin/check", authMiddleware, async (req, res) => {
   }
 });
 
+//USER LOGIN
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email and password are required",
+      });
+    }
+
+    // 1. Find user by email
+    const result = await db.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid email or password",
+      });
+    }
+
+    // 2. Compare submitted password against stored hash
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid email or password",
+      });
+    }
+
+    // 3. Generate JWT — same shape as register
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        is_admin: user.is_admin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      status: "ok",
+      message: "Login successful",
+      user: {
+        id: user.id,
+        email: user.email,
+        is_admin: user.is_admin,
+        created_at: user.created_at,
+      },
+      token,
+    });
+
+  } catch (error) {
+    console.error("Login error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to login",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;
