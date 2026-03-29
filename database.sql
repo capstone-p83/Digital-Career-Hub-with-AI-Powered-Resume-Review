@@ -10,7 +10,7 @@ CREATE TABLE users (
 -- 2. USER PROFILE
 CREATE TABLE user_profile (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id),
+    user_id INT UNIQUE REFERENCES users(id),
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     phone VARCHAR(20),
