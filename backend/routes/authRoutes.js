@@ -69,25 +69,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.get("/admin/check", authMiddleware, async (req, res) => {
-  try {
-    return res.json({
-      status: "ok",
-      is_admin: req.user.is_admin,
-      user: req.user,
-    });
-  } catch (error) {
-    console.error("Admin check error:", error);
-
-    return res.status(500).json({
-      status: "error",
-      message: "Failed to check admin status",
-      error: error.message,
-    });
-  }
-});
-
-//USER LOGIN
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -99,7 +80,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // 1. Find user by email
     const result = await db.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -114,7 +94,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // 2. Compare submitted password against stored hash
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -124,7 +103,6 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // 3. Generate JWT — same shape as register
     const token = jwt.sign(
       {
         id: user.id,
@@ -146,13 +124,37 @@ router.post("/login", async (req, res) => {
       },
       token,
     });
-
   } catch (error) {
     console.error("Login error:", error);
 
     return res.status(500).json({
       status: "error",
       message: "Failed to login",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/logout", authMiddleware, (req, res) => {
+  return res.json({
+    status: "ok",
+    message: "Logged out successfully",
+  });
+});
+
+router.get("/admin/check", authMiddleware, async (req, res) => {
+  try {
+    return res.json({
+      status: "ok",
+      is_admin: req.user.is_admin,
+      user: req.user,
+    });
+  } catch (error) {
+    console.error("Admin check error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to check admin status",
       error: error.message,
     });
   }
