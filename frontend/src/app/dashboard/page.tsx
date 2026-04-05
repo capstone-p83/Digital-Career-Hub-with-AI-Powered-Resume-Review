@@ -1,111 +1,213 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useAppContext } from '../../context/AppContext';
-import { User, Mail, Briefcase, History, FileText, Settings } from 'lucide-react';
-import { motion } from 'motion/react';
+import { useAuth } from "../../context/AuthContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { 
+  FileText, Bookmark, Clock, ArrowRight, 
+  Calendar, Briefcase, PlayCircle, BarChart2, Edit3 
+} from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
-const Dashboard = () => {
-  const { language } = useAppContext();
+export default function Dashboard() {
+  const { user, isAuthenticated } = useAuth();
 
-  // Mock data for demo
-  const history = [
-    { id: '1', date: '2024-03-15', role: 'Frontend Developer', score: 85 },
-    { id: '2', date: '2024-03-10', role: 'UI Designer', score: 78 },
+  if (!isAuthenticated) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
+        <h2 className="text-2xl font-bold">Please log in to view your dashboard</h2>
+        <Link href="/login">
+          <Button>Log In</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const activities = [
+    { title: "Uploaded Software Engineer Resume", date: "2 days ago", icon: <FileText className="text-blue-500 w-5 h-5" /> },
+    { title: "Viewed 'Top 10 React Interview Questions'", date: "3 days ago", icon: <Clock className="text-slate-500 w-5 h-5" /> }
+  ];
+
+  const savedResources = [
+    { title: "Ultimate Guide to System Design", category: "Interview Prep" },
+    { title: "Cold Email Templates that Work", category: "Networking" },
+    { title: "Navigating Tech Layoffs", category: "Job Search" }
+  ];
+
+  const upcomingInterviews = [
+    { company: "TechNova Corp", role: "Frontend Dev", date: "Tomorrow, 10:00 AM" },
+    { company: "FinServe Inc", role: "UI Engineer", date: "Apr 12, 2:30 PM" }
+  ];
+
+  const careerTools = [
+    { name: "Mock Interview", icon: <PlayCircle className="w-6 h-6 mb-2" />, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+    { name: "Cover Letter", icon: <Edit3 className="w-6 h-6 mb-2" />, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+    { name: "Salary Insights", icon: <BarChart2 className="w-6 h-6 mb-2" />, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
+    { name: "Job Tracker", icon: <Briefcase className="w-6 h-6 mb-2" />, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" }
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="grid lg:grid-cols-3 gap-12">
-        {/* Profile Info */}
-        <aside className="lg:col-span-1 space-y-8">
-          <div className="bg-white rounded-2xl border border-zinc-200 p-8 text-center">
-            <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="w-12 h-12 text-emerald-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-zinc-900">John Doe</h2>
-            <p className="text-zinc-500 mb-6">Software Engineering Student</p>
-            
-            <div className="space-y-4 text-left">
-              <div className="flex items-center space-x-3 text-zinc-600">
-                <Mail className="w-4 h-4" />
-                <span className="text-sm">john.doe@example.com</span>
-              </div>
-              <div className="flex items-center space-x-3 text-zinc-600">
-                <Briefcase className="w-4 h-4" />
-                <span className="text-sm">Target: Full Stack Developer</span>
-              </div>
-            </div>
-
-            <button className="w-full mt-8 bg-zinc-100 text-zinc-900 py-3 rounded-xl font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center space-x-2 hover:text-emerald-600">
-              <Settings className="w-4 h-4" />
-              <span>Edit Profile</span>
-            </button>
-          </div>
-
-          <div className="bg-emerald-600 rounded-2xl p-8 text-white">
-            <h3 className="text-lg font-bold mb-2">Career Readiness</h3>
-            <div className="text-4xl font-bold mb-4">82%</div>
-            <div className="w-full bg-emerald-700 rounded-full h-2 mb-4">
-              <div className="bg-white h-full rounded-full" style={{ width: '82%' }} />
-            </div>
-            <p className="text-emerald-100 text-sm">You're doing great! Complete 2 more resume reviews to reach 90%.</p>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="lg:col-span-2 space-y-8">
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-zinc-900 flex items-center space-x-2">
-                <History className="w-6 h-6 text-emerald-600" />
-                <span>Review History</span>
-              </h2>
-              <button className="text-emerald-600 font-bold text-sm hover:underline">View All</button>
-            </div>
-
-            <div className="space-y-4">
-              {history.map((item) => (
-                <motion.div
-                  key={item.id}
-                  whileHover={{ x: 4 }}
-                  className="bg-white p-6 rounded-2xl border border-zinc-200 flex items-center justify-between group cursor-pointer"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-zinc-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
-                      <FileText className="w-6 h-6 text-zinc-400 group-hover:text-emerald-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-zinc-900">{item.role}</h4>
-                      <p className="text-zinc-500 text-sm">{item.date}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-emerald-600">{item.score}%</div>
-                    <div className="text-xs text-zinc-400 uppercase tracking-widest font-bold">Score</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-
-          <section className="bg-zinc-50 rounded-2xl p-8 border border-zinc-100">
-            <h3 className="text-xl font-bold text-zinc-900 mb-4">Recommended for You</h3>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-xl border border-zinc-200">
-                <h4 className="font-bold text-zinc-900 mb-1">Interview Prep</h4>
-                <p className="text-sm text-zinc-500">Top 50 React Interview Questions</p>
-              </div>
-              <div className="bg-white p-4 rounded-xl border border-zinc-200">
-                <h4 className="font-bold text-zinc-900 mb-1">Skill Building</h4>
-                <p className="text-sm text-zinc-500">Advanced TypeScript Patterns</p>
-              </div>
-            </div>
-          </section>
-        </main>
+    <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+            Welcome back, {user?.name || "User"}!
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            Let's keep your career momentum going today.
+          </p>
+        </div>
+        <Button variant="outline" className="shrink-0">
+          <Edit3 className="w-4 h-4 mr-2" /> Edit Profile
+        </Button>
       </div>
+
+      {/* Top 3 Metric Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card className="bg-blue-600 text-white border-none h-full shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-center">
+                Resume Score <FileText className="w-5 h-5 text-blue-200" />
+              </CardTitle>
+              <CardDescription className="text-blue-200">Based on your latest upload</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-extrabold mb-4">85<span className="text-2xl text-blue-300">/100</span></div>
+              <Link href="/resume/feedback">
+                <Button variant="outline" className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none">
+                  View Full Report
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-center">
+                Upcoming Interviews <Calendar className="w-5 h-5 text-slate-400" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {upcomingInterviews.length > 0 ? (
+                <ul className="space-y-3">
+                  {upcomingInterviews.map((interview, idx) => (
+                    <li key={idx} className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{interview.company}</p>
+                        <p className="text-xs text-slate-500">{interview.role}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full whitespace-nowrap">
+                          {interview.date}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-500 py-4 text-center">No upcoming interviews scheduled.</p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <Card className="h-full border-blue-200 dark:border-blue-900/40 bg-gradient-to-b from-white to-blue-50/50 dark:from-slate-950 dark:to-blue-950/10">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Need Advice?</CardTitle>
+              <CardDescription>Chat instantly with our AI</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2 flex flex-col justify-between h-[calc(100%-70px)]">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Practice interview questions or get quick tips on negotiating your salary!
+              </p>
+              <Link href="/chatbot" className="mt-auto">
+                <Button className="w-full">
+                  Start Chatting <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Quick Career Tools */}
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Premium Tools</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {careerTools.map((tool, idx) => (
+            <motion.div key={idx} whileHover={{ y: -3 }}>
+              <button className="w-full flex flex-col items-center justify-center p-4 h-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-md transition-all group">
+                <div className={`p-2 rounded-full mb-2 transition-transform group-hover:scale-110 ${tool.color}`}>
+                  {tool.icon}
+                </div>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{tool.name}</span>
+              </button>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Row: Activity & Bookmarks */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {activities.map((activity, idx) => (
+                <li key={idx} className="flex items-start space-x-3 pb-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                  <div className="mt-1 p-2 bg-slate-100 dark:bg-slate-800 rounded-full">
+                    {activity.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{activity.title}</p>
+                    <p className="text-xs text-slate-500">{activity.date}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Bookmark className="mr-2 w-5 h-5 text-blue-600" /> Saved Resources
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {savedResources.length > 0 ? (
+              <ul className="space-y-3">
+                {savedResources.map((res, idx) => (
+                  <li key={idx} className="group flex justify-between items-center p-3 rounded-lg border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-blue-50 dark:hover:bg-slate-800 transition">
+                    <div>
+                      <p className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-wider mb-0.5">{res.category}</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white group-hover:underline">{res.title}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <p>No saved resources yet.</p>
+                <Link href="/resources" className="text-blue-600 hover:underline text-sm font-medium mt-2 inline-block">
+                  Browse Resources
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
     </div>
   );
-};
-
-export default Dashboard;
+}
