@@ -4,29 +4,56 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/Card";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Briefcase } from "lucide-react";
 
+interface RegisterFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 export default function RegisterPage() {
-  const { login } = useAuth();
+  const { register: registerUser } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm();
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormData>();
 
   const password = watch("password");
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: RegisterFormData) => {
     try {
-      // Mock API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      
-      login({ id: "2", name: data.name, email: data.email, role: "user" });
+      setError("");
+
+      await registerUser({
+        email: data.email,
+        password: data.password,
+      });
+
       router.push("/dashboard");
     } catch (err) {
-      setError("An error occurred during registration.");
+      const message =
+        err instanceof Error
+          ? err.message
+          : "An error occurred during registration.";
+
+      setError(message);
     }
   };
 
@@ -42,6 +69,7 @@ export default function RegisterPage() {
             Join the platform to access premium career tools
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
@@ -49,18 +77,7 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
-                Full Name
-              </label>
-              <Input
-                type="text"
-                placeholder="John Doe"
-                {...register("name", { required: "Name is required" })}
-                className={errors.name ? "border-red-500" : ""}
-              />
-              {errors.name && <p className="text-xs text-red-500">{errors.name.message as string}</p>}
-            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
                 Email
@@ -68,48 +85,73 @@ export default function RegisterPage() {
               <Input
                 type="email"
                 placeholder="m@example.com"
-                {...register("email", { required: "Email is required" })}
+                {...register("email", {
+                  required: "Email is required",
+                })}
                 className={errors.email ? "border-red-500" : ""}
               />
-              {errors.email && <p className="text-xs text-red-500">{errors.email.message as string}</p>}
+              {errors.email && (
+                <p className="text-xs text-red-500">
+                  {errors.email.message as string}
+                </p>
+              )}
             </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
                 Password
               </label>
               <Input
                 type="password"
-                {...register("password", { 
+                {...register("password", {
                   required: "Password is required",
-                  minLength: { value: 6, message: "Minimum 6 characters required" }
+                  minLength: {
+                    value: 6,
+                    message: "Minimum 6 characters required",
+                  },
                 })}
                 className={errors.password ? "border-red-500" : ""}
               />
-              {errors.password && <p className="text-xs text-red-500">{errors.password.message as string}</p>}
+              {errors.password && (
+                <p className="text-xs text-red-500">
+                  {errors.password.message as string}
+                </p>
+              )}
             </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
                 Confirm Password
               </label>
               <Input
                 type="password"
-                {...register("confirmPassword", { 
+                {...register("confirmPassword", {
                   required: "Please confirm your password",
-                  validate: value => value === password || "Passwords do not match"
+                  validate: (value) =>
+                    value === password || "Passwords do not match",
                 })}
                 className={errors.confirmPassword ? "border-red-500" : ""}
               />
-              {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword.message as string}</p>}
+              {errors.confirmPassword && (
+                <p className="text-xs text-red-500">
+                  {errors.confirmPassword.message as string}
+                </p>
+              )}
             </div>
+
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Creating account..." : "Register"}
             </Button>
           </form>
         </CardContent>
+
         <CardFooter className="flex flex-col items-center justify-center space-y-2">
           <div className="text-sm text-slate-500 dark:text-slate-400">
             Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 hover:underline dark:text-blue-400 font-medium">
+            <Link
+              href="/login"
+              className="text-blue-600 hover:underline dark:text-blue-400 font-medium"
+            >
               Log in here
             </Link>
           </div>

@@ -54,7 +54,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
-            Welcome back, {user?.name || "User"}!
+            Welcome back, {user?.email || "User"}!
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
             Let's keep your career momentum going today.
