@@ -54,8 +54,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setToken(null);
 
-    localStorage.removeItem("authUser");
-    localStorage.removeItem("authToken");
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
 
     localStorage.removeItem("user");
     localStorage.removeItem("token");
