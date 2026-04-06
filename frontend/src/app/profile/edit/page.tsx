@@ -19,7 +19,14 @@ const API_BASE_URL =
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { token, user, isAuthenticated, isLoading, fetchCurrentUser } = useAuth();
+  const {
+    token,
+    user,
+    isAuthenticated,
+    isLoading,
+    fetchCurrentUser,
+    updateAuthState,
+  } = useAuth();
 
   const [profileForm, setProfileForm] = useState<ProfileFormData>({
     email: "",
@@ -134,11 +141,17 @@ export default function EditProfilePage() {
         throw new Error(data.message || "Failed to update profile");
       }
 
-      await fetchCurrentUser();
+      if (data.user && data.token) {
+        updateAuthState(data.user, data.token);
+      } else {
+        await fetchCurrentUser();
+      }
+
       setProfileForm((prev) => ({
         ...prev,
-        email: data.user?.email || prev.email,
+        email: data.user?.email || trimmedEmail,
       }));
+
       setProfileSuccess("Email updated successfully");
     } catch (err: any) {
       setProfileError(err.message || "Failed to update profile");

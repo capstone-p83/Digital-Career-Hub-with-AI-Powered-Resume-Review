@@ -23,6 +23,10 @@ interface RegisterFormData {
   confirmPassword: string;
 }
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordPattern =
+  /^(?=.*[a-zA-Z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
   const router = useRouter();
@@ -35,14 +39,33 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>();
 
-  const password = watch("password");
+  const password = watch("password", "");
+
+  const passwordRules = [
+    {
+      label: "At least 8 characters",
+      valid: password.length >= 8,
+    },
+    {
+      label: "At least 1 letter",
+      valid: /[a-zA-Z]/.test(password),
+    },
+    {
+      label: "At least 1 uppercase letter",
+      valid: /[A-Z]/.test(password),
+    },
+    {
+      label: "At least 1 special character",
+      valid: /[^A-Za-z0-9]/.test(password),
+    },
+  ];
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setError("");
 
       await registerUser({
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
       });
 
@@ -87,6 +110,12 @@ export default function RegisterPage() {
                 placeholder="m@example.com"
                 {...register("email", {
                   required: "Email is required",
+                  pattern: {
+                    value: emailPattern,
+                    message: "Please enter a valid email address",
+                  },
+                  validate: (value) =>
+                    value.trim() !== "" || "Email is required",
                 })}
                 className={errors.email ? "border-red-500" : ""}
               />
@@ -105,13 +134,28 @@ export default function RegisterPage() {
                 type="password"
                 {...register("password", {
                   required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Minimum 6 characters required",
-                  },
+                  validate: (value) =>
+                    passwordPattern.test(value) ||
+                    "Password must be at least 8 characters and include 1 letter, 1 uppercase letter, and 1 special character",
                 })}
                 className={errors.password ? "border-red-500" : ""}
               />
+
+              <div className="rounded-md bg-slate-50 dark:bg-slate-800/60 p-3 space-y-1">
+                {passwordRules.map((rule) => (
+                  <p
+                    key={rule.label}
+                    className={`text-xs ${
+                      rule.valid
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
+                    {rule.valid ? "✓" : "•"} {rule.label}
+                  </p>
+                ))}
+              </div>
+
               {errors.password && (
                 <p className="text-xs text-red-500">
                   {errors.password.message as string}

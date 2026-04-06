@@ -24,7 +24,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    router.replace("/login");
   };
 
   const navLinks = [
@@ -169,7 +169,7 @@ export default function Navbar() {
                   onClick={async () => {
                     await logout();
                     setMobileMenuOpen(false);
-                    router.push("/login");
+                    router.replace("/login");
                   }}
                   className="text-sm font-medium bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-md"
                 >

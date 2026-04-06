@@ -35,6 +35,7 @@ interface AuthContextType {
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
+  updateAuthState: (userData: User, authToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,6 +92,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
     localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
   }, []);
+
+  const updateAuthState = useCallback((userData: User, authToken: string) => {
+    persistAuth(userData, authToken);
+  }, [persistAuth]);
 
   const login = useCallback(
     async (payload: LoginPayload) => {
@@ -191,6 +196,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         register,
         logout,
         fetchCurrentUser,
+        updateAuthState,
       }}
     >
       {children}

@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import {
@@ -13,72 +15,70 @@ import {
   PlayCircle,
   BarChart2,
   Edit3,
-  Shield
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
+  const router = useRouter();
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Please log in to view your dashboard
-        </h2>
-        <Link href="/login">
-          <Button>Log In</Button>
-        </Link>
-      </div>
-    );
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || !isAuthenticated) {
+    return null;
   }
 
   const activities = [
     {
       title: "Uploaded Software Engineer Resume",
       date: "2 days ago",
-      icon: <FileText className="text-blue-500 w-5 h-5" />
+      icon: <FileText className="text-blue-500 w-5 h-5" />,
     },
     {
       title: "Viewed 'Top 10 React Interview Questions'",
       date: "3 days ago",
-      icon: <Clock className="text-slate-500 w-5 h-5" />
-    }
+      icon: <Clock className="text-slate-500 w-5 h-5" />,
+    },
   ];
 
   const savedResources = [
     { title: "Ultimate Guide to System Design", category: "Interview Prep" },
     { title: "Cold Email Templates that Work", category: "Networking" },
-    { title: "Navigating Tech Layoffs", category: "Job Search" }
+    { title: "Navigating Tech Layoffs", category: "Job Search" },
   ];
 
   const upcomingInterviews = [
     { company: "TechNova Corp", role: "Frontend Dev", date: "Tomorrow, 10:00 AM" },
-    { company: "FinServe Inc", role: "UI Engineer", date: "Apr 12, 2:30 PM" }
+    { company: "FinServe Inc", role: "UI Engineer", date: "Apr 12, 2:30 PM" },
   ];
 
   const careerTools = [
     {
       name: "Mock Interview",
       icon: <PlayCircle className="w-6 h-6 mb-2" />,
-      color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+      color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
     },
     {
       name: "Cover Letter",
       icon: <Edit3 className="w-6 h-6 mb-2" />,
-      color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+      color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     },
     {
       name: "Salary Insights",
       icon: <BarChart2 className="w-6 h-6 mb-2" />,
-      color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+      color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     },
     {
       name: "Job Tracker",
       icon: <Briefcase className="w-6 h-6 mb-2" />,
-      color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-    }
+      color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    },
   ];
 
   return (
@@ -113,10 +113,7 @@ export default function Dashboard() {
       </div>
 
       {isAdmin && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="border-blue-200 dark:border-blue-900/40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-900">
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
