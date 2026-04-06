@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 
 interface User {
   id: number;
@@ -44,6 +50,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const clearAuth = useCallback(() => {
+    setUser(null);
+    setToken(null);
+
+    localStorage.removeItem("authUser");
+    localStorage.removeItem("authToken");
+
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("mockUser");
+  }, []);
+
   useEffect(() => {
     const savedUser = localStorage.getItem(USER_STORAGE_KEY);
     const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -60,61 +78,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setToken(savedToken);
     }
 
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("mockUser");
+
     setIsLoading(false);
   }, []);
 
-  const persistAuth = (userData: User, authToken: string) => {
+  const persistAuth = useCallback((userData: User, authToken: string) => {
     setUser(userData);
     setToken(authToken);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
     localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
-  };
+  }, []);
 
-  const clearAuth = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem("mockUser");
-  };
+  const login = useCallback(
+    async (payload: LoginPayload) => {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-  const login = async (payload: LoginPayload) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      const data = await response.json();
 
-    const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to login");
+      }
 
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to login");
-    }
+      persistAuth(data.user, data.token);
+    },
+    [persistAuth]
+  );
 
-    persistAuth(data.user, data.token);
-  };
+  const register = useCallback(
+    async (payload: RegisterPayload) => {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-  const register = async (payload: RegisterPayload) => {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      const data = await response.json();
 
-    const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to register");
+      }
 
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to register");
-    }
+      persistAuth(data.user, data.token);
+    },
+    [persistAuth]
+  );
 
-    persistAuth(data.user, data.token);
-  };
-
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     const savedToken = token || localStorage.getItem(TOKEN_STORAGE_KEY);
 
     if (!savedToken) {
@@ -138,9 +158,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     setUser(data.user);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
-  };
+  }, [token, clearAuth]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     const savedToken = token || localStorage.getItem(TOKEN_STORAGE_KEY);
 
     try {
@@ -157,7 +177,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       clearAuth();
     }
-  };
+  }, [token, clearAuth]);
 
   return (
     <AuthContext.Provider

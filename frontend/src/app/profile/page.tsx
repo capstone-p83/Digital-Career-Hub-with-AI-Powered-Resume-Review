@@ -6,16 +6,16 @@ import { useAuth } from "../../context/AuthContext";
 
 type ProfileData = {
   id?: string | number;
-  name?: string;
   email?: string;
-  role?: string;
+  is_admin?: boolean;
   created_at?: string;
 };
 
-const GET_ME_URL = "http://localhost:5001/api/user/me";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, token, isAuthenticated, isLoading } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,16 +26,15 @@ export default function ProfilePage() {
         setLoading(true);
         setError("");
 
-        const token =
-          typeof window !== "undefined"
-            ? localStorage.getItem("token")
-            : null;
+        if (!token) {
+          setError("No token provided");
+          return;
+        }
 
-        const res = await fetch(GET_ME_URL, {
+        const res = await fetch(`${API_BASE_URL}/users/me`, {
           method: "GET",
           headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -45,7 +44,7 @@ export default function ProfilePage() {
           throw new Error(data.message || "Failed to load profile");
         }
 
-        setProfile(data.user || data);
+        setProfile(data.user);
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
       } finally {
@@ -53,74 +52,87 @@ export default function ProfilePage() {
       }
     };
 
-    fetchProfile();
-  }, []);
+    if (!isLoading) {
+      fetchProfile();
+    }
+  }, [token, isLoading]);
+
+  if (isLoading || loading) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            Loading profile...
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
+            Please log in to view your profile.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
+    <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-            <p className="mt-2 text-sm text-gray-600">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+              My Profile
+            </h1>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               View your account information.
             </p>
           </div>
 
           <Link
             href="/profile/edit"
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
           >
             Edit Profile
           </Link>
         </div>
 
-        {loading && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-            Loading profile...
-          </div>
-        )}
-
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
             {error}
           </div>
         )}
 
-        {!loading && !error && (
+        {!error && (
           <div className="grid gap-4">
-            <div className="rounded-xl border border-gray-200 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                Name
-              </p>
-              <p className="mt-2 text-base text-gray-900">
-                {profile?.name || user?.name || "Not set"}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Email
               </p>
-              <p className="mt-2 text-base text-gray-900">
+              <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
                 {profile?.email || user?.email || "Not set"}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-200 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Role
               </p>
-              <p className="mt-2 text-base capitalize text-gray-900">
-                {profile?.role || user?.role || "user"}
+              <p className="mt-2 text-base capitalize text-slate-900 dark:text-slate-100">
+                {profile?.is_admin ? "admin" : "user"}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-200 p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Created At
               </p>
-              <p className="mt-2 text-base text-gray-900">
+              <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
                 {profile?.created_at
                   ? new Date(profile.created_at).toLocaleString()
                   : "Not available"}
