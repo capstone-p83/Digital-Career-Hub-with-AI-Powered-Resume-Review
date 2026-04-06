@@ -27,7 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
 }
 
@@ -75,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setToken(null);
     localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem("mockUser");
   };
 
   const login = async (payload: LoginPayload) => {
@@ -122,6 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const response = await fetch(`${API_BASE_URL}/users/me`, {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${savedToken}`,
       },
@@ -138,8 +140,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
   };
 
-  const logout = () => {
-    clearAuth();
+  const logout = async () => {
+    const savedToken = token || localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    try {
+      if (savedToken) {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${savedToken}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Logout request failed:", error);
+    } finally {
+      clearAuth();
+    }
   };
 
   return (

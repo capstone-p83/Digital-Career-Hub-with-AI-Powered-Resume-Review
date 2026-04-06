@@ -60,9 +60,11 @@ export default function Dashboard() {
             Let's keep your career momentum going today.
           </p>
         </div>
-        <Button variant="outline" className="shrink-0">
-          <Edit3 className="w-4 h-4 mr-2" /> Edit Profile
-        </Button>
+        <Link href="/profile">
+          <Button variant="outline" className="shrink-0">
+            <Edit3 className="w-4 h-4 mr-2" /> Edit Profile
+          </Button>
+        </Link>
       </div>
 
       {/* Top 3 Metric Cards */}
