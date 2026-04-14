@@ -3,6 +3,7 @@ const db = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
 
@@ -80,10 +81,23 @@ router.put("/me", authMiddleware, async (req, res) => {
       });
     }
 
+    const updatedUser = result.rows[0];
+
+    const token = jwt.sign(
+      {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        is_admin: updatedUser.is_admin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     return res.json({
       status: "ok",
       message: "User updated successfully",
-      user: result.rows[0],
+      user: updatedUser,
+      token,
     });
   } catch (error) {
     console.error("Update current user error:", error);
@@ -153,7 +167,7 @@ router.put("/update-password", authMiddleware, async (req, res) => {
   }
 });
 
-//admin updates user role (to either admin or back to user)
+// admin updates user role
 router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -167,10 +181,12 @@ router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
     }
 
     const result = await db.query(
-      `UPDATE users 
-       SET is_admin = $1 
-       WHERE id = $2 
-       RETURNING id, email, is_admin, created_at`,
+      `
+      UPDATE users
+      SET is_admin = $1
+      WHERE id = $2
+      RETURNING id, email, is_admin, created_at
+      `,
       [is_admin, id]
     );
 
@@ -186,7 +202,6 @@ router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
       message: "User role updated successfully",
       user: result.rows[0],
     });
-
   } catch (error) {
     console.error("Update role error:", error);
 
@@ -198,7 +213,7 @@ router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-//user deletes their own account
+// user deletes own account
 router.delete("/me", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -220,7 +235,6 @@ router.delete("/me", authMiddleware, async (req, res) => {
       message: "Account deleted successfully",
       user: result.rows[0],
     });
-
   } catch (error) {
     console.error("Delete account error:", error);
 

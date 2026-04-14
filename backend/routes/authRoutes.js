@@ -6,6 +6,10 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordPattern =
+  /^(?=.*[a-zA-Z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+
 router.post("/register", async (req, res) => {
   try {
     const { email, password, is_admin } = req.body;
@@ -17,9 +21,26 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    const trimmedEmail = email.trim();
+
+    if (!emailPattern.test(trimmedEmail)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Please enter a valid email address",
+      });
+    }
+
+    if (!passwordPattern.test(password)) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Password must be at least 8 characters and include 1 letter, 1 uppercase letter, and 1 special character",
+      });
+    }
+
     const existingUser = await db.query(
       "SELECT id FROM users WHERE email = $1",
-      [email]
+      [trimmedEmail]
     );
 
     if (existingUser.rows.length > 0) {
@@ -37,7 +58,7 @@ router.post("/register", async (req, res) => {
       VALUES ($1, $2, $3)
       RETURNING id, email, is_admin, created_at
       `,
-      [email, hashedPassword, is_admin === true]
+      [trimmedEmail, hashedPassword, is_admin === true]
     );
 
     const user = result.rows[0];
