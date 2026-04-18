@@ -1,20 +1,25 @@
 -- 1. USERS (authentication)
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(100) UNIQUE,
-    password VARCHAR(255),
+CCREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 2. USER PROFILE
 CREATE TABLE user_profile (
-    id SERIAL PRIMARY KEY,
-    user_id INT UNIQUE REFERENCES users(id),
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
-    phone VARCHAR(20),
-    date_of_birth DATE
+    profile_id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    gender TEXT,
+    date_of_birth DATE,
+    phone_number TEXT,
+    education TEXT,
+    skills TEXT,
+    career_interests TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 3. RESUMES
