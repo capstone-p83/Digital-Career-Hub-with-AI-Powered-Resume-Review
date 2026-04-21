@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
 const db = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -12,6 +13,8 @@ const passwordPattern =
 
 const allowedRoles = ["admin", "adminstaff", "user"];
 
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 function generateToken(user) {
   return jwt.sign(
     {
@@ -22,6 +25,118 @@ function generateToken(user) {
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
+}
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+async function findUserByIdentity(provider, providerUserId) {
+  const result = await db.query(
+    `
+    SELECT
+      u.id,
+      u.email,
+      u.role,
+      u.is_active,
+      u.deleted_at,
+      u.created_at
+    FROM user_identities ui
+    JOIN users u ON u.id = ui.user_id
+    WHERE ui.provider = $1 AND ui.provider_user_id = $2
+    LIMIT 1
+    `,
+    [provider, providerUserId]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function findUserByEmail(email) {
+  const result = await db.query(
+    `
+    SELECT
+      id,
+      email,
+      role,
+      is_active,
+      deleted_at,
+      created_at
+    FROM users
+    WHERE email = $1
+    LIMIT 1
+    `,
+    [normalizeEmail(email)]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function createOAuthUser(email) {
+  const result = await db.query(
+    `
+    INSERT INTO users (email, password, role)
+    VALUES ($1, $2, 'user')
+    RETURNING id, email, role, is_active, deleted_at, created_at
+    `,
+    [normalizeEmail(email), ""]
+  );
+
+  return result.rows[0];
+}
+
+async function createIdentity(userId, provider, providerUserId, providerEmail) {
+  await db.query(
+    `
+    INSERT INTO user_identities (user_id, provider, provider_user_id, provider_email)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT (provider, provider_user_id) DO NOTHING
+    `,
+    [userId, provider, providerUserId, normalizeEmail(providerEmail)]
+  );
+}
+
+async function getUserProfileByUserId(userId) {
+  const result = await db.query(
+    `
+    SELECT
+      id,
+      user_id,
+      first_name,
+      last_name,
+      phone,
+      date_of_birth
+    FROM user_profile
+    WHERE user_id = $1
+    LIMIT 1
+    `,
+    [userId]
+  );
+
+  return (
+    result.rows[0] || {
+      id: null,
+      user_id: userId,
+      first_name: null,
+      last_name: null,
+      phone: null,
+      date_of_birth: null,
+    }
+  );
+}
+
+async function buildAuthResponseUser(user) {
+  const profile = await getUserProfileByUserId(user.id);
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    is_active: user.is_active,
+    deleted_at: user.deleted_at,
+    created_at: user.created_at,
+    profile,
+  };
 }
 
 router.post("/register", async (req, res) => {
@@ -222,6 +337,81 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Failed to login",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/google", async (req, res) => {
+  try {
+    const { id_token } = req.body;
+
+    if (!id_token) {
+      return res.status(400).json({
+        status: "error",
+        message: "Google token is required",
+      });
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(500).json({
+        status: "error",
+        message: "GOOGLE_CLIENT_ID is not configured",
+      });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.sub || !payload.email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid Google identity payload",
+      });
+    }
+
+    const provider = "google";
+    const providerUserId = payload.sub;
+    const providerEmail = normalizeEmail(payload.email);
+
+    let user = await findUserByIdentity(provider, providerUserId);
+
+    if (!user) {
+      user = await findUserByEmail(providerEmail);
+
+      if (!user) {
+        user = await createOAuthUser(providerEmail);
+      }
+
+      await createIdentity(user.id, provider, providerUserId, providerEmail);
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
+
+    const authUser = await buildAuthResponseUser(user);
+    const token = generateToken(authUser);
+
+    return res.status(200).json({
+      status: "ok",
+      message: "Google login successful",
+      user: authUser,
+      token,
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Google login failed",
       error: error.message,
     });
   }

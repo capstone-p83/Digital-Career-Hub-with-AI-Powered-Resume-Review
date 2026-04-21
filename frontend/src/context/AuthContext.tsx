@@ -44,6 +44,11 @@ interface RegisterPayload {
   date_of_birth?: string | null;
 }
 
+interface AuthResponse {
+  user: User;
+  token: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -53,6 +58,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User>;
+  loginWithGoogle: (idToken: string) => Promise<User>;
   logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<User | null>;
   updateAuthState: (userData: User, authToken: string) => void;
@@ -101,7 +107,6 @@ function getStoredAuth() {
       return {
         user: JSON.parse(sessionUser) as User,
         token: sessionToken,
-        storage: "session" as const,
       };
     } catch {
       sessionStorage.removeItem(USER_SESSION_KEY);
@@ -117,7 +122,6 @@ function getStoredAuth() {
       return {
         user: JSON.parse(localUser) as User,
         token: localToken,
-        storage: "local" as const,
       };
     } catch {
       localStorage.removeItem(USER_STORAGE_KEY);
@@ -134,12 +138,11 @@ function persistAuthByRole(userData: User, authToken: string) {
   if (isPrivilegedRole(userData.role)) {
     sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(userData));
     sessionStorage.setItem(TOKEN_SESSION_KEY, authToken);
-    return "session" as const;
+    return;
   }
 
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
   localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
-  return "local" as const;
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -179,6 +182,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(false);
   }, []);
 
+  const handleAuthResponse = useCallback(
+    (data: AuthResponse) => {
+      if (!data.user) {
+        throw new Error("Authentication failed");
+      }
+
+      if (!data.user.is_active) {
+        throw new Error("This account has been deactivated");
+      }
+
+      persistAuth(data.user, data.token);
+
+      return data.user;
+    },
+    [persistAuth]
+  );
+
   const login = useCallback(
     async (payload: LoginPayload): Promise<User> => {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -195,19 +215,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error(data.message || "Failed to login");
       }
 
-      if (!data.user) {
-        throw new Error("Failed to login");
-      }
-
-      if (!data.user.is_active) {
-        throw new Error("This account has been deactivated");
-      }
-
-      persistAuth(data.user, data.token);
-
-      return data.user as User;
+      return handleAuthResponse(data);
     },
-    [persistAuth]
+    [handleAuthResponse]
   );
 
   const register = useCallback(
@@ -229,19 +239,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error(data.message || "Failed to register");
       }
 
-      if (!data.user) {
-        throw new Error("Failed to register");
-      }
-
-      if (!data.user.is_active) {
-        throw new Error("This account has been deactivated");
-      }
-
-      persistAuth(data.user, data.token);
-
-      return data.user as User;
+      return handleAuthResponse(data);
     },
-    [persistAuth]
+    [handleAuthResponse]
+  );
+
+  const loginWithGoogle = useCallback(
+    async (idToken: string): Promise<User> => {
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_token: idToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to login with Google");
+      }
+
+      return handleAuthResponse(data);
+    },
+    [handleAuthResponse]
   );
 
   const fetchCurrentUser = useCallback(async (): Promise<User | null> => {
@@ -339,6 +362,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isLoading,
         login,
         register,
+        loginWithGoogle,
         logout,
         fetchCurrentUser,
         updateAuthState,
