@@ -11,6 +11,8 @@ async function seedUsers() {
         email: "admin@example.com",
         password: "Admin@123",
         role: "admin",
+        is_active: true,
+        deleted_at: null,
         first_name: "System",
         last_name: "Admin",
         phone: "0400000001",
@@ -20,6 +22,8 @@ async function seedUsers() {
         email: "staff@example.com",
         password: "Staff@123",
         role: "adminstaff",
+        is_active: true,
+        deleted_at: null,
         first_name: "Admin",
         last_name: "Staff",
         phone: "0400000002",
@@ -29,10 +33,45 @@ async function seedUsers() {
         email: "user1@example.com",
         password: "User@123",
         role: "user",
+        is_active: true,
+        deleted_at: null,
         first_name: "Normal",
         last_name: "User",
         phone: "0400000003",
         date_of_birth: "2002-01-01",
+      },
+      {
+        email: "user2@example.com",
+        password: "User2@123",
+        role: "user",
+        is_active: true,
+        deleted_at: null,
+        first_name: "Normal",
+        last_name: "User",
+        phone: "0400000004",
+        date_of_birth: "2002-01-02",
+      },
+      {
+        email: "user3@example.com",
+        password: "User3@123",
+        role: "user",
+        is_active: true,
+        deleted_at: null,
+        first_name: "Normal",
+        last_name: "User",
+        phone: "0400000005",
+        date_of_birth: "2002-01-03",
+      },
+      {
+        email: "inactiveuser@example.com",
+        password: "Inactive@123",
+        role: "user",
+        is_active: false,
+        deleted_at: new Date().toISOString(),
+        first_name: "Inactive",
+        last_name: "User",
+        phone: "0400000006",
+        date_of_birth: "2002-01-04",
       },
     ];
 
@@ -53,11 +92,17 @@ async function seedUsers() {
 
       const userResult = await client.query(
         `
-        INSERT INTO users (email, password, role)
-        VALUES ($1, $2, $3)
+        INSERT INTO users (email, password, role, is_active, deleted_at)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id
         `,
-        [user.email, hashedPassword, user.role]
+        [
+          user.email,
+          hashedPassword,
+          user.role,
+          user.is_active,
+          user.deleted_at,
+        ]
       );
 
       const userId = userResult.rows[0].id;

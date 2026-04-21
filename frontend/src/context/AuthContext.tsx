@@ -8,11 +8,25 @@ import React, {
   useCallback,
 } from "react";
 
-interface User {
+export type UserRole = "admin" | "adminstaff" | "user";
+
+export interface UserProfile {
+  id: number | null;
+  user_id: number | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+}
+
+export interface User {
   id: number;
   email: string;
-  is_admin: boolean;
+  role: UserRole;
+  is_active: boolean;
+  deleted_at: string | null;
   created_at?: string;
+  profile?: UserProfile | null;
 }
 
 interface LoginPayload {
@@ -23,6 +37,11 @@ interface LoginPayload {
 interface RegisterPayload {
   email: string;
   password: string;
+  role?: UserRole;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
 }
 
 interface AuthContextType {
@@ -30,12 +49,14 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isAdminStaff: boolean;
   isLoading: boolean;
-  login: (payload: LoginPayload) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  login: (payload: LoginPayload) => Promise<User>;
+  register: (payload: RegisterPayload) => Promise<User>;
   logout: () => Promise<void>;
-  fetchCurrentUser: () => Promise<void>;
+  fetchCurrentUser: () => Promise<User | null>;
   updateAuthState: (userData: User, authToken: string) => void;
+  deactivateOwnAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,6 +67,81 @@ const API_BASE_URL =
 const USER_STORAGE_KEY = "authUser";
 const TOKEN_STORAGE_KEY = "authToken";
 
+const USER_SESSION_KEY = "sessionAuthUser";
+const TOKEN_SESSION_KEY = "sessionAuthToken";
+
+const LEGACY_USER_KEY = "user";
+const LEGACY_TOKEN_KEY = "token";
+const LEGACY_MOCK_USER_KEY = "mockUser";
+
+function isPrivilegedRole(role?: UserRole) {
+  return role === "admin" || role === "adminstaff";
+}
+
+function clearBrowserAuthStorage() {
+  localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_USER_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_MOCK_USER_KEY);
+
+  sessionStorage.removeItem(USER_SESSION_KEY);
+  sessionStorage.removeItem(TOKEN_SESSION_KEY);
+  sessionStorage.removeItem(LEGACY_USER_KEY);
+  sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+  sessionStorage.removeItem(LEGACY_MOCK_USER_KEY);
+}
+
+function getStoredAuth() {
+  const sessionUser = sessionStorage.getItem(USER_SESSION_KEY);
+  const sessionToken = sessionStorage.getItem(TOKEN_SESSION_KEY);
+
+  if (sessionUser && sessionToken) {
+    try {
+      return {
+        user: JSON.parse(sessionUser) as User,
+        token: sessionToken,
+        storage: "session" as const,
+      };
+    } catch {
+      sessionStorage.removeItem(USER_SESSION_KEY);
+      sessionStorage.removeItem(TOKEN_SESSION_KEY);
+    }
+  }
+
+  const localUser = localStorage.getItem(USER_STORAGE_KEY);
+  const localToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+  if (localUser && localToken) {
+    try {
+      return {
+        user: JSON.parse(localUser) as User,
+        token: localToken,
+        storage: "local" as const,
+      };
+    } catch {
+      localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  }
+
+  return null;
+}
+
+function persistAuthByRole(userData: User, authToken: string) {
+  clearBrowserAuthStorage();
+
+  if (isPrivilegedRole(userData.role)) {
+    sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(userData));
+    sessionStorage.setItem(TOKEN_SESSION_KEY, authToken);
+    return "session" as const;
+  }
+
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+  localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
+  return "local" as const;
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -54,51 +150,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const clearAuth = useCallback(() => {
     setUser(null);
     setToken(null);
-
-    localStorage.removeItem(USER_STORAGE_KEY);
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("mockUser");
-  }, []);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem(USER_STORAGE_KEY);
-    const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch {
-        localStorage.removeItem(USER_STORAGE_KEY);
-      }
-    }
-
-    if (savedToken) {
-      setToken(savedToken);
-    }
-
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("mockUser");
-
-    setIsLoading(false);
+    clearBrowserAuthStorage();
   }, []);
 
   const persistAuth = useCallback((userData: User, authToken: string) => {
     setUser(userData);
     setToken(authToken);
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
-    localStorage.setItem(TOKEN_STORAGE_KEY, authToken);
+    persistAuthByRole(userData, authToken);
   }, []);
 
-  const updateAuthState = useCallback((userData: User, authToken: string) => {
-    persistAuth(userData, authToken);
-  }, [persistAuth]);
+  const updateAuthState = useCallback(
+    (userData: User, authToken: string) => {
+      persistAuth(userData, authToken);
+    },
+    [persistAuth]
+  );
+
+  useEffect(() => {
+    const storedAuth = getStoredAuth();
+
+    if (storedAuth) {
+      setUser(storedAuth.user);
+      setToken(storedAuth.token);
+    } else {
+      clearBrowserAuthStorage();
+    }
+
+    setIsLoading(false);
+  }, []);
 
   const login = useCallback(
-    async (payload: LoginPayload) => {
+    async (payload: LoginPayload): Promise<User> => {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
@@ -113,19 +195,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error(data.message || "Failed to login");
       }
 
+      if (!data.user) {
+        throw new Error("Failed to login");
+      }
+
+      if (!data.user.is_active) {
+        throw new Error("This account has been deactivated");
+      }
+
       persistAuth(data.user, data.token);
+
+      return data.user as User;
     },
     [persistAuth]
   );
 
   const register = useCallback(
-    async (payload: RegisterPayload) => {
+    async (payload: RegisterPayload): Promise<User> => {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          role: payload.role || "user",
+        }),
       });
 
       const data = await response.json();
@@ -134,17 +229,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error(data.message || "Failed to register");
       }
 
+      if (!data.user) {
+        throw new Error("Failed to register");
+      }
+
+      if (!data.user.is_active) {
+        throw new Error("This account has been deactivated");
+      }
+
       persistAuth(data.user, data.token);
+
+      return data.user as User;
     },
     [persistAuth]
   );
 
-  const fetchCurrentUser = useCallback(async () => {
-    const savedToken = token || localStorage.getItem(TOKEN_STORAGE_KEY);
+  const fetchCurrentUser = useCallback(async (): Promise<User | null> => {
+    const storedAuth = getStoredAuth();
+    const savedToken = token || storedAuth?.token || null;
 
     if (!savedToken) {
       clearAuth();
-      return;
+      return null;
     }
 
     const response = await fetch(`${API_BASE_URL}/users/me`, {
@@ -161,12 +267,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error(data.message || "Failed to fetch current user");
     }
 
+    if (!data.user) {
+      clearAuth();
+      throw new Error("Failed to fetch current user");
+    }
+
+    if (!data.user.is_active) {
+      clearAuth();
+      throw new Error("This account has been deactivated");
+    }
+
     setUser(data.user);
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
+    setToken(savedToken);
+    persistAuthByRole(data.user, savedToken);
+
+    return data.user as User;
   }, [token, clearAuth]);
 
   const logout = useCallback(async () => {
-    const savedToken = token || localStorage.getItem(TOKEN_STORAGE_KEY);
+    const storedAuth = getStoredAuth();
+    const savedToken = token || storedAuth?.token || null;
 
     try {
       if (savedToken) {
@@ -184,19 +304,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [token, clearAuth]);
 
+  const deactivateOwnAccount = useCallback(async () => {
+    const storedAuth = getStoredAuth();
+    const savedToken = token || storedAuth?.token || null;
+
+    if (!savedToken) {
+      throw new Error("No token provided");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/me`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${savedToken}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to deactivate account");
+    }
+
+    clearAuth();
+  }, [token, clearAuth]);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
-        isAuthenticated: !!user && !!token,
-        isAdmin: !!user?.is_admin,
+        isAuthenticated: !!user && !!token && !!user.is_active,
+        isAdmin: user?.role === "admin",
+        isAdminStaff: user?.role === "adminstaff",
         isLoading,
         login,
         register,
         logout,
         fetchCurrentUser,
         updateAuthState,
+        deactivateOwnAccount,
       }}
     >
       {children}

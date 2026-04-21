@@ -23,7 +23,7 @@ interface LoginFormData {
 }
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, fetchCurrentUser } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
 
@@ -36,7 +36,20 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError("");
+
       await login(data);
+      const currentUser = await fetchCurrentUser();
+
+      if (currentUser?.role === "admin") {
+        router.push("/admin");
+        return;
+      }
+
+      if (currentUser?.role === "adminstaff") {
+        router.push("/admin/resources");
+        return;
+      }
+
       router.push("/dashboard");
     } catch (err) {
       const message =

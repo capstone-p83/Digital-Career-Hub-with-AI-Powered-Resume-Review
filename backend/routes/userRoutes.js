@@ -31,6 +31,8 @@ router.get("/me", authMiddleware, async (req, res) => {
         u.id,
         u.email,
         u.role,
+        u.is_active,
+        u.deleted_at,
         u.created_at,
         up.id AS profile_id,
         up.user_id,
@@ -60,6 +62,8 @@ router.get("/me", authMiddleware, async (req, res) => {
         id: row.id,
         email: row.email,
         role: row.role,
+        is_active: row.is_active,
+        deleted_at: row.deleted_at,
         created_at: row.created_at,
         profile: {
           id: row.profile_id,
@@ -104,6 +108,25 @@ router.put("/me", authMiddleware, async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    const userCheck = await client.query(
+      "SELECT id, is_active FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found",
+      });
+    }
+
+    if (!userCheck.rows[0].is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
+
     const existingUser = await client.query(
       "SELECT id FROM users WHERE email = $1 AND id != $2",
       [normalizedEmail, userId]
@@ -123,18 +146,10 @@ router.put("/me", authMiddleware, async (req, res) => {
       UPDATE users
       SET email = $1
       WHERE id = $2
-      RETURNING id, email, role, created_at
+      RETURNING id, email, role, is_active, deleted_at, created_at
       `,
       [normalizedEmail, userId]
     );
-
-    if (userResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({
-        status: "error",
-        message: "User not found",
-      });
-    }
 
     const profileCheck = await client.query(
       "SELECT id FROM user_profile WHERE user_id = $1",
@@ -216,7 +231,7 @@ router.put("/update-password", authMiddleware, async (req, res) => {
     }
 
     const result = await db.query(
-      "SELECT password FROM users WHERE id = $1",
+      "SELECT password, is_active FROM users WHERE id = $1",
       [userId]
     );
 
@@ -227,8 +242,14 @@ router.put("/update-password", authMiddleware, async (req, res) => {
       });
     }
 
-    const user = result.rows[0];
+    if (!result.rows[0].is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
 
+    const user = result.rows[0];
     const isMatch = await bcrypt.compare(oldPassword, user.password);
 
     if (!isMatch) {
@@ -277,7 +298,7 @@ router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
       UPDATE users
       SET role = $1
       WHERE id = $2
-      RETURNING id, email, role, created_at
+      RETURNING id, email, role, is_active, deleted_at, created_at
       `,
       [role, id]
     );
@@ -311,9 +332,11 @@ router.delete("/me", authMiddleware, async (req, res) => {
 
     const result = await db.query(
       `
-      DELETE FROM users
-      WHERE id = $1
-      RETURNING id, email, role
+      UPDATE users
+      SET is_active = false,
+          deleted_at = NOW()
+      WHERE id = $1 AND is_active = true
+      RETURNING id, email, role, is_active, deleted_at
       `,
       [userId]
     );
@@ -321,21 +344,21 @@ router.delete("/me", authMiddleware, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         status: "error",
-        message: "User not found",
+        message: "Active user not found",
       });
     }
 
     return res.json({
       status: "ok",
-      message: "Account deleted successfully",
+      message: "Account deactivated successfully",
       user: result.rows[0],
     });
   } catch (error) {
-    console.error("Delete account error:", error);
+    console.error("Deactivate account error:", error);
 
     return res.status(500).json({
       status: "error",
-      message: "Failed to delete account",
+      message: "Failed to deactivate account",
       error: error.message,
     });
   }

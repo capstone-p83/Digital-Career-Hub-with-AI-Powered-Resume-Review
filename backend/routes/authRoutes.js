@@ -89,7 +89,7 @@ router.post("/register", async (req, res) => {
       `
       INSERT INTO users (email, password, role)
       VALUES ($1, $2, $3)
-      RETURNING id, email, role, created_at
+      RETURNING id, email, role, is_active, deleted_at, created_at
       `,
       [trimmedEmail, hashedPassword, role]
     );
@@ -152,6 +152,8 @@ router.post("/login", async (req, res) => {
         u.email,
         u.password,
         u.role,
+        u.is_active,
+        u.deleted_at,
         u.created_at,
         up.id AS profile_id,
         up.user_id,
@@ -175,6 +177,13 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    if (!user.is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -193,6 +202,8 @@ router.post("/login", async (req, res) => {
         id: user.id,
         email: user.email,
         role: user.role,
+        is_active: user.is_active,
+        deleted_at: user.deleted_at,
         created_at: user.created_at,
         profile: {
           id: user.profile_id,
