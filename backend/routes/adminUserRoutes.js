@@ -5,18 +5,47 @@ const adminMiddleware = require("../middleware/adminMiddleware");
 
 const router = express.Router();
 
-// GET ALL USERS
+const allowedRoles = ["admin", "adminstaff", "user"];
+
 router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const result = await db.query(`
-      SELECT id, email, is_admin, created_at
-      FROM users
-      ORDER BY id ASC
-    `);
+    const result = await db.query(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.role,
+        u.created_at,
+        up.id AS profile_id,
+        up.user_id,
+        up.first_name,
+        up.last_name,
+        up.phone,
+        up.date_of_birth
+      FROM users u
+      LEFT JOIN user_profile up ON up.user_id = u.id
+      ORDER BY u.id ASC
+      `
+    );
+
+    const users = result.rows.map((row) => ({
+      id: row.id,
+      email: row.email,
+      role: row.role,
+      created_at: row.created_at,
+      profile: {
+        id: row.profile_id,
+        user_id: row.user_id,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        phone: row.phone,
+        date_of_birth: row.date_of_birth,
+      },
+    }));
 
     return res.json({
       status: "ok",
-      users: result.rows,
+      users,
     });
   } catch (error) {
     console.error("Get all users error:", error);
@@ -29,22 +58,37 @@ router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-// UPDATE USER BY ADMIN
 router.put("/:id", authMiddleware, adminMiddleware, async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const { email, is_admin } = req.body;
+  const client = await db.connect();
 
-    if (!email) {
+  try {
+    const userId = Number(req.params.id);
+    const {
+      email,
+      role,
+      first_name = null,
+      last_name = null,
+      phone = null,
+      date_of_birth = null,
+    } = req.body;
+
+    if (!email || !role) {
       return res.status(400).json({
         status: "error",
-        message: "Email is required",
+        message: "Email and role are required",
       });
     }
 
-    const existingUser = await db.query(
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid role",
+      });
+    }
+
+    const existingUser = await client.query(
       "SELECT id FROM users WHERE email = $1 AND id != $2",
-      [email, userId]
+      [email.trim().toLowerCase(), userId]
     );
 
     if (existingUser.rows.length > 0) {
@@ -54,29 +98,69 @@ router.put("/:id", authMiddleware, adminMiddleware, async (req, res) => {
       });
     }
 
-    const result = await db.query(
+    await client.query("BEGIN");
+
+    const userResult = await client.query(
       `
       UPDATE users
-      SET email = $1, is_admin = $2
+      SET email = $1, role = $2
       WHERE id = $3
-      RETURNING id, email, is_admin, created_at
+      RETURNING id, email, role, created_at
       `,
-      [email, is_admin === true, userId]
+      [email.trim().toLowerCase(), role, userId]
     );
 
-    if (result.rows.length === 0) {
+    if (userResult.rows.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(404).json({
         status: "error",
         message: "User not found",
       });
     }
 
+    const profileCheck = await client.query(
+      "SELECT id FROM user_profile WHERE user_id = $1",
+      [userId]
+    );
+
+    let profileResult;
+
+    if (profileCheck.rows.length === 0) {
+      profileResult = await client.query(
+        `
+        INSERT INTO user_profile (user_id, first_name, last_name, phone, date_of_birth)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, user_id, first_name, last_name, phone, date_of_birth
+        `,
+        [userId, first_name, last_name, phone, date_of_birth]
+      );
+    } else {
+      profileResult = await client.query(
+        `
+        UPDATE user_profile
+        SET first_name = $1,
+            last_name = $2,
+            phone = $3,
+            date_of_birth = $4
+        WHERE user_id = $5
+        RETURNING id, user_id, first_name, last_name, phone, date_of_birth
+        `,
+        [first_name, last_name, phone, date_of_birth, userId]
+      );
+    }
+
+    await client.query("COMMIT");
+
     return res.json({
       status: "ok",
       message: "User updated successfully",
-      user: result.rows[0],
+      user: {
+        ...userResult.rows[0],
+        profile: profileResult.rows[0],
+      },
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Admin update user error:", error);
 
     return res.status(500).json({
@@ -84,10 +168,11 @@ router.put("/:id", authMiddleware, adminMiddleware, async (req, res) => {
       message: "Failed to update user",
       error: error.message,
     });
+  } finally {
+    client.release();
   }
 });
 
-// DELETE USER BY ADMIN
 router.delete("/:id", authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const userId = req.params.id;
@@ -96,7 +181,7 @@ router.delete("/:id", authMiddleware, adminMiddleware, async (req, res) => {
       `
       DELETE FROM users
       WHERE id = $1
-      RETURNING id, email, is_admin, created_at
+      RETURNING id, email, role, created_at
       `,
       [userId]
     );
