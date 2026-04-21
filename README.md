@@ -16,7 +16,7 @@ Tech stack:
 Digital-Career-Hub-with-AI-Powered-Resume-Review
 ├── backend
 │   ├── config
-│   │   └── db.js # database connection, not build
+│   │   └── db.js # database connection
 │   ├── src
 │   │   └── server.js            # backend server entry
 │   ├── package.json
