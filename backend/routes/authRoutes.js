@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
+const jwksClient = require("jwks-rsa");
 const db = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -14,6 +15,13 @@ const passwordPattern =
 const allowedRoles = ["admin", "adminstaff", "user"];
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const microsoftJwks = jwksClient({
+  jwksUri: "https://login.microsoftonline.com/common/discovery/v2.0/keys",
+  cache: true,
+  cacheMaxEntries: 5,
+  cacheMaxAge: 10 * 60 * 1000,
+});
 
 function generateToken(user) {
   return jwt.sign(
@@ -137,6 +145,34 @@ async function buildAuthResponseUser(user) {
     created_at: user.created_at,
     profile,
   };
+}
+
+function getMicrosoftSigningKey(header) {
+  return new Promise((resolve, reject) => {
+    microsoftJwks.getSigningKey(header.kid, (err, key) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve(key.getPublicKey());
+    });
+  });
+}
+
+async function verifyMicrosoftIdToken(idToken) {
+  const decoded = jwt.decode(idToken, { complete: true });
+
+  if (!decoded || !decoded.header) {
+    throw new Error("Invalid Microsoft token");
+  }
+
+  const signingKey = await getMicrosoftSigningKey(decoded.header);
+
+  return jwt.verify(idToken, signingKey, {
+    algorithms: ["RS256"],
+    audience: process.env.MICROSOFT_CLIENT_ID,
+  });
 }
 
 router.post("/register", async (req, res) => {
@@ -412,6 +448,87 @@ router.post("/google", async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Google login failed",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/microsoft", async (req, res) => {
+  try {
+    const { id_token } = req.body;
+
+    if (!id_token) {
+      return res.status(400).json({
+        status: "error",
+        message: "Microsoft token is required",
+      });
+    }
+
+    if (!process.env.MICROSOFT_CLIENT_ID) {
+      return res.status(500).json({
+        status: "error",
+        message: "MICROSOFT_CLIENT_ID is not configured",
+      });
+    }
+
+    const payload = await verifyMicrosoftIdToken(id_token);
+
+    const issuer = String(payload.iss || "");
+    const providerUserId = payload.oid || payload.sub;
+    const providerEmail = normalizeEmail(
+      payload.preferred_username || payload.email
+    );
+
+    if (!issuer.includes("login.microsoftonline.com")) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid Microsoft token issuer",
+      });
+    }
+
+    if (!providerUserId || !providerEmail) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid Microsoft identity payload",
+      });
+    }
+
+    const provider = "microsoft";
+
+    let user = await findUserByIdentity(provider, providerUserId);
+
+    if (!user) {
+      user = await findUserByEmail(providerEmail);
+
+      if (!user) {
+        user = await createOAuthUser(providerEmail);
+      }
+
+      await createIdentity(user.id, provider, providerUserId, providerEmail);
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
+
+    const authUser = await buildAuthResponseUser(user);
+    const token = generateToken(authUser);
+
+    return res.status(200).json({
+      status: "ok",
+      message: "Microsoft login successful",
+      user: authUser,
+      token,
+    });
+  } catch (error) {
+    console.error("Microsoft login error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Microsoft login failed",
       error: error.message,
     });
   }

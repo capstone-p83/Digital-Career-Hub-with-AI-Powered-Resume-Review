@@ -1,7 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { PublicClientApplication } from "@azure/msal-browser";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -14,7 +15,7 @@ import {
   CardTitle,
 } from "../../components/ui/Card";
 import { useAuth } from "../../context/AuthContext";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Briefcase } from "lucide-react";
 
@@ -30,16 +31,46 @@ declare global {
 }
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+const MICROSOFT_CLIENT_ID =
+  process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID || "";
+const MICROSOFT_TENANT_ID =
+  process.env.NEXT_PUBLIC_MICROSOFT_TENANT_ID || "common";
 
 export default function LoginPage() {
-  const { login, loginWithGoogle, fetchCurrentUser } = useAuth();
+  const {
+    login,
+    loginWithGoogle,
+    loginWithMicrosoft,
+    fetchCurrentUser,
+  } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   const [error, setError] = useState("");
   const [googleReady, setGoogleReady] = useState(false);
+  const [microsoftProcessing, setMicrosoftProcessing] = useState(false);
+
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const googleInitializedRef = useRef(false);
+  const microsoftBusyRef = useRef(false);
+
+  const msalInstance = useMemo(() => {
+    if (!MICROSOFT_CLIENT_ID) {
+      return null;
+    }
+
+    return new PublicClientApplication({
+      auth: {
+        clientId: MICROSOFT_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}`,
+        redirectUri: "http://localhost:3000/login",
+        navigateToLoginRequestUrl: false,
+      },
+      cache: {
+        cacheLocation: "sessionStorage",
+        storeAuthStateInCookie: false,
+      },
+    });
+  }, []);
 
   const {
     register,
@@ -47,21 +78,22 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>();
 
-  const redirectByRole = useCallback(async () => {
-    const currentUser = await fetchCurrentUser();
+  const redirectByRole = useCallback(
+    (role?: string) => {
+      if (role === "admin") {
+        router.replace("/admin");
+        return;
+      }
 
-    if (currentUser?.role === "admin") {
-      router.replace("/admin");
-      return;
-    }
+      if (role === "adminstaff") {
+        router.replace("/dashboard");
+        return;
+      }
 
-    if (currentUser?.role === "adminstaff") {
       router.replace("/dashboard");
-      return;
-    }
-
-    router.replace("/dashboard");
-  }, [fetchCurrentUser, router]);
+    },
+    [router]
+  );
 
   const handleGoogleCredential = useCallback(
     async (response: { credential?: string }) => {
@@ -72,8 +104,8 @@ export default function LoginPage() {
           throw new Error("Google credential was not returned");
         }
 
-        await loginWithGoogle(response.credential);
-        await redirectByRole();
+        const user = await loginWithGoogle(response.credential);
+        redirectByRole(user?.role);
       } catch (err) {
         const message =
           err instanceof Error
@@ -99,6 +131,7 @@ export default function LoginPage() {
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCredential,
       });
+
       googleInitializedRef.current = true;
     }
 
@@ -113,11 +146,43 @@ export default function LoginPage() {
     });
   }, [handleGoogleCredential]);
 
+  const handleMicrosoftLogin = async () => {
+    if (!msalInstance) {
+      setError("Microsoft login is not configured");
+      return;
+    }
+
+    if (microsoftBusyRef.current) {
+      return;
+    }
+
+    try {
+      microsoftBusyRef.current = true;
+      setError("");
+
+      await msalInstance.initialize();
+
+      await msalInstance.loginRedirect({
+        scopes: ["openid", "profile", "email"],
+        prompt: "select_account",
+        redirectUri: "http://localhost:3000/login",
+      });
+    } catch (err) {
+      const rawMessage =
+        err instanceof Error
+          ? err.message
+          : "An error occurred during Microsoft login.";
+
+      setError(rawMessage);
+      microsoftBusyRef.current = false;
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError("");
-      await login(data);
-      await redirectByRole();
+      const user = await login(data);
+      redirectByRole(user?.role);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An error occurred during login.";
@@ -129,7 +194,7 @@ export default function LoginPage() {
     if (window.google) {
       setGoogleReady(true);
     }
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     if (!googleReady) {
@@ -143,16 +208,58 @@ export default function LoginPage() {
     return () => {
       clearTimeout(timer);
     };
-  }, [googleReady, renderGoogleButton, pathname]);
+  }, [googleReady, renderGoogleButton]);
+
+  useEffect(() => {
+    const processMicrosoftRedirect = async () => {
+      if (!msalInstance) {
+        return;
+      }
+
+      try {
+        setMicrosoftProcessing(true);
+
+        await msalInstance.initialize();
+        const result = await msalInstance.handleRedirectPromise();
+
+        if (result?.idToken) {
+          const user = await loginWithMicrosoft(result.idToken);
+
+          if (window.location.hash.includes("code=")) {
+            window.history.replaceState({}, document.title, "/login");
+          }
+
+          redirectByRole(user?.role);
+          return;
+        }
+
+        const currentUser = await fetchCurrentUser();
+
+        if (currentUser?.role) {
+          redirectByRole(currentUser.role);
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "An error occurred during Microsoft login.";
+
+        setError(message);
+      } finally {
+        microsoftBusyRef.current = false;
+        setMicrosoftProcessing(false);
+      }
+    };
+
+    processMicrosoftRedirect();
+  }, [msalInstance, loginWithMicrosoft, fetchCurrentUser, redirectByRole]);
 
   return (
     <>
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
-        onLoad={() => {
-          setGoogleReady(true);
-        }}
+        onLoad={() => setGoogleReady(true)}
       />
 
       <div className="flex-1 flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-900">
@@ -175,6 +282,12 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {microsoftProcessing && (
+                <div className="p-3 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 rounded-md">
+                  Completing Microsoft sign-in...
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
                   Email
@@ -182,6 +295,7 @@ export default function LoginPage() {
                 <Input
                   type="email"
                   placeholder="m@example.com"
+                  autoComplete="email"
                   {...register("email", { required: "Email is required" })}
                   className={errors.email ? "border-red-500" : ""}
                 />
@@ -207,6 +321,7 @@ export default function LoginPage() {
 
                 <Input
                   type="password"
+                  autoComplete="current-password"
                   {...register("password", { required: "Password is required" })}
                   className={errors.password ? "border-red-500" : ""}
                 />
@@ -236,6 +351,16 @@ export default function LoginPage() {
             <div className="flex justify-center">
               <div ref={googleButtonRef} className="w-full max-w-sm" />
             </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mt-3"
+              onClick={handleMicrosoftLogin}
+              disabled={microsoftProcessing}
+            >
+              Continue with Microsoft
+            </Button>
           </CardContent>
 
           <CardFooter className="flex flex-col items-center justify-center space-y-2">

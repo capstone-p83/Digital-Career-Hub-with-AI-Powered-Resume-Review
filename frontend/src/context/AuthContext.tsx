@@ -59,6 +59,7 @@ interface AuthContextType {
   login: (payload: LoginPayload) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User>;
   loginWithGoogle: (idToken: string) => Promise<User>;
+  loginWithMicrosoft: (idToken: string) => Promise<User>;
   logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<User | null>;
   updateAuthState: (userData: User, authToken: string) => void;
@@ -267,6 +268,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [handleAuthResponse]
   );
 
+  const loginWithMicrosoft = useCallback(
+    async (idToken: string): Promise<User> => {
+      const response = await fetch(`${API_BASE_URL}/auth/microsoft`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_token: idToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to login with Microsoft");
+      }
+
+      return handleAuthResponse(data);
+    },
+    [handleAuthResponse]
+  );
+
   const fetchCurrentUser = useCallback(async (): Promise<User | null> => {
     const storedAuth = getStoredAuth();
     const savedToken = token || storedAuth?.token || null;
@@ -363,6 +387,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         login,
         register,
         loginWithGoogle,
+        loginWithMicrosoft,
         logout,
         fetchCurrentUser,
         updateAuthState,
