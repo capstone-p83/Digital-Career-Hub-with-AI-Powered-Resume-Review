@@ -328,3 +328,26 @@ Features integrated into the UI:
 Next steps:
 - Connect the frontend Context/API components to your live backend Express endpoints.
 - Finalize the PostgreSQL logic.
+
+---
+
+# Environment value
+
+.env in backend/
+```
+PORT=5001
+DATABASE_URL=postgresql://neondb_owner:npg_iaIzroM36CQZ@ep-small-mud-a7h9aj20-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+JWT_SECRET=clientisgod
+GOOGLE_CLIENT_ID=393627962738-ukud50d8ebmpsk8dsf698oubkhkk4fsb.apps.googleusercontent.com
+MICROSOFT_CLIENT_ID=afb2d7c9-ebd0-4974-8548-fec44035cdfb
+```
+
+
+.env.local in frontend/
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:5001/api
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=393627962738-ukud50d8ebmpsk8dsf698oubkhkk4fsb.apps.googleusercontent.com
+NEXT_PUBLIC_MICROSOFT_CLIENT_ID=afb2d7c9-ebd0-4974-8548-fec44035cdfb
+NEXT_PUBLIC_MICROSOFT_TENANT_ID=be1f267a-3f73-4888-a0f7-2e1fcdefd1b7
+```
