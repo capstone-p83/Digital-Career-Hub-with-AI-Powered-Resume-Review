@@ -351,3 +351,13 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=393627962738-ukud50d8ebmpsk8dsf698oubkhkk4fsb.apps.
 NEXT_PUBLIC_MICROSOFT_CLIENT_ID=afb2d7c9-ebd0-4974-8548-fec44035cdfb
 NEXT_PUBLIC_MICROSOFT_TENANT_ID=be1f267a-3f73-4888-a0f7-2e1fcdefd1b7
 ```
+
+
+
+---
+
+# Database connection (terminal)
+
+```
+psql "postgresql://neondb_owner:npg_iaIzroM36CQZ@ep-small-mud-a7h9aj20-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+```
