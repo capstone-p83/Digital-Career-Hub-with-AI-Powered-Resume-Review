@@ -81,7 +81,7 @@ export default function LoginPage() {
   const redirectByRole = useCallback(
     (role?: string) => {
       if (role === "admin") {
-        router.replace("/admin");
+        router.replace("/dashboard");
         return;
       }
 
