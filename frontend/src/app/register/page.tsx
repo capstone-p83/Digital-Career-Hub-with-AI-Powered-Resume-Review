@@ -21,6 +21,10 @@ interface RegisterFormData {
   email: string;
   password: string;
   confirmPassword: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  date_of_birth?: string;
 }
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,6 +71,11 @@ export default function RegisterPage() {
       await registerUser({
         email: data.email.trim(),
         password: data.password,
+        role: "user",
+        first_name: data.first_name?.trim() || null,
+        last_name: data.last_name?.trim() || null,
+        phone: data.phone?.trim() || null,
+        date_of_birth: data.date_of_birth || null,
       });
 
       router.push("/dashboard");
@@ -100,6 +109,36 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
+                  First Name
+                </label>
+                <Input type="text" {...register("first_name")} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
+                  Last Name
+                </label>
+                <Input type="text" {...register("last_name")} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
+                Phone
+              </label>
+              <Input type="text" {...register("phone")} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
+                Date of Birth
+              </label>
+              <Input type="date" {...register("date_of_birth")} />
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
@@ -171,8 +210,8 @@ export default function RegisterPage() {
                 type="password"
                 {...register("confirmPassword", {
                   required: "Please confirm your password",
-                  validate: (value) =>
-                    value === password || "Passwords do not match",
+                  validate: (value, formValues) =>
+                    value === formValues.password || "Passwords do not match",
                 })}
                 className={errors.confirmPassword ? "border-red-500" : ""}
               />
@@ -184,7 +223,7 @@ export default function RegisterPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Register"}
+              {isSubmitting ? "Creating account..." : "Create Account"}
             </Button>
           </form>
         </CardContent>

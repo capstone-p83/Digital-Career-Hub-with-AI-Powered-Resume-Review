@@ -7,8 +7,16 @@ import { useAuth } from "../../context/AuthContext";
 type ProfileData = {
   id?: string | number;
   email?: string;
-  is_admin?: boolean;
+  role?: "admin" | "adminstaff" | "user";
+  is_active?: boolean;
+  deleted_at?: string | null;
   created_at?: string;
+  profile?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    phone?: string | null;
+    date_of_birth?: string | null;
+  } | null;
 };
 
 const API_BASE_URL =
@@ -119,12 +127,59 @@ export default function ProfilePage() {
               </p>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  First Name
+                </p>
+                <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
+                  {profile?.profile?.first_name || "Not set"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Last Name
+                </p>
+                <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
+                  {profile?.profile?.last_name || "Not set"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Phone
+                </p>
+                <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
+                  {profile?.profile?.phone || "Not set"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Date of Birth
+                </p>
+                <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
+                  {profile?.profile?.date_of_birth || "Not set"}
+                </p>
+              </div>
+            </div>
+
             <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Role
               </p>
               <p className="mt-2 text-base capitalize text-slate-900 dark:text-slate-100">
-                {profile?.is_admin ? "admin" : "user"}
+                {profile?.role || user?.role || "user"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Account Status
+              </p>
+              <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
+                {profile?.is_active ? "Active" : "Deactivated"}
               </p>
             </div>
 

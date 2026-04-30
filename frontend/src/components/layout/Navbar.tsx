@@ -2,16 +2,28 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useLanguage, type Language, LANGUAGE_NAMES } from "../../context/LanguageContext";
+import {
+  useLanguage,
+  type Language,
+  LANGUAGE_NAMES,
+} from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "next-themes";
-import { Moon, Sun, Menu, X, User as UserIcon, Globe } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  Menu,
+  X,
+  User as UserIcon,
+  Globe,
+  Shield,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "../../lib/utils";
 
 export default function Navbar() {
   const { t, language, setLanguage } = useLanguage();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -43,7 +55,10 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="font-bold text-xl text-blue-600 dark:text-blue-400">
+            <Link
+              href="/"
+              className="font-bold text-xl text-blue-600 dark:text-blue-400"
+            >
               CareerHub
             </Link>
           </div>
@@ -75,11 +90,13 @@ export default function Navbar() {
                 onChange={(e) => setLanguage(e.target.value as Language)}
                 className="bg-transparent text-sm font-medium py-1.5 pr-2 focus:outline-none dark:text-slate-300 hover:cursor-pointer"
               >
-                {(Object.entries(LANGUAGE_NAMES) as [Language, string][]).map(([key, name]) => (
-                  <option key={key} value={key} className="dark:bg-slate-800">
-                    {name}
-                  </option>
-                ))}
+                {(Object.entries(LANGUAGE_NAMES) as [Language, string][]).map(
+                  ([key, name]) => (
+                    <option key={key} value={key} className="dark:bg-slate-800">
+                      {name}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
@@ -92,9 +109,24 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-                <Link href="/dashboard" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title="Admin Panel"
+                  >
+                    <Shield size={18} />
+                  </Link>
+                )}
+
+                <Link
+                  href="/profile"
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                  title={user?.email || "Profile"}
+                >
                   <UserIcon size={18} />
                 </Link>
+
                 <button
                   onClick={handleLogout}
                   className="text-sm font-medium bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition"
@@ -135,56 +167,52 @@ export default function Navbar() {
                   "block px-3 py-2 rounded-md text-base font-medium",
                   pathname === link.href
                     ? "bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400"
-                    : "text-slate-700 hover:bg-slate-50 hover:text-blue-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
               >
                 {link.label}
               </Link>
             ))}
 
-            <div className="pt-4 pb-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-3">
-              <div className="flex space-x-2">
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value as Language)}
-                  className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-sm font-medium py-1.5 px-2 focus:outline-none dark:text-slate-300"
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                  {(Object.entries(LANGUAGE_NAMES) as [Language, string][]).map(([key, name]) => (
-                    <option key={key} value={key}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  Profile
+                </Link>
 
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="p-2 rounded-full border border-slate-200 dark:border-slate-700"
-                >
-                  {mounted && theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
-              </div>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
 
-              {isAuthenticated ? (
                 <button
                   onClick={async () => {
-                    await logout();
                     setMobileMenuOpen(false);
-                    router.replace("/login");
+                    await handleLogout();
                   }}
-                  className="text-sm font-medium bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-md"
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   {t("nav.logout")}
                 </button>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded-md"
-                >
-                  {t("nav.login")}
-                </Link>
-              )}
-            </div>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-md text-base font-medium text-blue-600"
+              >
+                {t("nav.login")}
+              </Link>
+            )}
           </div>
         </div>
       )}

@@ -1,6 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+const jwksClient = require("jwks-rsa");
 const db = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -8,11 +10,184 @@ const router = express.Router();
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordPattern =
-  /^(?=.*[a-zA-Z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+
+const allowedRoles = ["admin", "adminstaff", "user"];
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const microsoftJwks = jwksClient({
+  jwksUri: "https://login.microsoftonline.com/common/discovery/v2.0/keys",
+  cache: true,
+  cacheMaxEntries: 5,
+  cacheMaxAge: 10 * 60 * 1000,
+});
+
+function generateToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+async function findUserByIdentity(provider, providerUserId) {
+  const result = await db.query(
+    `
+    SELECT
+      u.id,
+      u.email,
+      u.role,
+      u.is_active,
+      u.deleted_at,
+      u.created_at
+    FROM user_identities ui
+    JOIN users u ON u.id = ui.user_id
+    WHERE ui.provider = $1 AND ui.provider_user_id = $2
+    LIMIT 1
+    `,
+    [provider, providerUserId]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function findUserByEmail(email) {
+  const result = await db.query(
+    `
+    SELECT
+      id,
+      email,
+      role,
+      is_active,
+      deleted_at,
+      created_at
+    FROM users
+    WHERE email = $1
+    LIMIT 1
+    `,
+    [normalizeEmail(email)]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function createOAuthUser(email) {
+  const result = await db.query(
+    `
+    INSERT INTO users (email, password, role)
+    VALUES ($1, $2, 'user')
+    RETURNING id, email, role, is_active, deleted_at, created_at
+    `,
+    [normalizeEmail(email), ""]
+  );
+
+  return result.rows[0];
+}
+
+async function createIdentity(userId, provider, providerUserId, providerEmail) {
+  await db.query(
+    `
+    INSERT INTO user_identities (user_id, provider, provider_user_id, provider_email)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT (provider, provider_user_id) DO NOTHING
+    `,
+    [userId, provider, providerUserId, normalizeEmail(providerEmail)]
+  );
+}
+
+async function getUserProfileByUserId(userId) {
+  const result = await db.query(
+    `
+    SELECT
+      id,
+      user_id,
+      first_name,
+      last_name,
+      phone,
+      date_of_birth
+    FROM user_profile
+    WHERE user_id = $1
+    LIMIT 1
+    `,
+    [userId]
+  );
+
+  return (
+    result.rows[0] || {
+      id: null,
+      user_id: userId,
+      first_name: null,
+      last_name: null,
+      phone: null,
+      date_of_birth: null,
+    }
+  );
+}
+
+async function buildAuthResponseUser(user) {
+  const profile = await getUserProfileByUserId(user.id);
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    is_active: user.is_active,
+    deleted_at: user.deleted_at,
+    created_at: user.created_at,
+    profile,
+  };
+}
+
+function getMicrosoftSigningKey(header) {
+  return new Promise((resolve, reject) => {
+    microsoftJwks.getSigningKey(header.kid, (err, key) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve(key.getPublicKey());
+    });
+  });
+}
+
+async function verifyMicrosoftIdToken(idToken) {
+  const decoded = jwt.decode(idToken, { complete: true });
+
+  if (!decoded || !decoded.header) {
+    throw new Error("Invalid Microsoft token");
+  }
+
+  const signingKey = await getMicrosoftSigningKey(decoded.header);
+
+  return jwt.verify(idToken, signingKey, {
+    algorithms: ["RS256"],
+    audience: process.env.MICROSOFT_CLIENT_ID,
+  });
+}
 
 router.post("/register", async (req, res) => {
+  const client = await db.connect();
+
   try {
-    const { email, password, is_admin } = req.body;
+    const {
+      email,
+      password,
+      role = "user",
+      first_name = null,
+      last_name = null,
+      phone = null,
+      date_of_birth = null,
+    } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -21,7 +196,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
 
     if (!emailPattern.test(trimmedEmail)) {
       return res.status(400).json({
@@ -34,11 +209,18 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({
         status: "error",
         message:
-          "Password must be at least 8 characters and include 1 letter, 1 uppercase letter, and 1 special character",
+          "Password must be at least 8 characters and include 1 lowercase letter, 1 uppercase letter, and 1 special character",
       });
     }
 
-    const existingUser = await db.query(
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid role",
+      });
+    }
+
+    const existingUser = await client.query(
       "SELECT id FROM users WHERE email = $1",
       [trimmedEmail]
     );
@@ -50,36 +232,45 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    await client.query("BEGIN");
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await db.query(
+    const userResult = await client.query(
       `
-      INSERT INTO users (email, password, is_admin)
+      INSERT INTO users (email, password, role)
       VALUES ($1, $2, $3)
-      RETURNING id, email, is_admin, created_at
+      RETURNING id, email, role, is_active, deleted_at, created_at
       `,
-      [trimmedEmail, hashedPassword, is_admin === true]
+      [trimmedEmail, hashedPassword, role]
     );
 
-    const user = result.rows[0];
+    const user = userResult.rows[0];
 
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        is_admin: user.is_admin,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+    const profileResult = await client.query(
+      `
+      INSERT INTO user_profile (user_id, first_name, last_name, phone, date_of_birth)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, user_id, first_name, last_name, phone, date_of_birth
+      `,
+      [user.id, first_name, last_name, phone, date_of_birth]
     );
+
+    await client.query("COMMIT");
+
+    const token = generateToken(user);
 
     return res.status(201).json({
       status: "ok",
       message: "User registered successfully",
-      user,
+      user: {
+        ...user,
+        profile: profileResult.rows[0],
+      },
       token,
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Register error:", error);
 
     return res.status(500).json({
@@ -87,6 +278,8 @@ router.post("/register", async (req, res) => {
       message: "Failed to register user",
       error: error.message,
     });
+  } finally {
+    client.release();
   }
 });
 
@@ -101,9 +294,29 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    const trimmedEmail = email.trim().toLowerCase();
+
     const result = await db.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.password,
+        u.role,
+        u.is_active,
+        u.deleted_at,
+        u.created_at,
+        up.id AS profile_id,
+        up.user_id,
+        up.first_name,
+        up.last_name,
+        up.phone,
+        up.date_of_birth
+      FROM users u
+      LEFT JOIN user_profile up ON up.user_id = u.id
+      WHERE u.email = $1
+      `,
+      [trimmedEmail]
     );
 
     const user = result.rows[0];
@@ -112,6 +325,13 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({
         status: "error",
         message: "Invalid email or password",
+      });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
       });
     }
 
@@ -124,15 +344,7 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        is_admin: user.is_admin,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = generateToken(user);
 
     return res.status(200).json({
       status: "ok",
@@ -140,8 +352,18 @@ router.post("/login", async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        is_admin: user.is_admin,
+        role: user.role,
+        is_active: user.is_active,
+        deleted_at: user.deleted_at,
         created_at: user.created_at,
+        profile: {
+          id: user.profile_id,
+          user_id: user.user_id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
+          date_of_birth: user.date_of_birth,
+        },
       },
       token,
     });
@@ -151,6 +373,162 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Failed to login",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/google", async (req, res) => {
+  try {
+    const { id_token } = req.body;
+
+    if (!id_token) {
+      return res.status(400).json({
+        status: "error",
+        message: "Google token is required",
+      });
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(500).json({
+        status: "error",
+        message: "GOOGLE_CLIENT_ID is not configured",
+      });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.sub || !payload.email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid Google identity payload",
+      });
+    }
+
+    const provider = "google";
+    const providerUserId = payload.sub;
+    const providerEmail = normalizeEmail(payload.email);
+
+    let user = await findUserByIdentity(provider, providerUserId);
+
+    if (!user) {
+      user = await findUserByEmail(providerEmail);
+
+      if (!user) {
+        user = await createOAuthUser(providerEmail);
+      }
+
+      await createIdentity(user.id, provider, providerUserId, providerEmail);
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
+
+    const authUser = await buildAuthResponseUser(user);
+    const token = generateToken(authUser);
+
+    return res.status(200).json({
+      status: "ok",
+      message: "Google login successful",
+      user: authUser,
+      token,
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Google login failed",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/microsoft", async (req, res) => {
+  try {
+    const { id_token } = req.body;
+
+    if (!id_token) {
+      return res.status(400).json({
+        status: "error",
+        message: "Microsoft token is required",
+      });
+    }
+
+    if (!process.env.MICROSOFT_CLIENT_ID) {
+      return res.status(500).json({
+        status: "error",
+        message: "MICROSOFT_CLIENT_ID is not configured",
+      });
+    }
+
+    const payload = await verifyMicrosoftIdToken(id_token);
+
+    const issuer = String(payload.iss || "");
+    const providerUserId = payload.oid || payload.sub;
+    const providerEmail = normalizeEmail(
+      payload.preferred_username || payload.email
+    );
+
+    if (!issuer.includes("login.microsoftonline.com")) {
+      return res.status(401).json({
+        status: "error",
+        message: "Invalid Microsoft token issuer",
+      });
+    }
+
+    if (!providerUserId || !providerEmail) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid Microsoft identity payload",
+      });
+    }
+
+    const provider = "microsoft";
+
+    let user = await findUserByIdentity(provider, providerUserId);
+
+    if (!user) {
+      user = await findUserByEmail(providerEmail);
+
+      if (!user) {
+        user = await createOAuthUser(providerEmail);
+      }
+
+      await createIdentity(user.id, provider, providerUserId, providerEmail);
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
+
+    const authUser = await buildAuthResponseUser(user);
+    const token = generateToken(authUser);
+
+    return res.status(200).json({
+      status: "ok",
+      message: "Microsoft login successful",
+      user: authUser,
+      token,
+    });
+  } catch (error) {
+    console.error("Microsoft login error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Microsoft login failed",
       error: error.message,
     });
   }
@@ -167,7 +545,8 @@ router.get("/admin/check", authMiddleware, async (req, res) => {
   try {
     return res.json({
       status: "ok",
-      is_admin: req.user.is_admin,
+      isAdmin: req.user.role === "admin",
+      role: req.user.role,
       user: req.user,
     });
   } catch (error) {

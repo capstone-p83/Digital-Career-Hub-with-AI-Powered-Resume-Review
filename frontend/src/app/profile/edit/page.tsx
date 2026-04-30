@@ -6,6 +6,10 @@ import { useAuth } from "../../../context/AuthContext";
 
 type ProfileFormData = {
   email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  date_of_birth: string;
 };
 
 type PasswordFormData = {
@@ -26,10 +30,15 @@ export default function EditProfilePage() {
     isLoading,
     fetchCurrentUser,
     updateAuthState,
+    deactivateOwnAccount,
   } = useAuth();
 
   const [profileForm, setProfileForm] = useState<ProfileFormData>({
     email: "",
+    first_name: "",
+    last_name: "",
+    phone: "",
+    date_of_birth: "",
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordFormData>({
@@ -39,9 +48,9 @@ export default function EditProfilePage() {
   });
 
   const [loading, setLoading] = useState(true);
-
   const [profileSubmitting, setProfileSubmitting] = useState(false);
   const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+  const [deactivateSubmitting, setDeactivateSubmitting] = useState(false);
 
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
@@ -75,6 +84,10 @@ export default function EditProfilePage() {
 
         setProfileForm({
           email: data.user?.email || "",
+          first_name: data.user?.profile?.first_name || "",
+          last_name: data.user?.profile?.last_name || "",
+          phone: data.user?.profile?.phone || "",
+          date_of_birth: data.user?.profile?.date_of_birth || "",
         });
       } catch (err: any) {
         setProfileError(err.message || "Failed to load profile");
@@ -132,6 +145,10 @@ export default function EditProfilePage() {
         },
         body: JSON.stringify({
           email: trimmedEmail,
+          first_name: profileForm.first_name.trim() || null,
+          last_name: profileForm.last_name.trim() || null,
+          phone: profileForm.phone.trim() || null,
+          date_of_birth: profileForm.date_of_birth || null,
         }),
       });
 
@@ -147,12 +164,7 @@ export default function EditProfilePage() {
         await fetchCurrentUser();
       }
 
-      setProfileForm((prev) => ({
-        ...prev,
-        email: data.user?.email || trimmedEmail,
-      }));
-
-      setProfileSuccess("Email updated successfully");
+      setProfileSuccess("Profile updated successfully");
     } catch (err: any) {
       setProfileError(err.message || "Failed to update profile");
     } finally {
@@ -180,8 +192,8 @@ export default function EditProfilePage() {
         throw new Error("Please fill in all password fields");
       }
 
-      if (passwordForm.newPassword.length < 6) {
-        throw new Error("New password must be at least 6 characters");
+      if (passwordForm.newPassword.length < 8) {
+        throw new Error("New password must be at least 8 characters");
       }
 
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -216,6 +228,26 @@ export default function EditProfilePage() {
       setPasswordError(err.message || "Failed to update password");
     } finally {
       setPasswordSubmitting(false);
+    }
+  };
+
+  const handleDeactivateAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to deactivate your account?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeactivateSubmitting(true);
+      await deactivateOwnAccount();
+      router.replace("/login");
+    } catch (err: any) {
+      setProfileError(err.message || "Failed to deactivate account");
+    } finally {
+      setDeactivateSubmitting(false);
     }
   };
 
@@ -256,37 +288,81 @@ export default function EditProfilePage() {
 
           <form onSubmit={handleProfileSubmit} className="mt-8 space-y-5">
             <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Email
               </label>
               <input
-                id="email"
                 name="email"
                 type="email"
                 value={profileForm.email}
                 onChange={handleProfileChange}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:caret-slate-100 dark:focus:border-slate-300"
-                placeholder="Enter your email"
-                autoComplete="email"
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  First Name
+                </label>
+                <input
+                  name="first_name"
+                  type="text"
+                  value={profileForm.first_name}
+                  onChange={handleProfileChange}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Last Name
+                </label>
+                <input
+                  name="last_name"
+                  type="text"
+                  value={profileForm.last_name}
+                  onChange={handleProfileChange}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Phone
+              </label>
+              <input
+                name="phone"
+                type="text"
+                value={profileForm.phone}
+                onChange={handleProfileChange}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="role"
-                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Date of Birth
+              </label>
+              <input
+                name="date_of_birth"
+                type="date"
+                value={profileForm.date_of_birth}
+                onChange={handleProfileChange}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Role
               </label>
               <input
-                id="role"
                 type="text"
-                value={user?.is_admin ? "Admin" : "User"}
+                value={user?.role || "user"}
                 disabled
-                className="w-full rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500 outline-none dark:border-slate-800 dark:bg-slate-800 dark:text-slate-400"
+                className="w-full rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500 outline-none dark:border-slate-800 dark:bg-slate-800 dark:text-slate-400 capitalize"
               />
             </div>
 
@@ -308,7 +384,7 @@ export default function EditProfilePage() {
                 disabled={profileSubmitting}
                 className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
               >
-                {profileSubmitting ? "Saving..." : "Save Email"}
+                {profileSubmitting ? "Saving..." : "Save Profile"}
               </button>
 
               <button
@@ -331,62 +407,32 @@ export default function EditProfilePage() {
           </p>
 
           <form onSubmit={handlePasswordSubmit} className="mt-8 space-y-5">
-            <div>
-              <label
-                htmlFor="oldPassword"
-                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                Current Password
-              </label>
-              <input
-                id="oldPassword"
-                name="oldPassword"
-                type="password"
-                value={passwordForm.oldPassword}
-                onChange={handlePasswordChange}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:caret-slate-100 dark:focus:border-slate-300"
-                placeholder="Enter current password"
-                autoComplete="current-password"
-              />
-            </div>
+            <input
+              name="oldPassword"
+              type="password"
+              value={passwordForm.oldPassword}
+              onChange={handlePasswordChange}
+              placeholder="Current password"
+              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+            />
 
-            <div>
-              <label
-                htmlFor="newPassword"
-                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                New Password
-              </label>
-              <input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={handlePasswordChange}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:caret-slate-100 dark:focus:border-slate-300"
-                placeholder="Enter new password"
-                autoComplete="new-password"
-              />
-            </div>
+            <input
+              name="newPassword"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={handlePasswordChange}
+              placeholder="New password"
+              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+            />
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                Confirm New Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={handlePasswordChange}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 caret-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:caret-slate-100 dark:focus:border-slate-300"
-                placeholder="Confirm new password"
-                autoComplete="new-password"
-              />
-            </div>
+            <input
+              name="confirmPassword"
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={handlePasswordChange}
+              placeholder="Confirm new password"
+              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+            />
 
             {passwordError && (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
@@ -400,16 +446,32 @@ export default function EditProfilePage() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="submit"
-                disabled={passwordSubmitting}
-                className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
-              >
-                {passwordSubmitting ? "Updating..." : "Change Password"}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={passwordSubmitting}
+              className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
+            >
+              {passwordSubmitting ? "Updating..." : "Update Password"}
+            </button>
           </form>
+        </div>
+
+        <div className="rounded-2xl border border-red-200 bg-white p-8 shadow-sm dark:border-red-900/40 dark:bg-slate-900">
+          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
+            Deactivate Account
+          </h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Your account will be deactivated, not permanently deleted.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleDeactivateAccount}
+            disabled={deactivateSubmitting}
+            className="mt-6 rounded-lg bg-red-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deactivateSubmitting ? "Deactivating..." : "Deactivate My Account"}
+          </button>
         </div>
       </div>
     </main>
