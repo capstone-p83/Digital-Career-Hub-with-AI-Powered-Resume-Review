@@ -170,7 +170,7 @@ export default function ResumeUploadPage() {
                 ref={fileInputRef}
                 onChange={handleChange}
                 className="hidden"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,.docx"
               />
               <UploadCloud className={`mx-auto h-12 w-12 mb-4 ${error ? "text-red-400" : "text-blue-500"}`} />
               <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
@@ -13,7 +13,6 @@ import {
 import { Button } from "../../components/ui/Button";
 import {
   FileText,
-  Clock,
   ArrowRight,
   Calendar,
   Briefcase,
@@ -24,10 +23,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import {
+  getLatestResumeFeedback,
+  type ResumeReviewAnalysis,
+  type ResumeReviewSuccessBody,
+} from "../../lib/resumeReviewSubmit";
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
+  const { user, token, isAuthenticated, isAdmin, isLoading } = useAuth();
   const router = useRouter();
+
+  const [latestFeedback, setLatestFeedback] =
+    useState<ResumeReviewAnalysis | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -35,40 +42,75 @@ export default function Dashboard() {
     }
   }, [isLoading, isAuthenticated, router]);
 
+  useEffect(() => {
+    async function loadLatestFeedback() {
+      if (!isAuthenticated) return;
+
+      try {
+        const res = await getLatestResumeFeedback(token);
+
+        if (!res.ok) {
+          setLatestFeedback(null);
+          return;
+        }
+
+        const data = (await res.json()) as ResumeReviewSuccessBody;
+
+        if (data.status === "ok" && data.analysis) {
+          setLatestFeedback(data.analysis);
+        }
+      } catch {
+        setLatestFeedback(null);
+      }
+    }
+
+    loadLatestFeedback();
+  }, [isAuthenticated, token]);
+
   if (isLoading || !isAuthenticated) {
     return null;
   }
 
   const displayName =
-    user?.profile?.first_name?.trim() ||
-    user?.email ||
-    "User";
+    user?.profile?.first_name?.trim() || user?.email || "User";
 
   const upcomingInterviews = [
-    { company: "TechNova Corp", role: "Frontend Dev", date: "Tomorrow, 10:00 AM" },
-    { company: "FinServe Inc", role: "UI Engineer", date: "Apr 12, 2:30 PM" },
+    {
+      company: "TechNova Corp",
+      role: "Frontend Dev",
+      date: "Tomorrow, 10:00 AM",
+    },
+    {
+      company: "FinServe Inc",
+      role: "UI Engineer",
+      date: "Apr 12, 2:30 PM",
+    },
   ];
 
   const careerTools = [
     {
       name: "Mock Interview",
       icon: <PlayCircle className="w-6 h-6 mb-2" />,
-      color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+      color:
+        "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
     },
     {
       name: "Cover Letter",
       icon: <Edit3 className="w-6 h-6 mb-2" />,
-      color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+      color:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     },
     {
       name: "Salary Insights",
       icon: <BarChart2 className="w-6 h-6 mb-2" />,
-      color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      color:
+        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     },
     {
       name: "Job Tracker",
       icon: <Briefcase className="w-6 h-6 mb-2" />,
-      color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      color:
+        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
     },
   ];
 
@@ -104,7 +146,10 @@ export default function Dashboard() {
       </div>
 
       {isAdmin && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <Card className="border-blue-200 dark:border-blue-900/40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-900">
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
@@ -127,7 +172,11 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           <Card className="bg-blue-600 text-white border-none h-full shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex justify-between items-center">
@@ -138,26 +187,58 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-extrabold mb-4">
-                85<span className="text-2xl text-blue-300">/100</span>
-              </div>
-              <Link href="/resume/feedback">
-                <Button
-                  variant="outline"
-                  className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
-                >
-                  View Full Report
-                </Button>
-              </Link>
+              {latestFeedback ? (
+                <>
+                  <div className="text-4xl font-extrabold mb-2">
+                    {latestFeedback.score}
+                    <span className="text-2xl text-blue-300">/100</span>
+                  </div>
+
+                  <p className="text-sm text-blue-100 mb-4 line-clamp-1">
+                    {latestFeedback.target_job_role}
+                  </p>
+
+                  <Link
+                    href={`/resume/feedback?id=${latestFeedback.feedback_id}`}
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
+                    >
+                      View Full Report
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl font-extrabold mb-2">No Score</div>
+                  <p className="text-sm text-blue-100 mb-4">
+                    Upload a resume to generate your first review.
+                  </p>
+                  <Link href="/resume">
+                    <Button
+                      variant="outline"
+                      className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
+                    >
+                      Upload Resume
+                    </Button>
+                  </Link>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <Card className="h-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex justify-between items-center">
-                Upcoming Interviews <Calendar className="w-5 h-5 text-slate-400" />
+                Upcoming Interviews{" "}
+                <Calendar className="w-5 h-5 text-slate-400" />
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-2">
@@ -172,7 +253,9 @@ export default function Dashboard() {
                         <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">
                           {interview.company}
                         </p>
-                        <p className="text-xs text-slate-500">{interview.role}</p>
+                        <p className="text-xs text-slate-500">
+                          {interview.role}
+                        </p>
                       </div>
                       <div className="text-right">
                         <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full whitespace-nowrap">
@@ -191,11 +274,17 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <Card className="h-full">
             <CardHeader>
               <CardTitle>Career Tools</CardTitle>
-              <CardDescription>Quick access to your favorite tools.</CardDescription>
+              <CardDescription>
+                Quick access to your favorite tools.
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               {careerTools.map((tool) => (
@@ -215,7 +304,9 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Account Status</CardTitle>
-          <CardDescription>Your current access state from the backend.</CardDescription>
+          <CardDescription>
+            Your current access state from the backend.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div>
@@ -229,7 +320,9 @@ export default function Dashboard() {
           <div>
             <span className="font-medium">Created At:</span>{" "}
             <span>
-              {user?.created_at ? new Date(user.created_at).toLocaleString() : "N/A"}
+              {user?.created_at
+                ? new Date(user.created_at).toLocaleString()
+                : "N/A"}
             </span>
           </div>
         </CardContent>

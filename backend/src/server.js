@@ -45,3 +45,8 @@ app.use("/api", routes);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+const resumeRoutes = require("../routes/resumeRoutes");
+
+app.use("/api/resume", resumeRoutes);
