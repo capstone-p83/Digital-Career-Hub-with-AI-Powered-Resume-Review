@@ -1,122 +1,593 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Users, FileText, Settings, ShieldAlert, Edit, Trash2 } from "lucide-react";
+import {
+  Users,
+  RefreshCw,
+  Search,
+  Shield,
+  User as UserIcon,
+  Pencil,
+  Save,
+  X,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+
+type AdminUser = {
+  id: number;
+  email: string;
+  role: "admin" | "adminstaff" | "user";
+  is_active: boolean;
+  deleted_at: string | null;
+  created_at: string;
+  profile?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    phone?: string | null;
+    date_of_birth?: string | null;
+  } | null;
+};
+
+type EditingUserState = {
+  id: number;
+  email: string;
+  role: "admin" | "adminstaff" | "user";
+  is_active: boolean;
+} | null;
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, token, isAuthenticated, isAdmin, isLoading } = useAuth();
   const router = useRouter();
 
-  // Simple protection check (mock)
-  if (!user || user.role !== "admin") {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
-        <ShieldAlert className="w-16 h-16 text-red-500" />
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Access Denied</h2>
-        <p className="text-slate-500">You must be logged in as an administrator to view this page.</p>
-        <Button onClick={() => router.push("/")}>Return Home</Button>
-      </div>
-    );
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState("");
+  const [pageSuccess, setPageSuccess] = useState("");
+  const [search, setSearch] = useState("");
+
+  const [editingUser, setEditingUser] = useState<EditingUserState>(null);
+  const [savingUserId, setSavingUserId] = useState<number | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [restoringUserId, setRestoringUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!isLoading && isAuthenticated && !isAdmin) {
+      router.replace("/dashboard");
+    }
+  }, [isLoading, isAuthenticated, isAdmin, router]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setPageError("");
+      setPageSuccess("");
+
+      if (!token) {
+        throw new Error("No token provided");
+      }
+
+      const res = await fetch(`${API_BASE_URL}/admin/users`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to fetch users");
+      }
+
+      setUsers(data.users || []);
+    } catch (err: any) {
+      setPageError(err.message || "Failed to fetch users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && isAdmin) {
+      fetchUsers();
+    }
+    if (!isLoading && (!isAuthenticated || !isAdmin)) {
+      setLoading(false);
+    }
+  }, [isLoading, isAuthenticated, isAdmin]);
+
+  const startEditingUser = (selectedUser: AdminUser) => {
+    setPageError("");
+    setPageSuccess("");
+    setEditingUser({
+      id: selectedUser.id,
+      email: selectedUser.email,
+      role: selectedUser.role,
+      is_active: selectedUser.is_active,
+    });
+  };
+
+  const cancelEditingUser = () => {
+    setEditingUser(null);
+  };
+
+  const handleEditingFieldChange = (
+    field: "email" | "role" | "is_active",
+    value: string | boolean
+  ) => {
+    setEditingUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
+  };
+
+  const handleSaveUser = async () => {
+    if (!editingUser || !token) return;
+
+    const trimmedEmail = editingUser.email.trim();
+
+    if (!trimmedEmail) {
+      setPageError("Email is required");
+      return;
+    }
+
+    try {
+      setSavingUserId(editingUser.id);
+      setPageError("");
+      setPageSuccess("");
+
+      const res = await fetch(`${API_BASE_URL}/admin/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          role: editingUser.role,
+          is_active: editingUser.is_active,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to update user");
+      }
+
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === editingUser.id
+            ? {
+                ...item,
+                ...data.user,
+              }
+            : item
+        )
+      );
+
+      setPageSuccess("User updated successfully");
+      setEditingUser(null);
+    } catch (err: any) {
+      setPageError(err.message || "Failed to update user");
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
+  const handleDeactivateUser = async (userId: number) => {
+    if (!token) return;
+
+    if (user?.id === userId) {
+      setPageError("You cannot deactivate your own admin account from this page.");
+      return;
+    }
+
+    const confirmed = window.confirm("Are you sure you want to deactivate this user?");
+    if (!confirmed) return;
+
+    try {
+      setDeletingUserId(userId);
+      setPageError("");
+      setPageSuccess("");
+
+      const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to deactivate user");
+      }
+
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === userId
+            ? {
+                ...item,
+                is_active: false,
+                deleted_at: data.user?.deleted_at ?? new Date().toISOString(),
+              }
+            : item
+        )
+      );
+
+      if (editingUser?.id === userId) {
+        setEditingUser(null);
+      }
+
+      setPageSuccess("User deactivated successfully");
+    } catch (err: any) {
+      setPageError(err.message || "Failed to deactivate user");
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
+  const handleRestoreUser = async (userId: number) => {
+    if (!token) return;
+
+    try {
+      setRestoringUserId(userId);
+      setPageError("");
+      setPageSuccess("");
+
+      const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/restore`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to restore user");
+      }
+
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === userId
+            ? {
+                ...item,
+                is_active: true,
+                deleted_at: null,
+              }
+            : item
+        )
+      );
+
+      setPageSuccess("User restored successfully");
+    } catch (err: any) {
+      setPageError(err.message || "Failed to restore user");
+    } finally {
+      setRestoringUserId(null);
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    if (!keyword) return users;
+
+    return users.filter((item) => {
+      return (
+        item.email.toLowerCase().includes(keyword) ||
+        String(item.id).includes(keyword) ||
+        item.role.includes(keyword) ||
+        (item.is_active ? "active" : "deactivated").includes(keyword)
+      );
+    });
+  }, [users, search]);
+
+  const totalUsers = users.length;
+  const totalAdmins = users.filter((item) => item.role === "admin").length;
+  const totalRegularUsers = users.filter((item) => item.role === "user").length;
+
+  if (isLoading || !isAuthenticated || !isAdmin) {
+    return null;
   }
 
-  const mockUsers = [
-    { id: 1, name: "John Doe", email: "john@example.com", role: "user", joined: "2024-01-12" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", role: "user", joined: "2024-02-05" },
-    { id: 3, name: "Admin Test", email: "admin@example.com", role: "admin", joined: "2024-01-01" },
-  ];
-
   return (
-    <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Admin Panel</h1>
-        <p className="text-slate-600 dark:text-slate-400">Manage platform resources, view users, and monitor system health.</p>
+    <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            Admin Panel
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            Manage registered users across the platform.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" onClick={() => router.push("/dashboard")}>
+            Back to Dashboard
+          </Button>
+          <Button onClick={fetchUsers} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full text-blue-600 dark:text-blue-400">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-full text-blue-600 dark:text-blue-400">
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Total Users</p>
-              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">1,248</h4>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                Total Users
+              </p>
+              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {totalUsers}
+              </h4>
             </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-full text-emerald-600 dark:text-emerald-400">
-              <FileText className="w-6 h-6" />
+            <div className="p-3 bg-purple-100 dark:bg-purple-900/40 rounded-full text-purple-600 dark:text-purple-400">
+              <Shield className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Resumes Analyzed</p>
-              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">8,451</h4>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                Admin Users
+              </p>
+              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {totalAdmins}
+              </h4>
             </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-full text-purple-600 dark:text-purple-400">
-              <Settings className="w-6 h-6" />
+            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-full text-emerald-600 dark:text-emerald-400">
+              <UserIcon className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">System Health</p>
-              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">99.9%</h4>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                Regular Users
+              </p>
+              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {totalRegularUsers}
+              </h4>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tables section */}
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase">
-                <tr>
-                  <th className="px-6 py-3 font-medium">Name</th>
-                  <th className="px-6 py-3 font-medium">Email</th>
-                  <th className="px-6 py-3 font-medium">Role</th>
-                  <th className="px-6 py-3 font-medium">Joined</th>
-                  <th className="px-6 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {mockUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{u.name}</td>
-                    <td className="px-6 py-4 text-slate-500">{u.email}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        u.role === "admin" 
-                          ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" 
-                          : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400"
-                      }`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500">{u.joined}</td>
-                    <td className="px-6 py-4 text-right space-x-2 flex justify-end">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-slate-800">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-slate-800">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <CardHeader className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle>All Users</CardTitle>
+
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by id, email, role, status"
+                className="w-full rounded-lg border border-slate-300 bg-white px-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-300"
+              />
+            </div>
           </div>
+
+          {pageError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
+              {pageError}
+            </div>
+          )}
+
+          {pageSuccess && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+              {pageSuccess}
+            </div>
+          )}
+        </CardHeader>
+
+        <CardContent>
+          {loading ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              Loading users...
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              No users found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1100px] text-sm text-left">
+                <thead className="border-b border-slate-200 dark:border-slate-800">
+                  <tr className="text-slate-500 dark:text-slate-400">
+                    <th className="px-4 py-3 font-medium">ID</th>
+                    <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">Role</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Created At</th>
+                    <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredUsers.map((item) => {
+                    const isEditing = editingUser?.id === item.id;
+                    const isCurrentUser = user?.id === item.id;
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+                      >
+                        <td className="px-4 py-4 text-slate-900 dark:text-white">
+                          {item.id}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          {isEditing ? (
+                            <input
+                              type="email"
+                              value={editingUser.email}
+                              onChange={(e) =>
+                                handleEditingFieldChange("email", e.target.value)
+                              }
+                              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                            />
+                          ) : (
+                            <span className="text-slate-700 dark:text-slate-300">
+                              {item.email}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          {isEditing ? (
+                            <select
+                              value={editingUser.role}
+                              onChange={(e) =>
+                                handleEditingFieldChange("role", e.target.value)
+                              }
+                              disabled={isCurrentUser}
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                            >
+                              <option value="user">user</option>
+                              <option value="adminstaff">adminstaff</option>
+                              <option value="admin">admin</option>
+                            </select>
+                          ) : (
+                            <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 capitalize">
+                              {item.role}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          {isEditing ? (
+                            <select
+                              value={editingUser.is_active ? "active" : "deactivated"}
+                              onChange={(e) =>
+                                handleEditingFieldChange(
+                                  "is_active",
+                                  e.target.value === "active"
+                                )
+                              }
+                              disabled={isCurrentUser}
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                            >
+                              <option value="active">active</option>
+                              <option value="deactivated">deactivated</option>
+                            </select>
+                          ) : (
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                item.is_active
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                              }`}
+                            >
+                              {item.is_active ? "Active" : "Deactivated"}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4 text-slate-500 dark:text-slate-400">
+                          {item.created_at
+                            ? new Date(item.created_at).toLocaleString()
+                            : "N/A"}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveUser}
+                                  disabled={savingUserId === item.id}
+                                  className="inline-flex items-center justify-center rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                                  title="Save"
+                                >
+                                  <Save className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={cancelEditingUser}
+                                  disabled={savingUserId === item.id}
+                                  className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                                  title="Cancel"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingUser(item)}
+                                  className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+
+                                {item.is_active ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeactivateUser(item.id)}
+                                    disabled={deletingUserId === item.id || isCurrentUser}
+                                    className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                                    title="Deactivate"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRestoreUser(item.id)}
+                                    disabled={restoringUserId === item.id}
+                                    className="inline-flex items-center justify-center rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                                    title="Restore"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

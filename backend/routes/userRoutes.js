@@ -3,16 +3,46 @@ const db = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
+
+const allowedRoles = ["admin", "adminstaff", "user"];
+const passwordPattern =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+
+function generateToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
 
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const result = await db.query(
       `
-      SELECT id, email, is_admin, created_at
-      FROM users
-      WHERE id = $1
+      SELECT
+        u.id,
+        u.email,
+        u.role,
+        u.is_active,
+        u.deleted_at,
+        u.created_at,
+        up.id AS profile_id,
+        up.user_id,
+        up.first_name,
+        up.last_name,
+        up.phone,
+        up.date_of_birth
+      FROM users u
+      LEFT JOIN user_profile up ON up.user_id = u.id
+      WHERE u.id = $1
       `,
       [req.user.id]
     );
@@ -24,9 +54,26 @@ router.get("/me", authMiddleware, async (req, res) => {
       });
     }
 
+    const row = result.rows[0];
+
     return res.json({
       status: "ok",
-      user: result.rows[0],
+      user: {
+        id: row.id,
+        email: row.email,
+        role: row.role,
+        is_active: row.is_active,
+        deleted_at: row.deleted_at,
+        created_at: row.created_at,
+        profile: {
+          id: row.profile_id,
+          user_id: row.user_id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          phone: row.phone,
+          date_of_birth: row.date_of_birth,
+        },
+      },
     });
   } catch (error) {
     console.error("Get current user error:", error);
@@ -40,9 +87,17 @@ router.get("/me", authMiddleware, async (req, res) => {
 });
 
 router.put("/me", authMiddleware, async (req, res) => {
+  const client = await db.connect();
+
   try {
     const userId = req.user.id;
-    const { email } = req.body;
+    const {
+      email,
+      first_name = null,
+      last_name = null,
+      phone = null,
+      date_of_birth = null,
+    } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -51,9 +106,30 @@ router.put("/me", authMiddleware, async (req, res) => {
       });
     }
 
-    const existingUser = await db.query(
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const userCheck = await client.query(
+      "SELECT id, is_active FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found",
+      });
+    }
+
+    if (!userCheck.rows[0].is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
+
+    const existingUser = await client.query(
       "SELECT id FROM users WHERE email = $1 AND id != $2",
-      [email, userId]
+      [normalizedEmail, userId]
     );
 
     if (existingUser.rows.length > 0) {
@@ -63,29 +139,65 @@ router.put("/me", authMiddleware, async (req, res) => {
       });
     }
 
-    const result = await db.query(
+    await client.query("BEGIN");
+
+    const userResult = await client.query(
       `
       UPDATE users
       SET email = $1
       WHERE id = $2
-      RETURNING id, email, is_admin, created_at
+      RETURNING id, email, role, is_active, deleted_at, created_at
       `,
-      [email, userId]
+      [normalizedEmail, userId]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        status: "error",
-        message: "User not found",
-      });
+    const profileCheck = await client.query(
+      "SELECT id FROM user_profile WHERE user_id = $1",
+      [userId]
+    );
+
+    let profileResult;
+
+    if (profileCheck.rows.length === 0) {
+      profileResult = await client.query(
+        `
+        INSERT INTO user_profile (user_id, first_name, last_name, phone, date_of_birth)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, user_id, first_name, last_name, phone, date_of_birth
+        `,
+        [userId, first_name, last_name, phone, date_of_birth]
+      );
+    } else {
+      profileResult = await client.query(
+        `
+        UPDATE user_profile
+        SET first_name = $1,
+            last_name = $2,
+            phone = $3,
+            date_of_birth = $4
+        WHERE user_id = $5
+        RETURNING id, user_id, first_name, last_name, phone, date_of_birth
+        `,
+        [first_name, last_name, phone, date_of_birth, userId]
+      );
     }
+
+    await client.query("COMMIT");
+
+    const updatedUser = userResult.rows[0];
+    const token = generateToken(updatedUser);
 
     return res.json({
       status: "ok",
       message: "User updated successfully",
-      user: result.rows[0],
+      user: {
+        ...updatedUser,
+        profile: profileResult.rows[0],
+      },
+      token,
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Update current user error:", error);
 
     return res.status(500).json({
@@ -93,6 +205,8 @@ router.put("/me", authMiddleware, async (req, res) => {
       message: "Failed to update user",
       error: error.message,
     });
+  } finally {
+    client.release();
   }
 });
 
@@ -108,8 +222,16 @@ router.put("/update-password", authMiddleware, async (req, res) => {
       });
     }
 
+    if (!passwordPattern.test(newPassword)) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "New password must be at least 8 characters and include 1 lowercase letter, 1 uppercase letter, and 1 special character",
+      });
+    }
+
     const result = await db.query(
-      "SELECT password FROM users WHERE id = $1",
+      "SELECT password, is_active FROM users WHERE id = $1",
       [userId]
     );
 
@@ -120,8 +242,14 @@ router.put("/update-password", authMiddleware, async (req, res) => {
       });
     }
 
-    const user = result.rows[0];
+    if (!result.rows[0].is_active) {
+      return res.status(403).json({
+        status: "error",
+        message: "This account has been deactivated",
+      });
+    }
 
+    const user = result.rows[0];
     const isMatch = await bcrypt.compare(oldPassword, user.password);
 
     if (!isMatch) {
@@ -133,10 +261,10 @@ router.put("/update-password", authMiddleware, async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await db.query(
-      "UPDATE users SET password = $1 WHERE id = $2",
-      [hashedPassword, userId]
-    );
+    await db.query("UPDATE users SET password = $1 WHERE id = $2", [
+      hashedPassword,
+      userId,
+    ]);
 
     return res.json({
       status: "ok",
@@ -153,25 +281,26 @@ router.put("/update-password", authMiddleware, async (req, res) => {
   }
 });
 
-//admin updates user role (to either admin or back to user)
 router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { is_admin } = req.body;
+    const { role } = req.body;
 
-    if (typeof is_admin !== "boolean") {
+    if (!allowedRoles.includes(role)) {
       return res.status(400).json({
         status: "error",
-        message: "is_admin must be a boolean value",
+        message: "Invalid role",
       });
     }
 
     const result = await db.query(
-      `UPDATE users 
-       SET is_admin = $1 
-       WHERE id = $2 
-       RETURNING id, email, is_admin, created_at`,
-      [is_admin, id]
+      `
+      UPDATE users
+      SET role = $1
+      WHERE id = $2
+      RETURNING id, email, role, is_active, deleted_at, created_at
+      `,
+      [role, id]
     );
 
     if (result.rows.length === 0) {
@@ -186,7 +315,6 @@ router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
       message: "User role updated successfully",
       user: result.rows[0],
     });
-
   } catch (error) {
     console.error("Update role error:", error);
 
@@ -198,35 +326,39 @@ router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-//user deletes their own account
 router.delete("/me", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
 
     const result = await db.query(
-      `DELETE FROM users WHERE id = $1 RETURNING id, email`,
+      `
+      UPDATE users
+      SET is_active = false,
+          deleted_at = NOW()
+      WHERE id = $1 AND is_active = true
+      RETURNING id, email, role, is_active, deleted_at
+      `,
       [userId]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         status: "error",
-        message: "User not found",
+        message: "Active user not found",
       });
     }
 
     return res.json({
       status: "ok",
-      message: "Account deleted successfully",
+      message: "Account deactivated successfully",
       user: result.rows[0],
     });
-
   } catch (error) {
-    console.error("Delete account error:", error);
+    console.error("Deactivate account error:", error);
 
     return res.status(500).json({
       status: "error",
-      message: "Failed to delete account",
+      message: "Failed to deactivate account",
       error: error.message,
     });
   }
