@@ -158,20 +158,73 @@ export default function ResumeUploadPage() {
             </div>
           )}
 
-          <div className="mt-6 flex flex-col space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Target Job Role (Optional)
-            </label>
-            <select className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-800 dark:bg-slate-950">
-              <option value="">Select a role...</option>
-              <option value="swe">Software Engineer</option>
-              <option value="pm">Product Manager</option>
-              <option value="design">UX/UI Designer</option>
-              <option value="marketing">Marketing Specialist</option>
-              <option value="data">Data Scientist</option>
-            </select>
-            <p className="text-xs text-slate-500">Providing the role helps tailor the AI feedback.</p>
-          </div>
+        <div className="mt-6 flex flex-col space-y-2">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Target Job Role & Industry
+          </label>
+          <select className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-800 dark:bg-slate-950">
+            <option value="">Select your specific role...</option>
+    
+            <optgroup label="Technology & IT">
+              <option value="tech-swe">Software Engineer / Developer</option>
+              <option value="tech-data">Data Scientist / Analyst</option>
+              <option value="tech-cyber">Cybersecurity Specialist</option>
+              <option value="tech-cloud">Cloud Architect / DevOps</option>
+              <option value="tech-it">IT Support / Systems Admin</option>
+            </optgroup>
+
+            <optgroup label="Business & Management">
+              <option value="bus-pm">Product Manager</option>
+              <option value="bus-project">Project Manager</option>
+              <option value="bus-analyst">Business Analyst</option>
+              <option value="bus-hr">HR / Talent Acquisition</option>
+              <option value="bus-ops">Operations Manager</option>
+            </optgroup>
+
+            <optgroup label="Healthcare & Medical">
+              <option value="med-nurse">Registered Nurse</option>
+              <option value="med-admin">Healthcare Administration</option>
+              <option value="med-tech">Medical Laboratory Tech</option>
+              <option value="med-phys">Physician / Specialist</option>
+            </optgroup>
+
+            <optgroup label="Finance & Accounting">
+              <option value="fin-acc">Accountant / CPA</option>
+              <option value="fin-analyst">Financial Analyst</option>
+              <option value="fin-bank">Investment Banking</option>
+              <option value="fin-audit">Auditor</option>
+            </optgroup>
+
+            <optgroup label="Creative & Design">
+              <option value="design-uiux">UI/UX Designer</option>
+              <option value="design-graphic">Graphic Designer</option>
+              <option value="design-copy">Copywriter / Content Creator</option>
+              <option value="design-video">Video Editor / Animator</option>
+            </optgroup>
+
+            <optgroup label="Marketing & Sales">
+              <option value="mkt-digital">Digital Marketing Specialist</option>
+              <option value="mkt-seo">SEO / SEM Expert</option>
+              <option value="mkt-sales">Sales Executive / Account Manager</option>
+              <option value="mkt-pr">Public Relations</option>
+            </optgroup>
+
+            <optgroup label="Education & Training">
+              <option value="edu-teacher">K-12 Teacher</option>
+              <option value="edu-prof">Professor / Academic</option>
+              <option value="edu-inst">Instructional Designer</option>
+            </optgroup>
+
+            <optgroup label="Skilled Trades & Logistics">
+              <option value="trade-elec">Electrician / Technician</option>
+              <option value="trade-eng">Mechanical/Civil Engineer</option>
+              <option value="trade-log">Logistics & Supply Chain</option>
+            </optgroup>
+          </select>
+          <p className="text-xs text-slate-500">
+            Categorizing your role helps the AI compare your resume against industry-specific standards.
+          </p>
+        </div>
         </CardContent>
         <CardFooter>
           <Button 
