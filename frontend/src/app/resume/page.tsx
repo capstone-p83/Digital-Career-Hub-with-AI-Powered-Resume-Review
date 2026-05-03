@@ -3,19 +3,27 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "../../components/ui/Card";
-import { UploadCloud, File, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { UploadCloud, File, X, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { cn } from "../../lib/utils";
+import {
+  buildResumeReviewFormData,
+  postResumeReview,
+  RESUME_REVIEW_STORAGE_KEY,
+} from "../../lib/resumeReviewSubmit";
 
 export default function ResumeUploadPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [targetJob, setTargetJob] = useState("");
+  const [targetJobDescription, setTargetJobDescription] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, token } = useAuth();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -48,29 +56,61 @@ export default function ResumeUploadPage() {
     setFile(selectedFile);
   };
 
-  const handleUpload = () => {
-    if (!file) return;
+  const handleUpload = async () => {
+    if (!file || !targetJob.trim()) return;
 
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
 
+    const resumeReviewFormData = buildResumeReviewFormData({
+      resume: file,
+      target_job_role: targetJob.trim(),
+      target_job_description: targetJobDescription,
+    });
+
+    if (!resumeReviewFormData.has("resume")) {
+      setError("Could not prepare your resume for upload.");
+      return;
+    }
+
     setIsUploading(true);
-    
-    // Simulate upload and AI processing
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
-      
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          router.push("/resume/feedback");
-        }, 800);
+    setError("");
+
+    try {
+      const res = await postResumeReview(resumeReviewFormData, token);
+      const data = (await res.json().catch(() => ({}))) as {
+        status?: string;
+        message?: string;
+        analysis?: unknown;
+      };
+
+      if (!res.ok) {
+        setError(
+          typeof data.message === "string"
+            ? data.message
+            : "Review failed. Try again."
+        );
+        setIsUploading(false);
+        return;
       }
-    }, 300);
+
+      if (data.status === "ok" && data.analysis != null) {
+        sessionStorage.setItem(
+          RESUME_REVIEW_STORAGE_KEY,
+          JSON.stringify(data.analysis)
+        );
+        router.push("/resume/feedback");
+        return;
+      }
+
+      setError("Unexpected response from server.");
+      setIsUploading(false);
+    } catch {
+      setError("Network error. Check your connection and API URL.");
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -93,15 +133,20 @@ export default function ResumeUploadPage() {
               className="absolute inset-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6"
             >
               <div className="w-full max-w-xs space-y-4 text-center">
-                <p className="font-medium">Analyzing with AI...</p>
+                <p className="font-medium">Uploading and analyzing your resume…</p>
                 <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-blue-600" 
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${progress}%` }}
+                  <motion.div
+                    className="h-full bg-blue-600"
+                    initial={{ width: "15%" }}
+                    animate={{ width: ["15%", "85%", "40%", "100%"] }}
+                    transition={{
+                      duration: 2.4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                   />
                 </div>
-                <p className="text-xs text-slate-500">{progress}% complete</p>
+                <p className="text-xs text-slate-500">This may take a moment.</p>
               </div>
             </motion.div>
           )}
@@ -159,70 +204,39 @@ export default function ResumeUploadPage() {
           )}
 
         <div className="mt-6 flex flex-col space-y-2">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Target Job Role & Industry
+          <label htmlFor="resume-target-job" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Target job role
           </label>
-          <select className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-slate-800 dark:bg-slate-950">
-            <option value="">Select your specific role...</option>
-    
-            <optgroup label="Technology & IT">
-              <option value="tech-swe">Software Engineer / Developer</option>
-              <option value="tech-data">Data Scientist / Analyst</option>
-              <option value="tech-cyber">Cybersecurity Specialist</option>
-              <option value="tech-cloud">Cloud Architect / DevOps</option>
-              <option value="tech-it">IT Support / Systems Admin</option>
-            </optgroup>
-
-            <optgroup label="Business & Management">
-              <option value="bus-pm">Product Manager</option>
-              <option value="bus-project">Project Manager</option>
-              <option value="bus-analyst">Business Analyst</option>
-              <option value="bus-hr">HR / Talent Acquisition</option>
-              <option value="bus-ops">Operations Manager</option>
-            </optgroup>
-
-            <optgroup label="Healthcare & Medical">
-              <option value="med-nurse">Registered Nurse</option>
-              <option value="med-admin">Healthcare Administration</option>
-              <option value="med-tech">Medical Laboratory Tech</option>
-              <option value="med-phys">Physician / Specialist</option>
-            </optgroup>
-
-            <optgroup label="Finance & Accounting">
-              <option value="fin-acc">Accountant / CPA</option>
-              <option value="fin-analyst">Financial Analyst</option>
-              <option value="fin-bank">Investment Banking</option>
-              <option value="fin-audit">Auditor</option>
-            </optgroup>
-
-            <optgroup label="Creative & Design">
-              <option value="design-uiux">UI/UX Designer</option>
-              <option value="design-graphic">Graphic Designer</option>
-              <option value="design-copy">Copywriter / Content Creator</option>
-              <option value="design-video">Video Editor / Animator</option>
-            </optgroup>
-
-            <optgroup label="Marketing & Sales">
-              <option value="mkt-digital">Digital Marketing Specialist</option>
-              <option value="mkt-seo">SEO / SEM Expert</option>
-              <option value="mkt-sales">Sales Executive / Account Manager</option>
-              <option value="mkt-pr">Public Relations</option>
-            </optgroup>
-
-            <optgroup label="Education & Training">
-              <option value="edu-teacher">K-12 Teacher</option>
-              <option value="edu-prof">Professor / Academic</option>
-              <option value="edu-inst">Instructional Designer</option>
-            </optgroup>
-
-            <optgroup label="Skilled Trades & Logistics">
-              <option value="trade-elec">Electrician / Technician</option>
-              <option value="trade-eng">Mechanical/Civil Engineer</option>
-              <option value="trade-log">Logistics & Supply Chain</option>
-            </optgroup>
-          </select>
+          <Input
+            id="resume-target-job"
+            type="text"
+            value={targetJob}
+            onChange={(e) => setTargetJob(e.target.value)}
+            placeholder="e.g. Frontend Developer, Marketing Manager, Business Analyst"
+            autoComplete="organization-title"
+          />
           <p className="text-xs text-slate-500">
-            Categorizing your role helps the AI compare your resume against industry-specific standards.
+            Enter the job title or role you are targeting so feedback can be tailored to that position.
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col space-y-2">
+          <label htmlFor="resume-job-description" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Job description{" "}
+            <span className="font-normal text-slate-500 dark:text-slate-400">(optional)</span>
+          </label>
+          <textarea
+            id="resume-job-description"
+            value={targetJobDescription}
+            onChange={(e) => setTargetJobDescription(e.target.value)}
+            rows={4}
+            placeholder="Paste or type a short job description to align feedback with the posting."
+            className={cn(
+              "flex min-h-[88px] w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-blue-500"
+            )}
+          />
+          <p className="text-xs text-slate-500">
+            Optional context from the job posting helps tailor keywords and suggestions.
           </p>
         </div>
         </CardContent>
@@ -230,7 +244,7 @@ export default function ResumeUploadPage() {
           <Button 
             className="w-full h-12" 
             onClick={handleUpload} 
-            disabled={!file || isUploading}
+            disabled={!file || !targetJob.trim() || isUploading}
           >
             {isUploading ? "Processing..." : "Generate AI Review"}
           </Button>
