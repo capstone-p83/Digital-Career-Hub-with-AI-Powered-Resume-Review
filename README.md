@@ -340,6 +340,17 @@ DATABASE_URL=postgresql://neondb_owner:npg_iaIzroM36CQZ@ep-small-mud-a7h9aj20-po
 JWT_SECRET=clientisgod
 GOOGLE_CLIENT_ID=393627962738-ukud50d8ebmpsk8dsf698oubkhkk4fsb.apps.googleusercontent.com
 MICROSOFT_CLIENT_ID=afb2d7c9-ebd0-4974-8548-fec44035cdfb
+
+AI_PROVIDER=gemini
+
+DEEPSEEK_API_KEY=sk-4940e6b660fd43908500fd50e4e6e7ee
+DEEPSEEK_MODEL=deepseek-chat
+
+GEMINI_API_KEY=AIzaSyDy8vtNeFWezQn95Tc32ZEsWRTudbbrn5U
+GEMINI_MODEL=gemini-2.5-flash
+
+OPENAI_API_KEY=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
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 
