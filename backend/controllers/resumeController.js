@@ -562,10 +562,62 @@ async function getFeedbackById(req, res) {
     });
   }
 }
+async function deleteFeedbackById(req, res) {
+  try {
+    const currentUser = await getCurrentUser(req);
+
+    if (!currentUser) {
+      return res.status(401).json({
+        status: "error",
+        message: "Unauthorized. Please log in first.",
+      });
+    }
+
+    const feedbackId = Number(req.params.id);
+
+    if (!Number.isInteger(feedbackId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid feedback ID.",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      DELETE FROM resume_feedback
+      WHERE id = $1
+      AND user_id = $2
+      RETURNING id
+      `,
+      [feedbackId, currentUser.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Feedback not found or you do not have permission to delete it.",
+      });
+    }
+
+    return res.json({
+      status: "ok",
+      message: "Feedback deleted successfully.",
+      deleted_id: feedbackId,
+    });
+  } catch (error) {
+    console.error("Delete feedback error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to delete feedback.",
+    });
+  }
+}
 
 module.exports = {
   reviewResume,
   getLatestFeedback,
   getAllFeedback,
   getFeedbackById,
+  deleteFeedbackById,
 };

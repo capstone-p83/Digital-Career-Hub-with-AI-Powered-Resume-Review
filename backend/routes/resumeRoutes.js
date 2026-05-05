@@ -5,6 +5,7 @@ const {
   getLatestFeedback,
   getAllFeedback,
   getFeedbackById,
+  deleteFeedbackById,
 } = require("../controllers/resumeController");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -33,5 +34,5 @@ router.post("/review", authMiddleware, upload.single("resume"), reviewResume);
 router.get("/feedback/latest", authMiddleware, getLatestFeedback);
 router.get("/feedback", authMiddleware, getAllFeedback);
 router.get("/feedback/:id", authMiddleware, getFeedbackById);
-
+router.delete("/feedback/:id", authMiddleware, deleteFeedbackById);
 module.exports = router;

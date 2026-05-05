@@ -21,6 +21,7 @@ import {
   Briefcase,
   CalendarDays,
   History,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -30,6 +31,7 @@ import {
   RESUME_REVIEW_STORAGE_KEY,
   getResumeFeedbackById,
   getResumeFeedbackHistory,
+  deleteResumeFeedbackById,
   type ResumeFeedbackHistoryItem,
   type ResumeFeedbackListBody,
   type ResumeReviewAnalysis,
@@ -99,7 +101,7 @@ export default function ResumeFeedbackPage() {
   const [history, setHistory] = useState<ResumeFeedbackHistoryItem[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [error, setError] = useState("");
-
+  const [showFullJobDescription, setShowFullJobDescription] = useState(false);
   const loadFeedbackDetail = useCallback(
     async (feedbackId: number) => {
       try {
@@ -127,6 +129,7 @@ export default function ResumeFeedbackPage() {
             JSON.stringify(data.analysis)
           );
         }
+        setShowFullJobDescription(false);
       } catch {
         setError("Network error. Could not load feedback details.");
       }
@@ -134,6 +137,43 @@ export default function ResumeFeedbackPage() {
     [token]
   );
 
+  async function handleDeleteFeedback(feedbackId: number) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this feedback record?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const res = await deleteResumeFeedbackById(feedbackId, token);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message || "Failed to delete feedback.");
+        return;
+      }
+
+      const updatedHistory = history.filter(
+        (item) => item.feedback_id !== feedbackId
+      );
+
+      setHistory(updatedHistory);
+
+      if (selectedId === feedbackId) {
+        const nextItem = updatedHistory[0];
+
+        if (nextItem) {
+          await loadFeedbackDetail(nextItem.feedback_id);
+        } else {
+          setAnalysis(null);
+          setSelectedId(null);
+          sessionStorage.removeItem(RESUME_REVIEW_STORAGE_KEY);
+        }
+      }
+    } catch {
+      setError("Network error. Could not delete feedback.");
+    }
+  }
   useEffect(() => {
     async function loadInitialData() {
       if (!isAuthenticated) {
@@ -262,28 +302,43 @@ export default function ResumeFeedbackPage() {
                   const isActive = selectedId === item.feedback_id;
 
                   return (
-                    <button
+                    <div
                       key={item.feedback_id}
-                      type="button"
-                      onClick={() => loadFeedbackDetail(item.feedback_id)}
-                      className={`w-full text-left rounded-xl border p-3 transition ${
+                      className={`w-full rounded-xl border p-3 transition ${
                         isActive
                           ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                           : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">
-                          {item.target_job_role}
-                        </p>
-                        <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                          {item.score}/100
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => loadFeedbackDetail(item.feedback_id)}
+                          className="flex-1 text-left"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">
+                              {item.target_job_role}
+                            </p>
+                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                              {item.score}/100
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {formatDate(item.created_at)}
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFeedback(item.feedback_id)}
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                          title="Delete feedback"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {formatDate(item.created_at)}
-                      </p>
-                    </button>
+                    </div>
                   );
                 })
               )}
@@ -313,16 +368,31 @@ export default function ResumeFeedbackPage() {
                     <p className="text-xs uppercase tracking-wide text-slate-500">
                       Target Job Description
                     </p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line">
+
+                    <p
+                      className={`text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line ${
+                        showFullJobDescription ? "" : "line-clamp-3"
+                      }`}
+                    >
                       {analysis.target_job_description}
                     </p>
+
+                    {analysis.target_job_description.length > 180 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowFullJobDescription((prev) => !prev)}
+                        className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        {showFullJobDescription ? "Show less" : "Show full description"}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
                     <Info className="w-4 h-4 mt-0.5 shrink-0" />
                     <p>
-                      No detailed job description was provided. The analysis is
-                      based on common industry requirements for this target role.
+                      No detailed job description was provided. The analysis is based on common
+                      industry requirements for this target role.
                     </p>
                   </div>
                 )}
