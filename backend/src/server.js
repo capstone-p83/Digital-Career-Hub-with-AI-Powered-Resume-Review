@@ -4,9 +4,10 @@ const express = require("express");
 const cors = require("cors");
 const db = require("../config/db");
 const routes = require("../routes");
-
 const app = express();
 const PORT = process.env.PORT || 5001;
+const resumeRoutes = require("../routes/resumeRoutes");
+const jobRoutes = require("../routes/jobRoutes");
 
 app.use(
   cors({
@@ -47,6 +48,8 @@ app.listen(PORT, () => {
 });
 
 
-const resumeRoutes = require("../routes/resumeRoutes");
+
 
 app.use("/api/resume", resumeRoutes);
+
+app.use("/api/jobs", jobRoutes);

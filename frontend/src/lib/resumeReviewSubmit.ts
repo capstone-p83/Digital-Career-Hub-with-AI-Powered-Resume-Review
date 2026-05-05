@@ -142,3 +142,15 @@ export async function getResumeFeedbackById(
     headers: getAuthHeaders(token),
   });
 }
+
+export async function deleteResumeFeedbackById(
+  feedbackId: number,
+  token?: string | null
+): Promise<Response> {
+  const url = `${apiBase.replace(/\/$/, "")}/resume/feedback/${feedbackId}`;
+
+  return fetch(url, {
+    method: "DELETE",
+    headers: getAuthHeaders(token),
+  });
+}
