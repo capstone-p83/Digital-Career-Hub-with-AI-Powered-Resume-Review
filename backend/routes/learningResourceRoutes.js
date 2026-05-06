@@ -35,7 +35,7 @@ router.post(
   roleMiddleware(["admin", "adminstaff"]),
   async (req, res) => {
     try {
-      const { title, author, image_url, content_en, content_bn, article_url } = req.body;
+      const { title, author, image_url, content_en, content_bn } = req.body;
 
       if (!title || !author || !content_en) {
         return res.status(400).json({
@@ -45,10 +45,10 @@ router.post(
       }
 
       const result = await db.query(
-        `INSERT INTO articles (title, author, image_url, content_en, content_bn, article_url, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO articles (title, author, image_url, content_en, content_bn, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [title, author, image_url || null, content_en, content_bn || content_en, article_url || null, req.user.id]
+        [title, author, image_url || null, content_en, content_bn || content_en, req.user.id]
       );
 
       return res.status(201).json({
@@ -263,7 +263,7 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, author, image_url, content_en, content_bn, article_url } = req.body;
+      const { title, author, image_url, content_en, content_bn } = req.body;
 
       if (!title || !author || !content_en) {
         return res.status(400).json({
@@ -279,11 +279,10 @@ router.put(
              image_url = $3,
              content_en = $4,
              content_bn = $5,
-             article_url = $6,
              updated_at = NOW()
-         WHERE id = $7 AND is_deleted = false
+         WHERE id = $6 AND is_deleted = false
          RETURNING *`,
-        [title, author, image_url || null, content_en, content_bn || content_en, article_url || null, id]
+        [title, author, image_url || null, content_en, content_bn || content_en, id]
       );
 
       if (result.rows.length === 0) {

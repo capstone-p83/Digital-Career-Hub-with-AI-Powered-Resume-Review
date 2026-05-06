@@ -33,7 +33,6 @@ type Article = {
   image_url: string | null;
   content_en: string;
   content_bn: string;
-  article_url: string | null;
   created_by: number;
   is_deleted: boolean;
   deleted_at: string | null;
@@ -60,7 +59,6 @@ type ArticleForm = {
   author: string;
   image_url: string;
   content: string;
-  article_url: string;
 };
 
 type ResumeForm = {
@@ -76,7 +74,6 @@ const emptyArticleForm: ArticleForm = {
   author: "",
   image_url: "",
   content: "",
-  article_url: "",
 };
 
 const emptyResumeForm: ResumeForm = {
@@ -179,7 +176,6 @@ export default function LearningResourcesPage() {
       author: article.author,
       image_url: article.image_url || "",
       content: article.content_en,
-      article_url: article.article_url || "",
     });
     setPageError("");
     setPageSuccess("");
@@ -242,7 +238,6 @@ export default function LearningResourcesPage() {
             image_url: articleForm.image_url || null,
             content_en: articleForm.content,
             content_bn: articleForm.content,
-            article_url: articleForm.article_url || null,
           }),
         });
 
@@ -512,20 +507,6 @@ export default function LearningResourcesPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {t("mgmt.externalUrl")}
-              </label>
-              <input
-                type="text"
-                value={articleForm.article_url}
-                onChange={(e) => setArticleForm((p) => ({ ...p, article_url: e.target.value }))}
-                placeholder="https://example.com/full-article"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-              />
-              <p className="text-xs text-slate-400 mt-1">{t("mgmt.externalUrlHint")}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {t("mgmt.content")} <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -678,7 +659,6 @@ export default function LearningResourcesPage() {
                     <th className="px-4 py-3 font-medium">{t("mgmt.title_field")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.author")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.thumbnailCol")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.externalUrlCol")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.createdAt")}</th>
                     <th className="px-4 py-3 font-medium text-right">{t("mgmt.actions")}</th>
                   </tr>
@@ -693,15 +673,6 @@ export default function LearningResourcesPage() {
                         {article.image_url ? (
                           <a href={article.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]">
                             {t("mgmt.viewImage")}
-                          </a>
-                        ) : (
-                          <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        {article.article_url ? (
-                          <a href={article.article_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]">
-                            {t("mgmt.viewArticle")}
                           </a>
                         ) : (
                           <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>

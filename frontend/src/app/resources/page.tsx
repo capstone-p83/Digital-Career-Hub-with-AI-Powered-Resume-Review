@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { Search, ExternalLink, Bookmark, FileText } from "lucide-react";
+import { Search, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -18,7 +18,6 @@ type Article = {
   image_url: string | null;
   content_en: string;
   content_bn: string;
-  article_url: string | null;
   created_at: string;
 };
 
@@ -38,7 +37,6 @@ type ResourceItem = {
   category: "Article" | "Resume Example";
   content_en: string;
   content_bn: string;
-  link: string | null;
   author: string;
   image_url: string | null;
 };
@@ -78,7 +76,6 @@ export default function ResourcesPage() {
             category: "Article" as const,
             content_en: a.content_en,
             content_bn: a.content_bn,
-            link: a.article_url || null,
             author: a.author,
             image_url: a.image_url,
           })
@@ -91,7 +88,6 @@ export default function ResourcesPage() {
             category: "Resume Example" as const,
             content_en: r.description,
             content_bn: r.description,
-            link: null,
             author: r.candidate_name,
             image_url: r.image_url,
           })
@@ -222,44 +218,6 @@ export default function ResourcesPage() {
                       {content}
                     </p>
                   </CardContent>
-                  <CardFooter>
-                    {resource.category === "Article" ? (
-                      resource.link ? (
-                        <a
-                          href={resource.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full"
-                        >
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-between hover:bg-blue-50 dark:hover:bg-slate-800 group text-blue-600 dark:text-blue-400"
-                          >
-                            {t("resources.readArticle")}
-                            <ExternalLink className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        </a>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          disabled
-                          className="w-full justify-between text-slate-400 cursor-not-allowed"
-                        >
-                          {t("resources.noLink")}
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      )
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        disabled
-                        className="w-full justify-between text-slate-400 cursor-not-allowed"
-                      >
-                        {t("resources.resumeExample")}
-                        <FileText className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </CardFooter>
                 </Card>
               </motion.div>
             );
