@@ -21,12 +21,13 @@ import {
   BarChart2,
   Edit3,
   Shield,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
+  const { user, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,6 +39,8 @@ export default function Dashboard() {
   if (isLoading || !isAuthenticated) {
     return null;
   }
+
+  const isPrivileged = isAdmin || isAdminStaff;
 
   const displayName =
     user?.profile?.first_name?.trim() ||
@@ -94,6 +97,15 @@ export default function Dashboard() {
             </Link>
           )}
 
+          {isPrivileged && (
+            <Link href="/learningresources">
+              <Button variant="outline" className="shrink-0">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Learning Resources
+              </Button>
+            </Link>
+          )}
+
           <Link href="/profile">
             <Button variant="outline" className="shrink-0">
               <Edit3 className="w-4 h-4 mr-2" />
@@ -118,6 +130,29 @@ export default function Dashboard() {
               <Link href="/admin">
                 <Button>
                   Open Admin Panel
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {isPrivileged && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="border-emerald-200 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-900 dark:to-slate-900">
+            <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                  Learning Resource Management
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Create, edit and manage articles and resume examples for users.
+                </p>
+              </div>
+              <Link href="/learningresources">
+                <Button>
+                  Manage Resources
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
