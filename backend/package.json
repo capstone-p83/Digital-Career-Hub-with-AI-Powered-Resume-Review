@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 {
   "name": "backend",
   "version": "1.0.0",
@@ -16,3 +17,35 @@
     "nodemon": "^3.1.14"
   }
 }
+=======
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "node src/server.js",
+    "seed:users": "node scripts/seedUsers.js",
+    "clear:users": "node scripts/clearUsers.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.51.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "google-auth-library": "^10.6.2",
+    "jose": "^5.10.0",
+    "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^3.1.0",
+    "mammoth": "^1.12.0",
+    "multer": "^2.1.1",
+    "mysql2": "^3.14.5",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
+>>>>>>> Stashed changes
