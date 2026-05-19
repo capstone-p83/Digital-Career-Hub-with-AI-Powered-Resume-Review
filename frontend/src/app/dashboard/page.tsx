@@ -1,111 +1,367 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useAppContext } from '../../context/AppContext';
-import { User, Mail, Briefcase, History, FileText, Settings } from 'lucide-react';
-import { motion } from 'motion/react';
+import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import {
+  FileText,
+  ArrowRight,
+  Calendar,
+  Briefcase,
+  PlayCircle,
+  BarChart2,
+  Edit3,
+  Shield,
+  BookOpen,
+} from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  getLatestResumeFeedback,
+  type ResumeReviewAnalysis,
+  type ResumeReviewSuccessBody,
+} from "../../lib/resumeReviewSubmit";
 
-const Dashboard = () => {
-  const { language } = useAppContext();
+export default function Dashboard() {
+const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAuth();
+  const router = useRouter();
 
-  // Mock data for demo
-  const history = [
-    { id: '1', date: '2024-03-15', role: 'Frontend Developer', score: 85 },
-    { id: '2', date: '2024-03-10', role: 'UI Designer', score: 78 },
+  const [latestFeedback, setLatestFeedback] =
+    useState<ResumeReviewAnalysis | null>(null);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    async function loadLatestFeedback() {
+      if (!isAuthenticated) return;
+
+      try {
+        const res = await getLatestResumeFeedback(token);
+
+        if (!res.ok) {
+          setLatestFeedback(null);
+          return;
+        }
+
+        const data = (await res.json()) as ResumeReviewSuccessBody;
+
+        if (data.status === "ok" && data.analysis) {
+          setLatestFeedback(data.analysis);
+        }
+      } catch {
+        setLatestFeedback(null);
+      }
+    }
+
+    loadLatestFeedback();
+  }, [isAuthenticated, token]);
+
+  if (isLoading || !isAuthenticated) {
+    return null;
+  }
+
+  const isPrivileged = isAdmin || isAdminStaff;
+
+  const displayName =
+    user?.profile?.first_name?.trim() || user?.email || "User";
+
+  const upcomingInterviews = [
+    {
+      company: "TechNova Corp",
+      role: "Frontend Dev",
+      date: "Tomorrow, 10:00 AM",
+    },
+    {
+      company: "FinServe Inc",
+      role: "UI Engineer",
+      date: "Apr 12, 2:30 PM",
+    },
+  ];
+
+  const careerTools = [
+    {
+      name: "Mock Interview",
+      icon: <PlayCircle className="w-6 h-6 mb-2" />,
+      color:
+        "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+    },
+    {
+      name: "Cover Letter",
+      icon: <Edit3 className="w-6 h-6 mb-2" />,
+      color:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    },
+    {
+      name: "Salary Insights",
+      icon: <BarChart2 className="w-6 h-6 mb-2" />,
+      color:
+        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    },
+    {
+      name: "Job Tracker",
+      icon: <Briefcase className="w-6 h-6 mb-2" />,
+      color:
+        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="grid lg:grid-cols-3 gap-12">
-        {/* Profile Info */}
-        <aside className="lg:col-span-1 space-y-8">
-          <div className="bg-white rounded-2xl border border-zinc-200 p-8 text-center">
-            <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="w-12 h-12 text-emerald-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-zinc-900">John Doe</h2>
-            <p className="text-zinc-500 mb-6">Software Engineering Student</p>
-            
-            <div className="space-y-4 text-left">
-              <div className="flex items-center space-x-3 text-zinc-600">
-                <Mail className="w-4 h-4" />
-                <span className="text-sm">john.doe@example.com</span>
-              </div>
-              <div className="flex items-center space-x-3 text-zinc-600">
-                <Briefcase className="w-4 h-4" />
-                <span className="text-sm">Target: Full Stack Developer</span>
-              </div>
-            </div>
+    <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+            Welcome back, {displayName}!
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            Let&apos;s keep your career momentum going today.
+          </p>
+        </div>
 
-            <button className="w-full mt-8 bg-zinc-100 text-zinc-900 py-3 rounded-xl font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center space-x-2 hover:text-emerald-600">
-              <Settings className="w-4 h-4" />
-              <span>Edit Profile</span>
-            </button>
-          </div>
+        <div className="flex flex-wrap gap-3">
+          {isAdmin && (
+            <Link href="/admin">
+              <Button variant="outline" className="shrink-0">
+                <Shield className="w-4 h-4 mr-2" />
+                Admin Panel
+              </Button>
+            </Link>
+          )}
 
-          <div className="bg-emerald-600 rounded-2xl p-8 text-white">
-            <h3 className="text-lg font-bold mb-2">Career Readiness</h3>
-            <div className="text-4xl font-bold mb-4">82%</div>
-            <div className="w-full bg-emerald-700 rounded-full h-2 mb-4">
-              <div className="bg-white h-full rounded-full" style={{ width: '82%' }} />
-            </div>
-            <p className="text-emerald-100 text-sm">You're doing great! Complete 2 more resume reviews to reach 90%.</p>
-          </div>
-        </aside>
+          {isPrivileged && (
+            <Link href="/learningresources">
+              <Button variant="outline" className="shrink-0">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Learning Resources
+              </Button>
+            </Link>
+          )}
 
-        {/* Main Content */}
-        <main className="lg:col-span-2 space-y-8">
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-zinc-900 flex items-center space-x-2">
-                <History className="w-6 h-6 text-emerald-600" />
-                <span>Review History</span>
-              </h2>
-              <button className="text-emerald-600 font-bold text-sm hover:underline">View All</button>
-            </div>
-
-            <div className="space-y-4">
-              {history.map((item) => (
-                <motion.div
-                  key={item.id}
-                  whileHover={{ x: 4 }}
-                  className="bg-white p-6 rounded-2xl border border-zinc-200 flex items-center justify-between group cursor-pointer"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-zinc-50 rounded-xl flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
-                      <FileText className="w-6 h-6 text-zinc-400 group-hover:text-emerald-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-zinc-900">{item.role}</h4>
-                      <p className="text-zinc-500 text-sm">{item.date}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-emerald-600">{item.score}%</div>
-                    <div className="text-xs text-zinc-400 uppercase tracking-widest font-bold">Score</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-
-          <section className="bg-zinc-50 rounded-2xl p-8 border border-zinc-100">
-            <h3 className="text-xl font-bold text-zinc-900 mb-4">Recommended for You</h3>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-xl border border-zinc-200">
-                <h4 className="font-bold text-zinc-900 mb-1">Interview Prep</h4>
-                <p className="text-sm text-zinc-500">Top 50 React Interview Questions</p>
-              </div>
-              <div className="bg-white p-4 rounded-xl border border-zinc-200">
-                <h4 className="font-bold text-zinc-900 mb-1">Skill Building</h4>
-                <p className="text-sm text-zinc-500">Advanced TypeScript Patterns</p>
-              </div>
-            </div>
-          </section>
-        </main>
+          <Link href="/profile">
+            <Button variant="outline" className="shrink-0">
+              <Edit3 className="w-4 h-4 mr-2" />
+              My Profile
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="border-blue-200 dark:border-blue-900/40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-900">
+            <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                  Administrator Access Enabled
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  You can manage registered users from the admin panel.
+                </p>
+              </div>
+              <Link href="/admin">
+                <Button>
+                  Open Admin Panel
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {isPrivileged && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="border-emerald-200 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-900 dark:to-slate-900">
+            <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                  Learning Resource Management
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Create, edit and manage articles and resume examples for users.
+                </p>
+              </div>
+              <Link href="/learningresources">
+                <Button>
+                  Manage Resources
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="bg-blue-600 text-white border-none h-full shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-center">
+                Resume Score <FileText className="w-5 h-5 text-blue-200" />
+              </CardTitle>
+              <CardDescription className="text-blue-200">
+                Based on your latest upload
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {latestFeedback ? (
+                <>
+                  <div className="text-4xl font-extrabold mb-2">
+                    {latestFeedback.score}
+                    <span className="text-2xl text-blue-300">/100</span>
+                  </div>
+
+                  <p className="text-sm text-blue-100 mb-4 line-clamp-1">
+                    {latestFeedback.target_job_role}
+                  </p>
+
+                  <Link
+                    href={`/resume/feedback?id=${latestFeedback.feedback_id}`}
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
+                    >
+                      View Full Report
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl font-extrabold mb-2">No Score</div>
+                  <p className="text-sm text-blue-100 mb-4">
+                    Upload a resume to generate your first review.
+                  </p>
+                  <Link href="/resume">
+                    <Button
+                      variant="outline"
+                      className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
+                    >
+                      Upload Resume
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex justify-between items-center">
+                Upcoming Interviews{" "}
+                <Calendar className="w-5 h-5 text-slate-400" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {upcomingInterviews.length > 0 ? (
+                <ul className="space-y-3">
+                  {upcomingInterviews.map((interview, idx) => (
+                    <li
+                      key={idx}
+                      className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">
+                          {interview.company}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {interview.role}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full whitespace-nowrap">
+                          {interview.date}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-500 py-4 text-center">
+                  No upcoming interviews scheduled.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Career Tools</CardTitle>
+              <CardDescription>
+                Quick access to your favorite tools.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3">
+              {careerTools.map((tool) => (
+                <div
+                  key={tool.name}
+                  className={`rounded-xl p-4 ${tool.color} flex flex-col items-center justify-center text-center`}
+                >
+                  {tool.icon}
+                  <span className="text-sm font-semibold">{tool.name}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Account Status</CardTitle>
+          <CardDescription>
+            Your current access state from the backend.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div>
+            <span className="font-medium">Role:</span>{" "}
+            <span className="capitalize">{user?.role}</span>
+          </div>
+          <div>
+            <span className="font-medium">Status:</span>{" "}
+            <span>{user?.is_active ? "Active" : "Deactivated"}</span>
+          </div>
+          <div>
+            <span className="font-medium">Created At:</span>{" "}
+            <span>
+              {user?.created_at
+                ? new Date(user.created_at).toLocaleString()
+                : "N/A"}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default Dashboard;
+}

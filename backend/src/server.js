@@ -2,12 +2,12 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-
-// for future database connection test, we can return the result of the query
-// const db = require("../config/db");
-
+const db = require("../config/db");
+const routes = require("../routes");
 const app = express();
 const PORT = process.env.PORT || 5001;
+const resumeRoutes = require("../routes/resumeRoutes");
+const jobRoutes = require("../routes/jobRoutes");
 
 app.use(
   cors({
@@ -23,24 +23,33 @@ app.get("/", (req, res) => {
 
 app.get("/api/health", async (req, res) => {
   try {
-    // for future database connection test, we can return the result of the query
-    // const [rows] = await db.query("SELECT 1 AS status");
+    const result = await db.query("SELECT NOW() AS current_time");
 
     res.json({
       status: "ok",
-      message: "Backend working",
-      // for future database connection test, we can return the result of the query
-      // database: rows[0],
+      message: "Backend and database are working",
+      databaseTime: result.rows[0].current_time,
     });
   } catch (error) {
+    console.error("Database connection error:", error);
+
     res.status(500).json({
       status: "error",
       message: "Database connection failed",
-      error: error.message,
+      error: error.message || "Unknown database error",
     });
   }
 });
 
+app.use("/api", routes);
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+
+
+app.use("/api/resume", resumeRoutes);
+
+app.use("/api/jobs", jobRoutes);

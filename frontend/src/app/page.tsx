@@ -1,132 +1,110 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useAppContext } from '../context/AppContext';
-import { ArrowRight, FileText, MessageCircle, Globe } from 'lucide-react';
-import Link from 'next/link';
-import { motion } from 'motion/react';
+import { motion } from "framer-motion";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
+import { ArrowRight, BookOpen, FileText, Bot, Briefcase } from "lucide-react";
+import Link from "next/link";
+import { useLanguage } from "../context/LanguageContext";
 
-const LandingPage = () => {
-  const { t } = useAppContext();
+export default function Home() {
+  const { t } = useLanguage();
 
   const features = [
     {
-      icon: <FileText className="w-6 h-6 text-emerald-600" />,
-      title: 'AI Resume Review',
-      description: 'Get detailed feedback on your resume structure, content, and impact.'
+      title: "AI Resume Review",
+      description: "Get instant, actionable feedback on your resume powered by advanced AI.",
+      icon: <FileText className="w-10 h-10 text-blue-600 mb-4" />,
+      href: "/resume"
     },
     {
-      icon: <MessageCircle className="w-6 h-6 text-emerald-600" />,
-      title: 'Career Chatbot',
-      description: 'Ask questions about interview prep, job search strategies, and more.'
+      title: "Career Resources",
+      description: "Access a curated library of interview guides, skillset roadmaps, and more.",
+      icon: <BookOpen className="w-10 h-10 text-blue-600 mb-4" />,
+      href: "/resources"
     },
     {
-      icon: <Globe className="w-6 h-6 text-emerald-600" />,
-      title: 'Bilingual Support',
-      description: 'Access all features and resources in both English and Bangla.'
+      title: "AI Assistant",
+      description: "Chat with our intelligent career bot for personalized advice and answers.",
+      icon: <Bot className="w-10 h-10 text-blue-600 mb-4" />,
+      href: "/chatbot"
     }
   ];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col flex-1">
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden bg-zinc-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto">
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-5xl lg:text-7xl font-bold text-zinc-900 tracking-tight mb-6"
-            >
-              {t.hero.title}
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-xl text-zinc-600 mb-10 leading-relaxed"
-            >
-              {t.hero.subtitle}
-            </motion.p>
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-col sm:flex-row justify-center gap-4"
-            >
-              <Link
-                href="/review"
-                className="bg-emerald-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-emerald-700 transition-all flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20"
-              >
-                <span>{t.hero.cta}</span>
-                <ArrowRight className="w-5 h-5" />
+      <section 
+        className="relative py-20 lg:py-32 overflow-hidden bg-cover bg-center" 
+        style={{ backgroundImage: "url('/hero-bg.jpg')" }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 drop-shadow-md">
+              {t("hero.title")}
+            </h1>
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-10 drop-shadow-md">
+              {t("hero.subtitle")}
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <Link href="/resume">
+                <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base group">
+                  {t("cta.upload")}
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
               </Link>
-              <Link
-                href="/resources"
-                className="bg-white text-zinc-900 border border-zinc-200 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-zinc-50 transition-all hover:text-emerald-600"
-              >
-                Browse Resources
+              <Link href="/chatbot">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base">
+                  {t("cta.askAI")}
+                </Button>
               </Link>
-            </motion.div>
-          </div>
-        </div>
-        
-        {/* Background Accents */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-50 animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-50 rounded-full blur-3xl opacity-50 animate-pulse delay-1000" />
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-white">
+      <section className="py-20 bg-white dark:bg-slate-950 flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-12">
-            {features.map((feature, i) => (
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+              Everything you need to land your dream job
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+              Our platform provides the modern tools necessary for today's competitive job market.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
               <motion.div
-                key={i}
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-8 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-emerald-200 transition-colors group"
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold text-zinc-900 mb-4">{feature.title}</h3>
-                <p className="text-zinc-600 leading-relaxed">{feature.description}</p>
+                <Link href={feature.href} className="block h-full transition-transform hover:-translate-y-2">
+                  <Card className="h-full border-slate-200 dark:border-slate-800 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 transition-all">
+                    <CardHeader>
+                      {feature.icon}
+                      <CardTitle>{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-base">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </Link>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
-
-      {/* Stats Section */}
-      <section className="py-24 bg-zinc-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-emerald-500 mb-2">10k+</div>
-              <div className="text-zinc-400 text-sm uppercase tracking-widest">Resumes Reviewed</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-emerald-500 mb-2">95%</div>
-              <div className="text-zinc-400 text-sm uppercase tracking-widest">Success Rate</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-emerald-500 mb-2">24/7</div>
-              <div className="text-zinc-400 text-sm uppercase tracking-widest">AI Support</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-emerald-500 mb-2">2</div>
-              <div className="text-zinc-400 text-sm uppercase tracking-widest">Languages</div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
-};
-
-export default LandingPage;
+}

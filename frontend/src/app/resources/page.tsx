@@ -1,113 +1,250 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useAppContext } from '../../context/AppContext';
-import { RESOURCES } from '../../constants';
-import { BookOpen, Play, FileText, Search, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { Search, Bookmark, FileText } from "lucide-react";
+import { motion } from "framer-motion";
+import { useLanguage } from "../../context/LanguageContext";
 
-const ResourceHub = () => {
-  const { language } = useAppContext();
-  const [search, setSearch] = React.useState('');
-  const [activeCategory, setActiveCategory] = React.useState('all');
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-  const categories = ['all', 'resume', 'interview', 'networking', 'skills'];
+type Article = {
+  id: number;
+  title: string;
+  author: string;
+  image_url: string | null;
+  content_en: string;
+  content_bn: string;
+  created_at: string;
+};
 
-  const filteredResources = RESOURCES.filter(r => {
-    const matchesSearch = r.title.toLowerCase().includes(search.toLowerCase()) || 
-                         r.description.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = activeCategory === 'all' || r.category === activeCategory;
+type ResumeExample = {
+  id: number;
+  title: string;
+  candidate_name: string;
+  job_title: string;
+  image_url: string | null;
+  description: string;
+  created_at: string;
+};
+
+type ResourceItem = {
+  id: string;
+  title: string;
+  category: "Article" | "Resume Example";
+  content_en: string;
+  content_bn: string;
+  author: string;
+  image_url: string | null;
+};
+
+export default function ResourcesPage() {
+  const { t, language } = useLanguage();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const CATEGORIES = [
+    { key: "all", label: t("resources.all") },
+    { key: "articles", label: t("resources.articles") },
+    { key: "resumes", label: t("resources.resumes") },
+  ];
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [articlesRes, resumesRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/learning-resources`),
+          fetch(`${API_BASE_URL}/learning-resources/resumes`),
+        ]);
+
+        const articlesData = await articlesRes.json();
+        const resumesData = await resumesRes.json();
+
+        const articleItems: ResourceItem[] = (articlesData.articles || []).map(
+          (a: Article) => ({
+            id: `article-${a.id}`,
+            title: a.title,
+            category: "Article" as const,
+            content_en: a.content_en,
+            content_bn: a.content_bn,
+            author: a.author,
+            image_url: a.image_url,
+          })
+        );
+
+        const resumeItems: ResourceItem[] = (resumesData.resumes || []).map(
+          (r: ResumeExample) => ({
+            id: `resume-${r.id}`,
+            title: r.title,
+            category: "Resume Example" as const,
+            content_en: r.description,
+            content_bn: r.description,
+            author: r.candidate_name,
+            image_url: r.image_url,
+          })
+        );
+
+        setResources([...articleItems, ...resumeItems]);
+      } catch (err: any) {
+        setError("Failed to load resources. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResources();
+  }, []);
+
+  const filteredResources = resources.filter((res) => {
+    const content = language === "bn" ? res.content_bn : res.content_en;
+    const matchesSearch =
+      res.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      res.author.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "all" ||
+      (selectedCategory === "articles" && res.category === "Article") ||
+      (selectedCategory === "resumes" && res.category === "Resume Example");
+
     return matchesSearch && matchesCategory;
   });
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'article': return <BookOpen className="w-5 h-5" />;
-      case 'video': return <Play className="w-5 h-5" />;
-      case 'guide': return <FileText className="w-5 h-5" />;
-      default: return <BookOpen className="w-5 h-5" />;
-    }
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
-        <div>
-          <h1 className="text-4xl font-bold text-zinc-900 mb-2">
-            {language === 'en' ? 'Career Resources' : 'ক্যারিয়ার রিসোর্স'}
-          </h1>
-          <p className="text-zinc-600">
-            {language === 'en' ? 'Everything you need to succeed in your job search.' : 'আপনার চাকরির সন্ধানে সফল হওয়ার জন্য প্রয়োজনীয় সবকিছু।'}
-          </p>
-        </div>
+    <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-10 text-center">
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">
+          {t("resources.title")}
+        </h1>
+        <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+          {t("resources.subtitle")}
+        </p>
+      </div>
 
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search resources..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-12 pr-4 py-3 bg-white border border-zinc-200 rounded-xl w-full md:w-80 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+      {/* Search and Filter */}
+      <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder={t("resources.search")}
+            className="pl-10 h-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+          {CATEGORIES.map((category) => (
+            <Button
+              key={category.key}
+              variant={selectedCategory === category.key ? "default" : "outline"}
+              onClick={() => setSelectedCategory(category.key)}
+              className="whitespace-nowrap h-10"
+            >
+              {category.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
-      {/* Categories */}
-      <div className="flex flex-wrap gap-2 mb-12">
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`px-6 py-2 rounded-full text-sm font-semibold transition-all capitalize ${
-              activeCategory === cat 
-                ? 'bg-emerald-600 text-white' 
-                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 hover:text-emerald-600'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      {/* Loading */}
+      {loading && (
+        <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
+          <FileText className="w-10 h-10 text-slate-400 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-500">{t("resources.loading")}</p>
+        </div>
+      )}
 
-      {/* Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredResources.map((res, i) => (
-          <motion.div
-            key={res.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="bg-white rounded-2xl border border-zinc-200 overflow-hidden hover:shadow-lg transition-all group"
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full uppercase tracking-wider">
-                  {res.category}
-                </span>
-                <div className="text-zinc-400 group-hover:text-emerald-600 transition-colors">
-                  {getIcon(res.type)}
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-zinc-900 mb-2 group-hover:text-emerald-600 transition-colors">
-                {res.title}
-              </h3>
-              <p className="text-zinc-600 text-sm leading-relaxed mb-6">
-                {res.description}
-              </p>
-              <a
-                href={res.url}
-                className="inline-flex items-center text-emerald-600 font-bold text-sm hover:underline"
+      {/* Error */}
+      {!loading && error && (
+        <div className="text-center py-20 bg-red-50 dark:bg-red-950/20 rounded-xl border border-dashed border-red-300 dark:border-red-800">
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* Resource Grid */}
+      {!loading && !error && filteredResources.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredResources.map((resource, idx) => {
+            const content = language === "bn" ? resource.content_bn : resource.content_en;
+            return (
+              <motion.div
+                key={resource.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="h-full"
               >
-                Read More
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </a>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                <Card className="h-full flex flex-col hover:border-blue-300 dark:hover:border-blue-700 transition">
+                  {resource.image_url && (
+                    <div className="w-full h-40 overflow-hidden rounded-t-xl">
+                      <img
+                        src={resource.image_url}
+                        alt={resource.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <CardHeader>
+                    <div className="flex justify-between items-start mb-2">
+                      <span
+                        className={`text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded ${
+                          resource.category === "Article"
+                            ? "text-blue-600 bg-blue-50 dark:bg-slate-800 dark:text-blue-400"
+                            : "text-emerald-600 bg-emerald-50 dark:bg-slate-800 dark:text-emerald-400"
+                        }`}
+                      >
+                        {resource.category === "Article" ? t("resources.articles") : t("resources.resumes")}
+                      </span>
+                      <button className="text-slate-400 hover:text-blue-600 transition">
+                        <Bookmark className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <CardTitle className="text-xl leading-snug">{resource.title}</CardTitle>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {t("resources.by")} {resource.author}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+                      {content}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && filteredResources.length === 0 && (
+        <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
+          <Bookmark className="w-10 h-10 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white">
+            {t("resources.noResults")}
+          </h3>
+          <p className="text-slate-500">{t("resources.noResultsHint")}</p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => {
+              setSearchTerm("");
+              setSelectedCategory("all");
+            }}
+          >
+            {t("resources.clearFilters")}
+          </Button>
+        </div>
+      )}
     </div>
   );
-};
-
-export default ResourceHub;
+}
