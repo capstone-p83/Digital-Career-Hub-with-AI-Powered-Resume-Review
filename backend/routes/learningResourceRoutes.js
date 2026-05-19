@@ -35,7 +35,7 @@ router.post(
   roleMiddleware(["admin", "adminstaff"]),
   async (req, res) => {
     try {
-      const { title, author, image_url, content_en, content_bn } = req.body;
+      const { title, author, image_url, content_en, content_bn, subcategory } = req.body;
 
       if (!title || !author || !content_en) {
         return res.status(400).json({
@@ -45,10 +45,10 @@ router.post(
       }
 
       const result = await db.query(
-        `INSERT INTO articles (title, author, image_url, content_en, content_bn, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO articles (title, author, image_url, content_en, content_bn, subcategory, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
-        [title, author, image_url || null, content_en, content_bn || content_en, req.user.id]
+        [title, author, image_url || null, content_en, content_bn || content_en, subcategory || null, req.user.id]
       );
 
       return res.status(201).json({
@@ -97,7 +97,7 @@ router.post(
   roleMiddleware(["admin", "adminstaff"]),
   async (req, res) => {
     try {
-      const { title, candidate_name, job_title, image_url, description } = req.body;
+      const { title, candidate_name, job_title, image_url, description, subcategory } = req.body;
 
       if (!title || !candidate_name || !job_title || !description) {
         return res.status(400).json({
@@ -107,10 +107,10 @@ router.post(
       }
 
       const result = await db.query(
-        `INSERT INTO resume_examples (title, candidate_name, job_title, image_url, description, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO resume_examples (title, candidate_name, job_title, image_url, description, subcategory, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
-        [title, candidate_name, job_title, image_url || null, description, req.user.id]
+        [title, candidate_name, job_title, image_url || null, description, subcategory || null, req.user.id]
       );
 
       return res.status(201).json({
@@ -137,7 +137,7 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, candidate_name, job_title, image_url, description } = req.body;
+      const { title, candidate_name, job_title, image_url, description, subcategory } = req.body;
 
       if (!title || !candidate_name || !job_title || !description) {
         return res.status(400).json({
@@ -153,10 +153,11 @@ router.put(
              job_title = $3,
              image_url = $4,
              description = $5,
+             subcategory = $6,
              updated_at = NOW()
-         WHERE id = $6 AND is_deleted = false
+         WHERE id = $7 AND is_deleted = false
          RETURNING *`,
-        [title, candidate_name, job_title, image_url || null, description, id]
+        [title, candidate_name, job_title, image_url || null, description, subcategory || null, id]
       );
 
       if (result.rows.length === 0) {
@@ -263,7 +264,7 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, author, image_url, content_en, content_bn } = req.body;
+      const { title, author, image_url, content_en, content_bn, subcategory } = req.body;
 
       if (!title || !author || !content_en) {
         return res.status(400).json({
@@ -279,10 +280,11 @@ router.put(
              image_url = $3,
              content_en = $4,
              content_bn = $5,
+             subcategory = $6,
              updated_at = NOW()
-         WHERE id = $6 AND is_deleted = false
+         WHERE id = $7 AND is_deleted = false
          RETURNING *`,
-        [title, author, image_url || null, content_en, content_bn || content_en, id]
+        [title, author, image_url || null, content_en, content_bn || content_en, subcategory || null, id]
       );
 
       if (result.rows.length === 0) {

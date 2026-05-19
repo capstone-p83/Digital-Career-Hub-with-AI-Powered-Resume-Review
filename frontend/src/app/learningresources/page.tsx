@@ -24,6 +24,18 @@ import { useLanguage } from "../../context/LanguageContext";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
+const SUBCATEGORY_OPTIONS = [
+  "IT",
+  "Software Engineering",
+  "Construction",
+  "Hospitality",
+  "Healthcare",
+  "Finance",
+  "Marketing",
+  "Education",
+  "Other",
+];
+
 type ResourceType = "article" | "resume";
 
 type Article = {
@@ -33,6 +45,7 @@ type Article = {
   image_url: string | null;
   content_en: string;
   content_bn: string;
+  subcategory: string | null;
   created_by: number;
   is_deleted: boolean;
   deleted_at: string | null;
@@ -47,6 +60,7 @@ type ResumeExample = {
   job_title: string;
   image_url: string | null;
   description: string | null;
+  subcategory: string | null;
   created_by: number;
   is_deleted: boolean;
   deleted_at: string | null;
@@ -59,6 +73,8 @@ type ArticleForm = {
   author: string;
   image_url: string;
   content: string;
+  subcategory: string;
+  customSubcategory: string;
 };
 
 type ResumeForm = {
@@ -67,6 +83,8 @@ type ResumeForm = {
   job_title: string;
   image_url: string;
   description: string;
+  subcategory: string;
+  customSubcategory: string;
 };
 
 const emptyArticleForm: ArticleForm = {
@@ -74,6 +92,8 @@ const emptyArticleForm: ArticleForm = {
   author: "",
   image_url: "",
   content: "",
+  subcategory: "",
+  customSubcategory: "",
 };
 
 const emptyResumeForm: ResumeForm = {
@@ -82,6 +102,24 @@ const emptyResumeForm: ResumeForm = {
   job_title: "",
   image_url: "",
   description: "",
+  subcategory: "",
+  customSubcategory: "",
+};
+
+// Helper to determine if a subcategory is predefined or custom
+const getSubcategoryFormState = (subcategory: string | null) => {
+  if (!subcategory) return { subcategory: "", customSubcategory: "" };
+  if (SUBCATEGORY_OPTIONS.includes(subcategory) && subcategory !== "Other") {
+    return { subcategory, customSubcategory: "" };
+  }
+  return { subcategory: "Other", customSubcategory: subcategory };
+};
+
+// Helper to get the final subcategory value to send to the backend
+const resolveSubcategory = (sub: string, custom: string): string | null => {
+  if (!sub) return null;
+  if (sub === "Other") return custom.trim() || null;
+  return sub;
 };
 
 export default function LearningResourcesPage() {
@@ -171,11 +209,14 @@ export default function LearningResourcesPage() {
     setSelectedType("article");
     setEditingArticle(article);
     setEditingResume(null);
+    const subState = getSubcategoryFormState(article.subcategory);
     setArticleForm({
       title: article.title,
       author: article.author,
       image_url: article.image_url || "",
       content: article.content_en,
+      subcategory: subState.subcategory,
+      customSubcategory: subState.customSubcategory,
     });
     setPageError("");
     setPageSuccess("");
@@ -187,12 +228,15 @@ export default function LearningResourcesPage() {
     setSelectedType("resume");
     setEditingResume(resume);
     setEditingArticle(null);
+    const subState = getSubcategoryFormState(resume.subcategory);
     setResumeForm({
       title: resume.title,
       candidate_name: resume.candidate_name,
       job_title: resume.job_title,
       image_url: resume.image_url || "",
       description: resume.description || "",
+      subcategory: subState.subcategory,
+      customSubcategory: subState.customSubcategory,
     });
     setPageError("");
     setPageSuccess("");
@@ -224,6 +268,8 @@ export default function LearningResourcesPage() {
           return;
         }
 
+        const finalSubcategory = resolveSubcategory(articleForm.subcategory, articleForm.customSubcategory);
+
         const isEditing = !!editingArticle;
         const url = isEditing
           ? `${API_BASE_URL}/learning-resources/${editingArticle.id}`
@@ -238,6 +284,7 @@ export default function LearningResourcesPage() {
             image_url: articleForm.image_url || null,
             content_en: articleForm.content,
             content_bn: articleForm.content,
+            subcategory: finalSubcategory,
           }),
         });
 
@@ -259,6 +306,8 @@ export default function LearningResourcesPage() {
           return;
         }
 
+        const finalSubcategory = resolveSubcategory(resumeForm.subcategory, resumeForm.customSubcategory);
+
         const isEditing = !!editingResume;
         const url = isEditing
           ? `${API_BASE_URL}/learning-resources/resumes/${editingResume.id}`
@@ -273,6 +322,7 @@ export default function LearningResourcesPage() {
             job_title: resumeForm.job_title,
             image_url: resumeForm.image_url || null,
             description: resumeForm.description,
+            subcategory: finalSubcategory,
           }),
         });
 
@@ -494,6 +544,31 @@ export default function LearningResourcesPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Subcategory
+              </label>
+              <select
+                value={articleForm.subcategory}
+                onChange={(e) => setArticleForm((p) => ({ ...p, subcategory: e.target.value, customSubcategory: "" }))}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+              >
+                <option value="">Select a subcategory...</option>
+                {SUBCATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              {articleForm.subcategory === "Other" && (
+                <input
+                  type="text"
+                  value={articleForm.customSubcategory}
+                  onChange={(e) => setArticleForm((p) => ({ ...p, customSubcategory: e.target.value }))}
+                  placeholder="Enter custom subcategory"
+                  className="w-full mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {t("mgmt.thumbnailUrl")}
               </label>
               <input
@@ -590,6 +665,31 @@ export default function LearningResourcesPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Subcategory
+              </label>
+              <select
+                value={resumeForm.subcategory}
+                onChange={(e) => setResumeForm((p) => ({ ...p, subcategory: e.target.value, customSubcategory: "" }))}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+              >
+                <option value="">Select a subcategory...</option>
+                {SUBCATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              {resumeForm.subcategory === "Other" && (
+                <input
+                  type="text"
+                  value={resumeForm.customSubcategory}
+                  onChange={(e) => setResumeForm((p) => ({ ...p, customSubcategory: e.target.value }))}
+                  placeholder="Enter custom subcategory"
+                  className="w-full mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {t("mgmt.thumbnailUrl")}
               </label>
               <input
@@ -658,6 +758,7 @@ export default function LearningResourcesPage() {
                     <th className="px-4 py-3 font-medium">{t("mgmt.id")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.title_field")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.author")}</th>
+                    <th className="px-4 py-3 font-medium">Subcategory</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.thumbnailCol")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.createdAt")}</th>
                     <th className="px-4 py-3 font-medium text-right">{t("mgmt.actions")}</th>
@@ -669,6 +770,15 @@ export default function LearningResourcesPage() {
                       <td className="px-4 py-4 text-slate-900 dark:text-white">{article.id}</td>
                       <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{article.title}</td>
                       <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{article.author}</td>
+                      <td className="px-4 py-4 text-slate-700 dark:text-slate-300">
+                        {article.subcategory ? (
+                          <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                            {article.subcategory}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-4">
                         {article.image_url ? (
                           <a href={article.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]">
@@ -721,6 +831,7 @@ export default function LearningResourcesPage() {
                     <th className="px-4 py-3 font-medium">{t("mgmt.title_field")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.candidateName")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.jobTitle")}</th>
+                    <th className="px-4 py-3 font-medium">Subcategory</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.thumbnailCol")}</th>
                     <th className="px-4 py-3 font-medium">{t("mgmt.createdAt")}</th>
                     <th className="px-4 py-3 font-medium text-right">{t("mgmt.actions")}</th>
@@ -733,6 +844,15 @@ export default function LearningResourcesPage() {
                       <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{resume.title}</td>
                       <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{resume.candidate_name}</td>
                       <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{resume.job_title}</td>
+                      <td className="px-4 py-4">
+                        {resume.subcategory ? (
+                          <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            {resume.subcategory}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-4">
                         {resume.image_url ? (
                           <a href={resume.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]">

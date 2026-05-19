@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -18,6 +18,7 @@ type Article = {
   image_url: string | null;
   content_en: string;
   content_bn: string;
+  subcategory: string | null;
   created_at: string;
 };
 
@@ -28,6 +29,7 @@ type ResumeExample = {
   job_title: string;
   image_url: string | null;
   description: string;
+  subcategory: string | null;
   created_at: string;
 };
 
@@ -39,12 +41,14 @@ type ResourceItem = {
   content_bn: string;
   author: string;
   image_url: string | null;
+  subcategory: string | null;
 };
 
 export default function ResourcesPage() {
   const { t, language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,6 +58,15 @@ export default function ResourcesPage() {
     { key: "articles", label: t("resources.articles") },
     { key: "resumes", label: t("resources.resumes") },
   ];
+
+  // Dynamically build subcategory list from resources
+  const SUBCATEGORIES = useMemo(() => {
+    const unique = new Set<string>();
+    resources.forEach((r) => {
+      if (r.subcategory) unique.add(r.subcategory);
+    });
+    return ["all", ...Array.from(unique).sort()];
+  }, [resources]);
 
   useEffect(() => {
     const fetchResources = async () => {
@@ -78,6 +91,7 @@ export default function ResourcesPage() {
             content_bn: a.content_bn,
             author: a.author,
             image_url: a.image_url,
+            subcategory: a.subcategory,
           })
         );
 
@@ -90,6 +104,7 @@ export default function ResourcesPage() {
             content_bn: r.description,
             author: r.candidate_name,
             image_url: r.image_url,
+            subcategory: r.subcategory,
           })
         );
 
@@ -116,7 +131,10 @@ export default function ResourcesPage() {
       (selectedCategory === "articles" && res.category === "Article") ||
       (selectedCategory === "resumes" && res.category === "Resume Example");
 
-    return matchesSearch && matchesCategory;
+    const matchesSubcategory =
+      selectedSubcategory === "all" || res.subcategory === selectedSubcategory;
+
+    return matchesSearch && matchesCategory && matchesSubcategory;
   });
 
   return (
@@ -130,8 +148,8 @@ export default function ResourcesPage() {
         </p>
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
+      {/* Search and Type Filter */}
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
           <Input
@@ -154,6 +172,26 @@ export default function ResourcesPage() {
           ))}
         </div>
       </div>
+
+      {/* Subcategory Filter */}
+      {SUBCATEGORIES.length > 1 && (
+        <div className="mb-8">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Filter by Subcategory</p>
+          <div className="flex flex-wrap gap-2">
+            {SUBCATEGORIES.map((sub) => (
+              <Button
+                key={sub}
+                variant={selectedSubcategory === sub ? "default" : "outline"}
+                onClick={() => setSelectedSubcategory(sub)}
+                className="whitespace-nowrap h-9 text-sm"
+                size="sm"
+              >
+                {sub === "all" ? "All Subcategories" : sub}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (
@@ -195,15 +233,22 @@ export default function ResourcesPage() {
                   )}
                   <CardHeader>
                     <div className="flex justify-between items-start mb-2">
-                      <span
-                        className={`text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded ${
-                          resource.category === "Article"
-                            ? "text-blue-600 bg-blue-50 dark:bg-slate-800 dark:text-blue-400"
-                            : "text-emerald-600 bg-emerald-50 dark:bg-slate-800 dark:text-emerald-400"
-                        }`}
-                      >
-                        {resource.category === "Article" ? t("resources.articles") : t("resources.resumes")}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <span
+                          className={`text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded ${
+                            resource.category === "Article"
+                              ? "text-blue-600 bg-blue-50 dark:bg-slate-800 dark:text-blue-400"
+                              : "text-emerald-600 bg-emerald-50 dark:bg-slate-800 dark:text-emerald-400"
+                          }`}
+                        >
+                          {resource.category === "Article" ? t("resources.articles") : t("resources.resumes")}
+                        </span>
+                        {resource.subcategory && (
+                          <span className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
+                            {resource.subcategory}
+                          </span>
+                        )}
+                      </div>
                       <button className="text-slate-400 hover:text-blue-600 transition">
                         <Bookmark className="w-5 h-5" />
                       </button>
@@ -239,6 +284,7 @@ export default function ResourcesPage() {
             onClick={() => {
               setSearchTerm("");
               setSelectedCategory("all");
+              setSelectedSubcategory("all");
             }}
           >
             {t("resources.clearFilters")}
