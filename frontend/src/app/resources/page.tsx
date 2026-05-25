@@ -262,6 +262,12 @@ export default function ResourcesPage() {
                     <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
                       {content}
                     </p>
+                    <a
+                      href={`/resources/${resource.id}`}
+                      className="inline-flex items-center mt-4 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      View full resource
+                    </a>
                   </CardContent>
                 </Card>
               </motion.div>
