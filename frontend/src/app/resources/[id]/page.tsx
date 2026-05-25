@@ -69,6 +69,49 @@ export default function ResourceDetailsPage() {
     });
   };
 
+  const getCurrentUserRole = () => {
+    const storedUser =
+      localStorage.getItem("authUser") ||
+      localStorage.getItem("adminUser") ||
+      localStorage.getItem("user") ||
+      sessionStorage.getItem("authUser") ||
+      sessionStorage.getItem("adminUser") ||
+      sessionStorage.getItem("user");
+
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        const storedRole =
+          parsedUser.role || parsedUser.user?.role || parsedUser.data?.role;
+
+        if (storedRole) {
+          return storedRole;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    const token = getStoredToken();
+
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.role || payload.user?.role || null;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  };
+
+  const isAdminUser = () => {
+    const role = getCurrentUserRole();
+    return role === "admin" || role === "adminstaff";
+  };
+
   const fetchComments = async () => {
     try {
       const commentEndpoint = isArticle
@@ -101,6 +144,7 @@ export default function ResourceDetailsPage() {
         setLoading(false);
       }
     };
+
 
     if (id) {
       fetchResource();
@@ -185,6 +229,31 @@ export default function ResourceDetailsPage() {
     }
   };
 
+  const handleReaction = async (
+    commentId: number,
+    reactionType: "like" | "dislike"
+  ) => {
+    const token = getStoredToken();
+
+    if (!token) {
+      alert("Please log in to react.");
+      return;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/comments/${commentId}/reaction`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reactionType }),
+    });
+
+    if (res.ok) {
+      fetchComments();
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-20 text-white">Loading resource...</div>;
   }
@@ -262,21 +331,39 @@ export default function ResourceDetailsPage() {
 
                   <p className="mt-2 text-slate-300">{comment.content}</p>
 
-                  <button
-                    onClick={() =>
-                      setReplyingTo(replyingTo === comment.id ? null : comment.id)
-                    }
-                    className="mt-3 text-sm text-blue-400 hover:text-blue-300"
-                  >
-                    Reply
-                  </button>
+                  <div className="mt-3 flex items-center gap-4">
+                    <button
+                      onClick={() => handleReaction(comment.id, "like")}
+                      className="text-sm text-slate-300 hover:text-blue-300"
+                    >
+                      👍 {comment.likes || 0}
+                    </button>
 
-                  <button
-                    onClick={() => handleDeleteComment(comment.id)}
-                    className="ml-4 mt-3 text-sm text-red-400 hover:text-red-300"
-                  >
-                    Delete
-                  </button>
+                    <button
+                      onClick={() => handleReaction(comment.id, "dislike")}
+                      className="text-sm text-slate-300 hover:text-red-300"
+                    >
+                      👎 {comment.dislikes || 0}
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        setReplyingTo(replyingTo === comment.id ? null : comment.id)
+                      }
+                      className="text-sm text-blue-400 hover:text-blue-300"
+                    >
+                      Reply
+                    </button>
+                  </div>
+
+                  {isAdminUser() && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="ml-4 mt-3 text-sm text-red-400 hover:text-red-300"
+                    >
+                      Delete
+                    </button>
+                  )}
 
                   {replyingTo === comment.id && (
                     <div className="mt-3">
@@ -315,12 +402,30 @@ export default function ResourceDetailsPage() {
                             {reply.content}
                           </p>
 
-                          <button
-                            onClick={() => handleDeleteComment(reply.id)}
-                            className="mt-2 text-xs text-red-400 hover:text-red-300"
-                          >
-                            Delete
-                          </button>
+                          <div className="mt-2 flex items-center gap-4">
+                            <button
+                              onClick={() => handleReaction(reply.id, "like")}
+                              className="text-xs text-slate-300 hover:text-blue-300"
+                            >
+                              👍 {reply.likes || 0}
+                            </button>
+
+                            <button
+                              onClick={() => handleReaction(reply.id, "dislike")}
+                              className="text-xs text-slate-300 hover:text-red-300"
+                            >
+                              👎 {reply.dislikes || 0}
+                            </button>
+                          </div>
+
+                          {isAdminUser() && (
+                            <button
+                              onClick={() => handleDeleteComment(reply.id)}
+                              className="mt-2 text-xs text-red-400 hover:text-red-300"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>

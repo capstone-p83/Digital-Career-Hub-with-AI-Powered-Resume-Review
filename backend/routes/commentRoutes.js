@@ -18,13 +18,17 @@ router.get("/article/:articleId", async (req, res) => {
         c.parent_comment_id,
         c.content,
         c.created_at AT TIME ZONE 'UTC' AS created_at,
+        COALESCE(SUM(CASE WHEN cr.reaction_type = 'like' THEN 1 ELSE 0 END), 0) AS likes,
+        COALESCE(SUM(CASE WHEN cr.reaction_type = 'dislike' THEN 1 ELSE 0 END), 0) AS dislikes,
         u.email,
         up.first_name,
         up.last_name
       FROM comments c
       JOIN users u ON u.id = c.user_id
       LEFT JOIN user_profile up ON up.user_id = u.id
+      LEFT JOIN comment_reactions cr ON cr.comment_id = c.id
       WHERE c.article_id = $1
+      GROUP BY c.id, u.email, up.first_name, up.last_name
       ORDER BY c.created_at ASC
       `,
       [articleId]
@@ -58,13 +62,17 @@ router.get("/resume/:resumeId", async (req, res) => {
         c.parent_comment_id,
         c.content,
         c.created_at AT TIME ZONE 'UTC' AS created_at,
+        COALESCE(SUM(CASE WHEN cr.reaction_type = 'like' THEN 1 ELSE 0 END), 0) AS likes,
+        COALESCE(SUM(CASE WHEN cr.reaction_type = 'dislike' THEN 1 ELSE 0 END), 0) AS dislikes,
         u.email,
         up.first_name,
         up.last_name
       FROM comments c
       JOIN users u ON u.id = c.user_id
       LEFT JOIN user_profile up ON up.user_id = u.id
+      LEFT JOIN comment_reactions cr ON cr.comment_id = c.id
       WHERE c.resume_example_id = $1
+      GROUP BY c.id, u.email, up.first_name, up.last_name
       ORDER BY c.created_at ASC
       `,
       [resumeId]
@@ -213,6 +221,68 @@ router.post("/:commentId/replies", authMiddleware, async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Failed to add reply",
+      error: error.message,
+    });
+  }
+});
+
+// ADD, UPDATE, OR REMOVE like/dislike reaction
+router.post("/:commentId/reaction", authMiddleware, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const { reactionType } = req.body;
+    const userId = req.user.id;
+
+    if (reactionType !== "like" && reactionType !== "dislike") {
+      return res.status(400).json({
+        status: "error",
+        message: "Reaction must be like or dislike",
+      });
+    }
+
+    const existingReaction = await db.query(
+      "SELECT id, reaction_type FROM comment_reactions WHERE comment_id = $1 AND user_id = $2",
+      [commentId, userId]
+    );
+
+    if (existingReaction.rows.length > 0) {
+      if (existingReaction.rows[0].reaction_type === reactionType) {
+        await db.query(
+          "DELETE FROM comment_reactions WHERE comment_id = $1 AND user_id = $2",
+          [commentId, userId]
+        );
+
+        return res.json({
+          status: "ok",
+          message: "Reaction removed successfully",
+        });
+      }
+
+      await db.query(
+        "UPDATE comment_reactions SET reaction_type = $1 WHERE comment_id = $2 AND user_id = $3",
+        [reactionType, commentId, userId]
+      );
+
+      return res.json({
+        status: "ok",
+        message: "Reaction updated successfully",
+      });
+    }
+
+    await db.query(
+      "INSERT INTO comment_reactions (comment_id, user_id, reaction_type) VALUES ($1, $2, $3)",
+      [commentId, userId, reactionType]
+    );
+
+    return res.status(201).json({
+      status: "ok",
+      message: "Reaction added successfully",
+    });
+  } catch (error) {
+    console.error("Comment reaction error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to update reaction",
       error: error.message,
     });
   }
