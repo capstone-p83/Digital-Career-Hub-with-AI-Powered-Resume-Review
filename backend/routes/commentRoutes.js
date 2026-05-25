@@ -17,7 +17,7 @@ router.get("/article/:articleId", async (req, res) => {
         c.user_id,
         c.parent_comment_id,
         c.content,
-        c.created_at,
+        c.created_at AT TIME ZONE 'UTC' AS created_at,
         u.email,
         up.first_name,
         up.last_name
@@ -39,6 +39,46 @@ router.get("/article/:articleId", async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Failed to fetch comments",
+      error: error.message,
+    });
+  }
+});
+
+// GET comments for one resume example
+router.get("/resume/:resumeId", async (req, res) => {
+  try {
+    const { resumeId } = req.params;
+
+    const result = await db.query(
+      `
+      SELECT 
+        c.id,
+        c.resume_example_id,
+        c.user_id,
+        c.parent_comment_id,
+        c.content,
+        c.created_at AT TIME ZONE 'UTC' AS created_at,
+        u.email,
+        up.first_name,
+        up.last_name
+      FROM comments c
+      JOIN users u ON u.id = c.user_id
+      LEFT JOIN user_profile up ON up.user_id = u.id
+      WHERE c.resume_example_id = $1
+      ORDER BY c.created_at ASC
+      `,
+      [resumeId]
+    );
+
+    return res.json({
+      status: "ok",
+      comments: result.rows,
+    });
+  } catch (error) {
+    console.error("Get resume comments error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch resume comments",
       error: error.message,
     });
   }
@@ -82,6 +122,44 @@ router.post("/article/:articleId", authMiddleware, async (req, res) => {
   }
 });
 
+// ADD comment under resume example
+router.post("/resume/:resumeId", authMiddleware, async (req, res) => {
+  try {
+    const { resumeId } = req.params;
+    const { content } = req.body;
+    const userId = req.user.id;
+
+    if (!content || content.trim() === "") {
+      return res.status(400).json({
+        status: "error",
+        message: "Comment cannot be empty",
+      });
+    }
+
+    const result = await db.query(
+      `
+      INSERT INTO comments (resume_example_id, user_id, parent_comment_id, content)
+      VALUES ($1, $2, NULL, $3)
+      RETURNING id, resume_example_id, user_id, parent_comment_id, content, created_at
+      `,
+      [resumeId, userId, content.trim()]
+    );
+
+    return res.status(201).json({
+      status: "ok",
+      message: "Resume comment added successfully",
+      comment: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Add resume comment error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to add resume comment",
+      error: error.message,
+    });
+  }
+});
+
 // ADD reply under comment
 router.post("/:commentId/replies", authMiddleware, async (req, res) => {
   try {
@@ -97,7 +175,7 @@ router.post("/:commentId/replies", authMiddleware, async (req, res) => {
     }
 
     const parent = await db.query(
-      "SELECT id, article_id FROM comments WHERE id = $1",
+      "SELECT id, article_id, resume_example_id FROM comments WHERE id = $1",
       [commentId]
     );
 
@@ -108,13 +186,21 @@ router.post("/:commentId/replies", authMiddleware, async (req, res) => {
       });
     }
 
+    const parentComment = parent.rows[0];
+
     const result = await db.query(
       `
-      INSERT INTO comments (article_id, user_id, parent_comment_id, content)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, article_id, user_id, parent_comment_id, content, created_at
+      INSERT INTO comments (article_id, resume_example_id, user_id, parent_comment_id, content)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, article_id, resume_example_id, user_id, parent_comment_id, content, created_at
       `,
-      [parent.rows[0].article_id, userId, commentId, content.trim()]
+      [
+        parentComment.article_id,
+        parentComment.resume_example_id,
+        userId,
+        commentId,
+        content.trim(),
+      ]
     );
 
     return res.status(201).json({

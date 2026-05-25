@@ -90,6 +90,38 @@ router.get("/resumes", async (req, res) => {
   }
 });
 
+// GET /api/learning-resources/resumes/:id - get single resume example
+router.get("/resumes/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await db.query(
+      `SELECT * FROM resume_examples
+       WHERE id = $1 AND is_deleted = false`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "Resume example not found",
+      });
+    }
+
+    return res.json({
+      status: "ok",
+      resume: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Get resume example error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch resume example",
+      error: error.message,
+    });
+  }
+});
+
 // POST /api/learning-resources/resumes - create resume example (admin/adminstaff only)
 router.post(
   "/resumes",
