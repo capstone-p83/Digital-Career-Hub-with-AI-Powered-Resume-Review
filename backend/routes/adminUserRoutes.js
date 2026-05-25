@@ -61,6 +61,71 @@ router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
     });
   }
 });
+//GET USER BY SINGLE 
+router.get("/:id", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+
+    const result = await db.query(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.role,
+        u.is_active,
+        u.deleted_at,
+        u.created_at,
+        up.id AS profile_id,
+        up.user_id,
+        up.first_name,
+        up.last_name,
+        up.phone,
+        up.date_of_birth
+      FROM users u
+      LEFT JOIN user_profile up ON up.user_id = u.id
+      WHERE u.id = $1
+      `,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found",
+      });
+    }
+
+    const row = result.rows[0];
+
+    return res.json({
+      status: "ok",
+      user: {
+        id: row.id,
+        email: row.email,
+        role: row.role,
+        is_active: row.is_active,
+        deleted_at: row.deleted_at,
+        created_at: row.created_at,
+        profile: {
+          id: row.profile_id,
+          user_id: row.user_id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          phone: row.phone,
+          date_of_birth: row.date_of_birth,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get single user error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch user",
+      error: error.message,
+    });
+  }
+});
 
 router.put("/:id", authMiddleware, adminMiddleware, async (req, res) => {
   const client = await db.connect();
