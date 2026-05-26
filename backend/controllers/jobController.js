@@ -44,21 +44,38 @@ function getRawItems(data) {
   return [];
 }
 
+// backend/controllers/jobController.js
+
 async function fetchEsco(endpoint, params) {
   const url = `${ESCO_API_BASE}${endpoint}?${params.toString()}`;
+  
+  // --- ADD TIMEOUT LOGS HERE ---
+  const startTime = Date.now();
+  console.log(`[ESCO API Request] Outgoing to: ${url}`);
+  // ------------------------------
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Failed to fetch ESCO data.");
+    const duration = Date.now() - startTime;
+    console.log(`[ESCO API Response] Success! Status: ${response.status} (${duration}ms)`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Failed to fetch ESCO data.");
+    }
+
+    return response.json();
+  } catch (err) {
+    const duration = Date.now() - startTime;
+    // This logs the exact millisecond count when the connection drops or times out
+    console.error(`[ESCO API Error] Failed after ${duration}ms! Message: ${err.message}`);
+    throw err; // Re-throw so your existing catch block still handles it
   }
-
-  return response.json();
 }
 
 function rankJobs(jobs, query) {
