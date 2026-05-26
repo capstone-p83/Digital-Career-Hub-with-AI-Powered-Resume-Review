@@ -255,7 +255,7 @@ export default function ResourceDetailsPage() {
   };
 
   if (loading) {
-    return <div className="text-center py-20 text-white">Loading resource...</div>;
+    return <div className="text-center py-20 text-slate-900 dark:text-white">Loading resource...</div>;
   }
 
   if (!resource) {
@@ -265,7 +265,7 @@ export default function ResourceDetailsPage() {
   const parentComments = comments.filter((comment) => !comment.parent_comment_id);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 text-white">
+    <div className="max-w-4xl mx-auto px-4 py-10 text-slate-900 dark:text-white">
       {resource.image_url && (
         <img
           src={resource.image_url}
@@ -284,11 +284,11 @@ export default function ResourceDetailsPage() {
           : "Resume Example"}
       </p>
 
-      <div className="text-lg leading-8 text-slate-300 whitespace-pre-line">
+      <div className="text-lg leading-8 text-slate-700 dark:text-slate-300 whitespace-pre-line">
         {resource.content_en || resource.description}
       </div>
 
-      <div className="mt-12 border-t border-slate-700 pt-8">
+      <div className="mt-12 border-t border-slate-300 dark:border-slate-700 pt-8">
         <h2 className="text-2xl font-bold mb-4">Comments</h2>
 
         <div className="mb-6">
@@ -296,7 +296,7 @@ export default function ResourceDetailsPage() {
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Write a comment..."
-            className="w-full min-h-28 rounded-lg border border-slate-700 bg-slate-900 p-4 text-white outline-none"
+            className="w-full min-h-28 rounded-lg border border-slate-300 bg-white p-4 text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           />
 
           <button
@@ -319,7 +319,7 @@ export default function ResourceDetailsPage() {
               return (
                 <div
                   key={comment.id}
-                  className="rounded-lg border border-slate-700 bg-slate-900 p-4"
+                  className="rounded-lg border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
                 >
                   <p className="font-semibold">
                     {comment.first_name || comment.email || "User"}
@@ -329,19 +329,19 @@ export default function ResourceDetailsPage() {
                     {formatTimestamp(comment.created_at)}
                   </p>
 
-                  <p className="mt-2 text-slate-300">{comment.content}</p>
+                  <p className="mt-2 text-slate-700 dark:text-slate-300">{comment.content}</p>
 
                   <div className="mt-3 flex items-center gap-4">
                     <button
                       onClick={() => handleReaction(comment.id, "like")}
-                      className="text-sm text-slate-300 hover:text-blue-300"
+                      className="text-sm text-slate-700 hover:text-blue-500 dark:text-slate-300 dark:hover:text-blue-300"
                     >
                       👍 {comment.likes || 0}
                     </button>
 
                     <button
                       onClick={() => handleReaction(comment.id, "dislike")}
-                      className="text-sm text-slate-300 hover:text-red-300"
+                      className="text-sm text-slate-700 hover:text-red-500 dark:text-slate-300 dark:hover:text-red-300"
                     >
                       👎 {comment.dislikes || 0}
                     </button>
@@ -371,7 +371,7 @@ export default function ResourceDetailsPage() {
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder="Write a reply..."
-                        className="w-full min-h-20 rounded-lg border border-slate-700 bg-slate-950 p-3 text-white outline-none"
+                        className="w-full min-h-20 rounded-lg border border-slate-300 bg-white p-3 text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                       />
 
                       <button
@@ -384,11 +384,11 @@ export default function ResourceDetailsPage() {
                   )}
 
                   {replies.length > 0 && (
-                    <div className="mt-4 space-y-3 border-l border-slate-700 pl-4">
+                    <div className="mt-4 space-y-3 border-l border-slate-300 pl-4 dark:border-slate-700">
                       {replies.map((reply) => (
                         <div
                           key={reply.id}
-                          className="rounded-lg bg-slate-950 p-3"
+                          className="rounded-lg bg-slate-100 p-3 dark:bg-slate-950"
                         >
                           <p className="text-sm font-semibold">
                             {reply.first_name || reply.email || "User"}
@@ -398,21 +398,21 @@ export default function ResourceDetailsPage() {
                             {formatTimestamp(reply.created_at)}
                           </p>
 
-                          <p className="mt-1 text-sm text-slate-300">
+                          <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                             {reply.content}
                           </p>
 
                           <div className="mt-2 flex items-center gap-4">
                             <button
                               onClick={() => handleReaction(reply.id, "like")}
-                              className="text-xs text-slate-300 hover:text-blue-300"
+                              className="text-xs text-slate-700 hover:text-blue-500 dark:text-slate-300 dark:hover:text-blue-300"
                             >
                               👍 {reply.likes || 0}
                             </button>
 
                             <button
                               onClick={() => handleReaction(reply.id, "dislike")}
-                              className="text-xs text-slate-300 hover:text-red-300"
+                              className="text-xs text-slate-700 hover:text-red-500 dark:text-slate-300 dark:hover:text-red-300"
                             >
                               👎 {reply.dislikes || 0}
                             </button>
