@@ -14,6 +14,7 @@ const API_BASE_URL =
 type Article = {
   id: number;
   title: string;
+  title_bn: string | null;
   author: string;
   image_url: string | null;
   content_en: string;
@@ -36,6 +37,7 @@ type ResumeExample = {
 type ResourceItem = {
   id: string;
   title: string;
+  title_bn: string | null;
   category: "Article" | "Resume Example";
   content_en: string;
   content_bn: string;
@@ -85,6 +87,7 @@ export default function ResourcesPage() {
           (a: Article) => ({
             id: `article-${a.id}`,
             title: a.title,
+            title_bn: a.title_bn,
             category: "Article" as const,
             content_en: a.content_en,
             content_bn: a.content_bn,
@@ -98,6 +101,7 @@ export default function ResourcesPage() {
           (r: ResumeExample) => ({
             id: `resume-${r.id}`,
             title: r.title,
+            title_bn: null,
             category: "Resume Example" as const,
             content_en: r.description,
             content_bn: r.description,
@@ -120,8 +124,11 @@ export default function ResourcesPage() {
 
   const filteredResources = resources.filter((res) => {
     const content = language === "bn" ? res.content_bn : res.content_en;
+    const displayTitle =
+      language === "bn" && res.title_bn ? res.title_bn : res.title;
+
     const matchesSearch =
-      res.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      displayTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       res.author.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -157,6 +164,7 @@ export default function ResourcesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+
         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
           {CATEGORIES.map((category) => (
             <Button
@@ -211,6 +219,11 @@ export default function ResourcesPage() {
             const content =
               language === "bn" ? resource.content_bn : resource.content_en;
 
+            const displayTitle =
+              language === "bn" && resource.title_bn
+                ? resource.title_bn
+                : resource.title;
+
             return (
               <motion.div
                 key={resource.id}
@@ -224,11 +237,12 @@ export default function ResourcesPage() {
                     <div className="w-full h-40 overflow-hidden rounded-t-xl">
                       <img
                         src={resource.image_url}
-                        alt={resource.title}
+                        alt={displayTitle}
                         className="w-full h-full object-cover"
                       />
                     </div>
                   )}
+
                   <CardHeader>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex flex-wrap gap-2">
@@ -243,27 +257,33 @@ export default function ResourcesPage() {
                             ? t("resources.articles")
                             : t("resources.resumes")}
                         </span>
+
                         {resource.subcategory && (
                           <span className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
                             {resource.subcategory}
                           </span>
                         )}
                       </div>
+
                       <button className="text-slate-400 hover:text-blue-600 transition">
                         <Bookmark className="w-5 h-5" />
                       </button>
                     </div>
+
                     <CardTitle className="text-xl leading-snug">
-                      {resource.title}
+                      {displayTitle}
                     </CardTitle>
+
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       {t("resources.by")} {resource.author}
                     </p>
                   </CardHeader>
+
                   <CardContent className="flex-1">
                     <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
                       {content}
                     </p>
+
                     <a
                       href={`/resources/${resource.id}`}
                       className="inline-flex items-center mt-4 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
@@ -281,10 +301,13 @@ export default function ResourcesPage() {
       {!loading && !error && filteredResources.length === 0 && (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
           <Bookmark className="w-10 h-10 text-slate-400 mx-auto mb-4" />
+
           <h3 className="text-lg font-medium text-slate-900 dark:text-white">
             {t("resources.noResults")}
           </h3>
+
           <p className="text-slate-500">{t("resources.noResultsHint")}</p>
+
           <Button
             variant="outline"
             className="mt-4"

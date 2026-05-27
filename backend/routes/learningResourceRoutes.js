@@ -35,7 +35,15 @@ router.post(
   roleMiddleware(["admin", "adminstaff"]),
   async (req, res) => {
     try {
-      const { title, author, image_url, content_en, content_bn, subcategory } = req.body;
+      const {
+        title,
+        title_bn,
+        author,
+        image_url,
+        content_en,
+        content_bn,
+        subcategory,
+      } = req.body;
 
       if (!title || !author || !content_en) {
         return res.status(400).json({
@@ -45,10 +53,28 @@ router.post(
       }
 
       const result = await db.query(
-        `INSERT INTO articles (title, author, image_url, content_en, content_bn, subcategory, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO articles (
+           title,
+           title_bn,
+           author,
+           image_url,
+           content_en,
+           content_bn,
+           subcategory,
+           created_by
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING *`,
-        [title, author, image_url || null, content_en, content_bn || content_en, subcategory || null, req.user.id]
+        [
+          title,
+          title_bn || title,
+          author,
+          image_url || null,
+          content_en,
+          content_bn || content_en,
+          subcategory || null,
+          req.user.id,
+        ]
       );
 
       return res.status(201).json({
@@ -129,20 +155,44 @@ router.post(
   roleMiddleware(["admin", "adminstaff"]),
   async (req, res) => {
     try {
-      const { title, candidate_name, job_title, image_url, description, subcategory } = req.body;
+      const {
+        title,
+        candidate_name,
+        job_title,
+        image_url,
+        description,
+        subcategory,
+      } = req.body;
 
       if (!title || !candidate_name || !job_title || !description) {
         return res.status(400).json({
           status: "error",
-          message: "Title, candidate name, job title and description are required",
+          message:
+            "Title, candidate name, job title and description are required",
         });
       }
 
       const result = await db.query(
-        `INSERT INTO resume_examples (title, candidate_name, job_title, image_url, description, subcategory, created_by)
+        `INSERT INTO resume_examples (
+           title,
+           candidate_name,
+           job_title,
+           image_url,
+           description,
+           subcategory,
+           created_by
+         )
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
-        [title, candidate_name, job_title, image_url || null, description, subcategory || null, req.user.id]
+        [
+          title,
+          candidate_name,
+          job_title,
+          image_url || null,
+          description,
+          subcategory || null,
+          req.user.id,
+        ]
       );
 
       return res.status(201).json({
@@ -169,12 +219,20 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, candidate_name, job_title, image_url, description, subcategory } = req.body;
+      const {
+        title,
+        candidate_name,
+        job_title,
+        image_url,
+        description,
+        subcategory,
+      } = req.body;
 
       if (!title || !candidate_name || !job_title || !description) {
         return res.status(400).json({
           status: "error",
-          message: "Title, candidate name, job title and description are required",
+          message:
+            "Title, candidate name, job title and description are required",
         });
       }
 
@@ -189,7 +247,15 @@ router.put(
              updated_at = NOW()
          WHERE id = $7 AND is_deleted = false
          RETURNING *`,
-        [title, candidate_name, job_title, image_url || null, description, subcategory || null, id]
+        [
+          title,
+          candidate_name,
+          job_title,
+          image_url || null,
+          description,
+          subcategory || null,
+          id,
+        ]
       );
 
       if (result.rows.length === 0) {
@@ -296,7 +362,15 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, author, image_url, content_en, content_bn, subcategory } = req.body;
+      const {
+        title,
+        title_bn,
+        author,
+        image_url,
+        content_en,
+        content_bn,
+        subcategory,
+      } = req.body;
 
       if (!title || !author || !content_en) {
         return res.status(400).json({
@@ -308,15 +382,25 @@ router.put(
       const result = await db.query(
         `UPDATE articles
          SET title = $1,
-             author = $2,
-             image_url = $3,
-             content_en = $4,
-             content_bn = $5,
-             subcategory = $6,
+             title_bn = $2,
+             author = $3,
+             image_url = $4,
+             content_en = $5,
+             content_bn = $6,
+             subcategory = $7,
              updated_at = NOW()
-         WHERE id = $7 AND is_deleted = false
+         WHERE id = $8 AND is_deleted = false
          RETURNING *`,
-        [title, author, image_url || null, content_en, content_bn || content_en, subcategory || null, id]
+        [
+          title,
+          title_bn || title,
+          author,
+          image_url || null,
+          content_en,
+          content_bn || content_en,
+          subcategory || null,
+          id,
+        ]
       );
 
       if (result.rows.length === 0) {
