@@ -8,7 +8,7 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   en: "English",
   bn: "Bangla",
   es: "Spanish",
-  hi: "Hindi"
+  hi: "Hindi",
 };
 
 interface LanguageContextType {
@@ -26,12 +26,17 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "Dashboard",
     "nav.login": "Log In",
     "nav.logout": "Log Out",
+
     "hero.title": "AI-Powered Career Hub",
-    "hero.subtitle": "Elevate your career with intelligent tools, curated resources, and AI feedback.",
+    "hero.subtitle":
+      "Elevate your career with intelligent tools, curated resources, and AI feedback.",
+
     "cta.upload": "Upload Resume",
     "cta.askAI": "Ask AI Assistant",
+
     "resources.title": "Career Resource Hub",
-    "resources.subtitle": "Explore our curated collection of guides, templates, and advice to help you land your dream job.",
+    "resources.subtitle":
+      "Explore our curated collection of guides, templates, and advice to help you land your dream job.",
     "resources.search": "Search resources...",
     "resources.all": "All",
     "resources.articles": "Articles",
@@ -44,6 +49,8 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.clearFilters": "Clear Filters",
     "resources.loading": "Loading resources...",
     "resources.by": "By",
+    "resources.viewFullResource": "View full resource",
+
     "mgmt.title": "Learning Resource Management",
     "mgmt.subtitle": "Create, edit and manage learning resources on the platform.",
     "mgmt.backToDashboard": "Back to Dashboard",
@@ -89,6 +96,7 @@ const translations: Record<Language, Record<string, string>> = {
     "mgmt.viewArticle": "View Article",
     "mgmt.none": "None",
   },
+
   bn: {
     "nav.home": "হোম",
     "nav.resources": "রিসোর্স",
@@ -97,12 +105,17 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "ড্যাশবোর্ড",
     "nav.login": "লগ ইন",
     "nav.logout": "লগ আউট",
+
     "hero.title": "এআই-চালিত ক্যারিয়ার হাব",
-    "hero.subtitle": "বুদ্ধিমান টুলস, বাছাইকৃত রিসোর্স এবং এআই ফিডব্যাকের মাধ্যমে আপনার ক্যারিয়ার উন্নত করুন।",
+    "hero.subtitle":
+      "বুদ্ধিমান টুলস, বাছাইকৃত রিসোর্স এবং এআই ফিডব্যাকের মাধ্যমে আপনার ক্যারিয়ার উন্নত করুন।",
+
     "cta.upload": "রিজুমে আপলোড করুন",
     "cta.askAI": "এআই অ্যাসিস্ট্যান্টকে জিজ্ঞাসা করুন",
+
     "resources.title": "ক্যারিয়ার রিসোর্স হাব",
-    "resources.subtitle": "আপনার স্বপ্নের চাকরি পেতে সাহায্য করার জন্য আমাদের বাছাইকৃত গাইড, টেমপ্লেট এবং পরামর্শ অন্বেষণ করুন।",
+    "resources.subtitle":
+      "আপনার স্বপ্নের চাকরি পেতে সাহায্য করার জন্য আমাদের বাছাইকৃত গাইড, টেমপ্লেট এবং পরামর্শ অন্বেষণ করুন।",
     "resources.search": "রিসোর্স খুঁজুন...",
     "resources.all": "সব",
     "resources.articles": "নিবন্ধ",
@@ -115,6 +128,8 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.clearFilters": "ফিল্টার পরিষ্কার করুন",
     "resources.loading": "রিসোর্স লোড হচ্ছে...",
     "resources.by": "লেখক",
+    "resources.viewFullResource": "সম্পূর্ণ রিসোর্স দেখুন",
+
     "mgmt.title": "লার্নিং রিসোর্স ম্যানেজমেন্ট",
     "mgmt.subtitle": "প্ল্যাটফর্মে লার্নিং রিসোর্স তৈরি, সম্পাদনা এবং পরিচালনা করুন।",
     "mgmt.backToDashboard": "ড্যাশবোর্ডে ফিরুন",
@@ -160,6 +175,7 @@ const translations: Record<Language, Record<string, string>> = {
     "mgmt.viewArticle": "নিবন্ধ দেখুন",
     "mgmt.none": "কোনোটি নেই",
   },
+
   es: {
     "nav.home": "Inicio",
     "nav.resources": "Recursos",
@@ -168,12 +184,17 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "Panel",
     "nav.login": "Iniciar Sesión",
     "nav.logout": "Cerrar Sesión",
+
     "hero.title": "Centro de Carreras con AI",
-    "hero.subtitle": "Eleva tu carrera con herramientas inteligentes, recursos seleccionados y comentarios de AI.",
+    "hero.subtitle":
+      "Eleva tu carrera con herramientas inteligentes, recursos seleccionados y comentarios de AI.",
+
     "cta.upload": "Subir Currículum",
     "cta.askAI": "Preguntar al Asistente AI",
+
     "resources.title": "Centro de Recursos de Carrera",
-    "resources.subtitle": "Explora nuestra colección de guías, plantillas y consejos para conseguir tu trabajo ideal.",
+    "resources.subtitle":
+      "Explora nuestra colección de guías, plantillas y consejos para conseguir tu trabajo ideal.",
     "resources.search": "Buscar recursos...",
     "resources.all": "Todos",
     "resources.articles": "Artículos",
@@ -186,6 +207,8 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.clearFilters": "Limpiar Filtros",
     "resources.loading": "Cargando recursos...",
     "resources.by": "Por",
+    "resources.viewFullResource": "Ver recurso completo",
+
     "mgmt.title": "Gestión de Recursos de Aprendizaje",
     "mgmt.subtitle": "Crea, edita y gestiona recursos de aprendizaje en la plataforma.",
     "mgmt.backToDashboard": "Volver al Panel",
@@ -231,6 +254,7 @@ const translations: Record<Language, Record<string, string>> = {
     "mgmt.viewArticle": "Ver Artículo",
     "mgmt.none": "Ninguno",
   },
+
   hi: {
     "nav.home": "होम",
     "nav.resources": "संसाधन",
@@ -239,12 +263,17 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "डैशबोर्ड",
     "nav.login": "लॉग इन",
     "nav.logout": "लॉग आउट",
+
     "hero.title": "एआई-संचालित करियर हब",
-    "hero.subtitle": "बुद्धिमान उपकरण, क्यूरेटेड संसाधन और एआई फीडबैक के साथ अपने करियर को बेहतर बनाएं।",
+    "hero.subtitle":
+      "बुद्धिमान उपकरण, क्यूरेटेड संसाधन और एआई फीडबैक के साथ अपने करियर को बेहतर बनाएं।",
+
     "cta.upload": "रिज्यूमे अपलोड करें",
     "cta.askAI": "एआई सहायक से पूछें",
+
     "resources.title": "करियर रिसोर्स हब",
-    "resources.subtitle": "अपने सपनों की नौकरी पाने में मदद के लिए हमारे गाइड, टेम्पलेट और सलाह का संग्रह देखें।",
+    "resources.subtitle":
+      "अपने सपनों की नौकरी पाने में मदद के लिए हमारे गाइड, टेम्पलेट और सलाह का संग्रह देखें।",
     "resources.search": "रिसोर्स खोजें...",
     "resources.all": "सभी",
     "resources.articles": "लेख",
@@ -257,6 +286,8 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.clearFilters": "फ़िल्टर साफ़ करें",
     "resources.loading": "रिसोर्स लोड हो रहे हैं...",
     "resources.by": "द्वारा",
+    "resources.viewFullResource": "पूरा रिसोर्स देखें",
+
     "mgmt.title": "लर्निंग रिसोर्स प्रबंधन",
     "mgmt.subtitle": "प्लेटफ़ॉर्म पर लर्निंग रिसोर्स बनाएं, संपादित करें और प्रबंधित करें।",
     "mgmt.backToDashboard": "डैशबोर्ड पर वापस जाएं",
@@ -301,7 +332,7 @@ const translations: Record<Language, Record<string, string>> = {
     "mgmt.viewImage": "छवि देखें",
     "mgmt.viewArticle": "लेख देखें",
     "mgmt.none": "कोई नहीं",
-  }
+  },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -309,7 +340,6 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
   const [language, setLangState] = useState<Language>("en");
 
-  // On mount, check if there's a preferred language saved
   useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage") as Language;
     if (["en", "bn", "es", "hi"].includes(savedLang)) {
@@ -335,8 +365,10 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
+
   if (!context) {
     throw new Error("useLanguage must be used within a LanguageProvider");
   }
+
   return context;
 };

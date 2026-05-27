@@ -266,7 +266,7 @@ export default function ResourcesPage() {
                       href={`/resources/${resource.id}`}
                       className="inline-flex items-center mt-4 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
-                      View full resource
+                      {t("resources.viewFullResource")}
                     </a>
                   </CardContent>
                 </Card>
