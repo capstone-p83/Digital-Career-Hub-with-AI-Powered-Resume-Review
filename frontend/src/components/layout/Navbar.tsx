@@ -113,7 +113,7 @@ export default function Navbar() {
                   <Link
                     href="/admin"
                     className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                    title="Admin Panel"
+                    title={t("nav.adminPanel")}
                   >
                     <Shield size={18} />
                   </Link>
@@ -122,7 +122,7 @@ export default function Navbar() {
                 <Link
                   href="/profile"
                   className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                  title={user?.email || "Profile"}
+                  title={user?.email || t("nav.profile")}
                 >
                   <UserIcon size={18} />
                 </Link>
@@ -181,7 +181,7 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                  Profile
+                  {t("nav.profile")}
                 </Link>
 
                 {isAdmin && (
@@ -190,7 +190,7 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                   >
-                    Admin Panel
+                    {t("nav.adminPanel")}
                   </Link>
                 )}
 

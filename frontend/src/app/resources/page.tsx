@@ -59,7 +59,6 @@ export default function ResourcesPage() {
     { key: "resumes", label: t("resources.resumes") },
   ];
 
-  // Dynamically build subcategory list from resources
   const SUBCATEGORIES = useMemo(() => {
     const unique = new Set<string>();
     resources.forEach((r) => {
@@ -110,7 +109,7 @@ export default function ResourcesPage() {
 
         setResources([...articleItems, ...resumeItems]);
       } catch (err: any) {
-        setError("Failed to load resources. Please try again later.");
+        setError("resources.failedLoad");
       } finally {
         setLoading(false);
       }
@@ -148,7 +147,6 @@ export default function ResourcesPage() {
         </p>
       </div>
 
-      {/* Search and Type Filter */}
       <div className="flex flex-col md:flex-row gap-4 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
@@ -173,10 +171,11 @@ export default function ResourcesPage() {
         </div>
       </div>
 
-      {/* Subcategory Filter */}
       {SUBCATEGORIES.length > 1 && (
         <div className="mb-8">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Filter by Subcategory</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+            {t("resources.filterBySubcategory")}
+          </p>
           <div className="flex flex-wrap gap-2">
             {SUBCATEGORIES.map((sub) => (
               <Button
@@ -186,14 +185,13 @@ export default function ResourcesPage() {
                 className="whitespace-nowrap h-9 text-sm"
                 size="sm"
               >
-                {sub === "all" ? "All Subcategories" : sub}
+                {sub === "all" ? t("resources.allSubcategories") : sub}
               </Button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
           <FileText className="w-10 h-10 text-slate-400 mx-auto mb-4 animate-pulse" />
@@ -201,18 +199,18 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      {/* Error */}
       {!loading && error && (
         <div className="text-center py-20 bg-red-50 dark:bg-red-950/20 rounded-xl border border-dashed border-red-300 dark:border-red-800">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-red-600 dark:text-red-400">{t(error)}</p>
         </div>
       )}
 
-      {/* Resource Grid */}
       {!loading && !error && filteredResources.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredResources.map((resource, idx) => {
-            const content = language === "bn" ? resource.content_bn : resource.content_en;
+            const content =
+              language === "bn" ? resource.content_bn : resource.content_en;
+
             return (
               <motion.div
                 key={resource.id}
@@ -241,7 +239,9 @@ export default function ResourcesPage() {
                               : "text-emerald-600 bg-emerald-50 dark:bg-slate-800 dark:text-emerald-400"
                           }`}
                         >
-                          {resource.category === "Article" ? t("resources.articles") : t("resources.resumes")}
+                          {resource.category === "Article"
+                            ? t("resources.articles")
+                            : t("resources.resumes")}
                         </span>
                         {resource.subcategory && (
                           <span className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
@@ -253,7 +253,9 @@ export default function ResourcesPage() {
                         <Bookmark className="w-5 h-5" />
                       </button>
                     </div>
-                    <CardTitle className="text-xl leading-snug">{resource.title}</CardTitle>
+                    <CardTitle className="text-xl leading-snug">
+                      {resource.title}
+                    </CardTitle>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       {t("resources.by")} {resource.author}
                     </p>
@@ -276,7 +278,6 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      {/* Empty State */}
       {!loading && !error && filteredResources.length === 0 && (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
           <Bookmark className="w-10 h-10 text-slate-400 mx-auto mb-4" />

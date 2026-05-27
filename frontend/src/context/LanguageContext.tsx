@@ -26,6 +26,8 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "Dashboard",
     "nav.login": "Log In",
     "nav.logout": "Log Out",
+    "nav.profile": "Profile",
+    "nav.adminPanel": "Admin Panel",
 
     "hero.title": "AI-Powered Career Hub",
     "hero.subtitle":
@@ -50,6 +52,29 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.loading": "Loading resources...",
     "resources.by": "By",
     "resources.viewFullResource": "View full resource",
+    "resources.filterBySubcategory": "Filter by Subcategory",
+    "resources.allSubcategories": "All Subcategories",
+    "resources.failedLoad": "Failed to load resources. Please try again later.",
+
+    "footer.brand": "Digital Career Hub",
+    "footer.description":
+      "AI-Powered Resume Review & Career Resources to help you land your dream job faster. Empowering professionals worldwide.",
+    "footer.resources": "Resources",
+    "footer.resumeTemplates": "Resume Templates",
+    "footer.coverLetterBuilder": "Cover Letter Builder",
+    "footer.interviewPrep": "Interview Prep",
+    "footer.careerAdvice": "Career Advice",
+    "footer.company": "Company",
+    "footer.aboutUs": "About Us",
+    "footer.careers": "Careers",
+    "footer.privacyPolicy": "Privacy Policy",
+    "footer.termsOfService": "Terms of Service",
+    "footer.contactUs": "Contact Us",
+    "footer.sendMessage": "Send us a message",
+    "footer.rights": "Digital Career Hub. All rights reserved.",
+    "footer.privacy": "Privacy",
+    "footer.terms": "Terms",
+    "footer.cookies": "Cookies",
 
     "mgmt.title": "Learning Resource Management",
     "mgmt.subtitle": "Create, edit and manage learning resources on the platform.",
@@ -105,6 +130,8 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "ড্যাশবোর্ড",
     "nav.login": "লগ ইন",
     "nav.logout": "লগ আউট",
+    "nav.profile": "প্রোফাইল",
+    "nav.adminPanel": "অ্যাডমিন প্যানেল",
 
     "hero.title": "এআই-চালিত ক্যারিয়ার হাব",
     "hero.subtitle":
@@ -129,6 +156,29 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.loading": "রিসোর্স লোড হচ্ছে...",
     "resources.by": "লেখক",
     "resources.viewFullResource": "সম্পূর্ণ রিসোর্স দেখুন",
+    "resources.filterBySubcategory": "সাবক্যাটাগরি অনুযায়ী ফিল্টার করুন",
+    "resources.allSubcategories": "সব সাবক্যাটাগরি",
+    "resources.failedLoad": "রিসোর্স লোড করা যায়নি। পরে আবার চেষ্টা করুন।",
+
+    "footer.brand": "ডিজিটাল ক্যারিয়ার হাব",
+    "footer.description":
+      "এআই-চালিত রিজুমে রিভিউ এবং ক্যারিয়ার রিসোর্স, যা আপনাকে দ্রুত আপনার স্বপ্নের চাকরি পেতে সাহায্য করে।",
+    "footer.resources": "রিসোর্স",
+    "footer.resumeTemplates": "রিজুমে টেমপ্লেট",
+    "footer.coverLetterBuilder": "কভার লেটার বিল্ডার",
+    "footer.interviewPrep": "ইন্টারভিউ প্রস্তুতি",
+    "footer.careerAdvice": "ক্যারিয়ার পরামর্শ",
+    "footer.company": "কোম্পানি",
+    "footer.aboutUs": "আমাদের সম্পর্কে",
+    "footer.careers": "ক্যারিয়ার",
+    "footer.privacyPolicy": "গোপনীয়তা নীতি",
+    "footer.termsOfService": "সেবার শর্তাবলি",
+    "footer.contactUs": "যোগাযোগ করুন",
+    "footer.sendMessage": "বার্তা পাঠান",
+    "footer.rights": "ডিজিটাল ক্যারিয়ার হাব। সর্বস্বত্ব সংরক্ষিত।",
+    "footer.privacy": "গোপনীয়তা",
+    "footer.terms": "শর্তাবলি",
+    "footer.cookies": "কুকিজ",
 
     "mgmt.title": "লার্নিং রিসোর্স ম্যানেজমেন্ট",
     "mgmt.subtitle": "প্ল্যাটফর্মে লার্নিং রিসোর্স তৈরি, সম্পাদনা এবং পরিচালনা করুন।",
@@ -184,6 +234,8 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "Panel",
     "nav.login": "Iniciar Sesión",
     "nav.logout": "Cerrar Sesión",
+    "nav.profile": "Perfil",
+    "nav.adminPanel": "Panel de Administración",
 
     "hero.title": "Centro de Carreras con AI",
     "hero.subtitle":
@@ -208,6 +260,29 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.loading": "Cargando recursos...",
     "resources.by": "Por",
     "resources.viewFullResource": "Ver recurso completo",
+    "resources.filterBySubcategory": "Filtrar por subcategoría",
+    "resources.allSubcategories": "Todas las subcategorías",
+    "resources.failedLoad": "No se pudieron cargar los recursos. Inténtalo de nuevo más tarde.",
+
+    "footer.brand": "Digital Career Hub",
+    "footer.description":
+      "Revisión de currículum con AI y recursos profesionales para ayudarte a conseguir tu trabajo ideal más rápido.",
+    "footer.resources": "Recursos",
+    "footer.resumeTemplates": "Plantillas de CV",
+    "footer.coverLetterBuilder": "Constructor de cartas",
+    "footer.interviewPrep": "Preparación para entrevistas",
+    "footer.careerAdvice": "Consejos profesionales",
+    "footer.company": "Empresa",
+    "footer.aboutUs": "Sobre nosotros",
+    "footer.careers": "Carreras",
+    "footer.privacyPolicy": "Política de privacidad",
+    "footer.termsOfService": "Términos de servicio",
+    "footer.contactUs": "Contáctanos",
+    "footer.sendMessage": "Envíanos un mensaje",
+    "footer.rights": "Digital Career Hub. Todos los derechos reservados.",
+    "footer.privacy": "Privacidad",
+    "footer.terms": "Términos",
+    "footer.cookies": "Cookies",
 
     "mgmt.title": "Gestión de Recursos de Aprendizaje",
     "mgmt.subtitle": "Crea, edita y gestiona recursos de aprendizaje en la plataforma.",
@@ -263,6 +338,8 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.dashboard": "डैशबोर्ड",
     "nav.login": "लॉग इन",
     "nav.logout": "लॉग आउट",
+    "nav.profile": "प्रोफाइल",
+    "nav.adminPanel": "एडमिन पैनल",
 
     "hero.title": "एआई-संचालित करियर हब",
     "hero.subtitle":
@@ -287,6 +364,29 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.loading": "रिसोर्स लोड हो रहे हैं...",
     "resources.by": "द्वारा",
     "resources.viewFullResource": "पूरा रिसोर्स देखें",
+    "resources.filterBySubcategory": "उपश्रेणी से फ़िल्टर करें",
+    "resources.allSubcategories": "सभी उपश्रेणियाँ",
+    "resources.failedLoad": "रिसोर्स लोड नहीं हो सके। कृपया बाद में फिर कोशिश करें।",
+
+    "footer.brand": "डिजिटल करियर हब",
+    "footer.description":
+      "एआई-संचालित रिज्यूमे समीक्षा और करियर रिसोर्स, जो आपको अपना सपना नौकरी जल्दी पाने में मदद करते हैं।",
+    "footer.resources": "रिसोर्स",
+    "footer.resumeTemplates": "रिज्यूमे टेम्पलेट",
+    "footer.coverLetterBuilder": "कवर लेटर बिल्डर",
+    "footer.interviewPrep": "इंटरव्यू तैयारी",
+    "footer.careerAdvice": "करियर सलाह",
+    "footer.company": "कंपनी",
+    "footer.aboutUs": "हमारे बारे में",
+    "footer.careers": "करियर",
+    "footer.privacyPolicy": "गोपनीयता नीति",
+    "footer.termsOfService": "सेवा की शर्तें",
+    "footer.contactUs": "संपर्क करें",
+    "footer.sendMessage": "हमें संदेश भेजें",
+    "footer.rights": "डिजिटल करियर हब। सर्वाधिकार सुरक्षित।",
+    "footer.privacy": "गोपनीयता",
+    "footer.terms": "शर्तें",
+    "footer.cookies": "कुकीज़",
 
     "mgmt.title": "लर्निंग रिसोर्स प्रबंधन",
     "mgmt.subtitle": "प्लेटफ़ॉर्म पर लर्निंग रिसोर्स बनाएं, संपादित करें और प्रबंधित करें।",
@@ -342,6 +442,7 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 
   useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage") as Language;
+
     if (["en", "bn", "es", "hi"].includes(savedLang)) {
       setLangState(savedLang);
     }
