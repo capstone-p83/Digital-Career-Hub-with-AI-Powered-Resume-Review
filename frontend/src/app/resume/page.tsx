@@ -12,14 +12,13 @@ import {
   CardTitle,
   CardFooter,
 } from "../../components/ui/Card";
-import { UploadCloud, File, X, AlertCircle, Search, User } from "lucide-react";
+import { UploadCloud, File, X, AlertCircle, Search, CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../lib/utils";
 import {
   buildResumeReviewFormData,
   postResumeReview,
-  RESUME_REVIEW_STORAGE_KEY,
 } from "../../lib/resumeReviewSubmit";
 import { searchJobTitles, type JobSuggestion } from "../../lib/jobSearch";
 
@@ -32,7 +31,7 @@ export default function ResumeUploadPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedJobUri, setSelectedJobUri] = useState("");
 
-  const [scansRemaining, setScansRemaining] = useState(2); // Local mock counter
+  const [scansRemaining, setScansRemaining] = useState<number>(2);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,6 +39,8 @@ export default function ResumeUploadPage() {
   const router = useRouter();
   const { isAuthenticated, token, user } = useAuth();
   const skipNextSearchRef = useRef(false);
+
+  // Job query search effect
   useEffect(() => {
     const query = targetJob.trim();
 
@@ -72,20 +73,65 @@ export default function ResumeUploadPage() {
     return () => window.clearTimeout(timer);
   }, [targetJob, token]);
 
+  // Auth synchronization effect with Direct Fetch Fallback
   useEffect(() => {
-  console.log("LOG 1: User object received from AuthContext:", user);
-  if (user && (user as any).scans_remaining !== undefined) {
-    console.log("LOG 2: Setting local scansRemaining state to:", (user as any).scans_remaining);
-    setScansRemaining((user as any).scans_remaining);
-  }
-}, [user]);
+    console.log("LOG 1: User object received from AuthContext:", user);
+    
+    if (!user) return;
+
+    // Hard Override: If localStorage shows they just used their last scan on this device, lock it at 0
+    const forceLock = localStorage.getItem(`lock_scans_user_${(user as any).id}`);
+    if (forceLock === "true") {
+      console.log("LOG 2 (Safety Lock): Enforcing local limit lock down to 0.");
+      setScansRemaining(0);
+      return;
+    }
+
+    if ((user as any).scans_remaining !== undefined && (user as any).scans_remaining !== null) {
+      console.log("LOG 2: Setting local scansRemaining state to:", (user as any).scans_remaining);
+      setScansRemaining((user as any).scans_remaining);
+    } else {
+      const fetchFreshCredits = async () => {
+        try {
+          const storedToken = localStorage.getItem("token") || sessionStorage.getItem("token") || token;
+          if (!storedToken) return;
+
+          const response = await fetch("http://localhost:5001/api/users/me", {
+            headers: {
+              "Authorization": `Bearer ${storedToken}`,
+              "Accept": "application/json"
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const trueScans = data.user?.scans_remaining;
+            
+            if (trueScans !== undefined && trueScans !== null) {
+              // Re-verify the local storage lock rule inside the async block
+              if (localStorage.getItem(`lock_scans_user_${(user as any).id}`) === "true") {
+                setScansRemaining(0);
+              } else {
+                console.log("LOG 2 (Direct Fetch API): Setting local scansRemaining state to:", trueScans);
+                setScansRemaining(trueScans);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch fresh user credits context:", err);
+        }
+      };
+
+      fetchFreshCredits(); 
+    }
+  }, [user, token]);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileSelection(e.dataTransfer.files[0]);
     }
@@ -99,7 +145,6 @@ export default function ResumeUploadPage() {
 
   const handleFileSelection = (selectedFile: File) => {
     setError("");
-
     const validTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -130,7 +175,6 @@ export default function ResumeUploadPage() {
   const handleUpload = async () => {
     setShowSuggestions(false);
     setJobSuggestions([]);
-
     
     if (!file || !targetJob.trim()) return;
 
@@ -141,12 +185,10 @@ export default function ResumeUploadPage() {
 
     const isFreeTier = !user || (user as any).subscription_tier === 'free';
   
-  if (isFreeTier && scansRemaining <= 0) {
-    // This sets the red text you see above the upload box
-    setError("You've used your 2 free scans. Upgrade to Pro for unlimited access!");
-    setIsUploading(false); // Ensure the loading state is turned off
-    return; // This stops the code from even TRYING to scan
-  }
+    if (isFreeTier && scansRemaining <= 0) {
+      setError("You've used all your free scans! Upgrade to Pro for unlimited access.");
+      return;
+    }
 
     const resumeReviewFormData = buildResumeReviewFormData({
       resume: file,
@@ -163,7 +205,6 @@ export default function ResumeUploadPage() {
 
     try {
       const res = await postResumeReview(resumeReviewFormData, token);
-
       const data = (await res.json().catch(() => ({}))) as {
         status?: string;
         message?: string;
@@ -171,21 +212,24 @@ export default function ResumeUploadPage() {
       };
 
       if (!res.ok) {
-        setError(
-          typeof data.message === "string"
-            ? data.message
-            : "Review failed. Try again."
-        );
+        setError(typeof data.message === "string" ? data.message : "Review failed. Try again.");
         setIsUploading(false);
         return;
       }
 
       if (data.status === "ok" && data.analysis != null) {
         console.log("LOG 3: Scan successful! Deducting 1 from local state.");
+        
+        // If they had 1 scan left, this scan drops them to 0. Lock it on this machine.
+        if (scansRemaining <= 1 && user) {
+          localStorage.setItem(`lock_scans_user_${(user as any).id}`, "true");
+        }
+
         setScansRemaining(prev => {
           console.log("LOG 4: Local state was:", prev, "now setting to:", prev - 1);
           return prev - 1;
         });
+
         router.push("/resume/feedback");
         return;
       }
@@ -250,31 +294,58 @@ export default function ResumeUploadPage() {
         </CardHeader>
 
         <CardContent>
+          {/* Temporary Payment Wall Prompt Banner */}
+          {scansRemaining <= 0 && (
+            <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 flex flex-col space-y-2">
+              <div className="flex items-center space-x-2 font-semibold">
+                <CreditCard className="w-5 h-5 flex-shrink-0" />
+                <span>Free Scan Limit Reached</span>
+              </div>
+              <p className="text-sm opacity-90">
+                You have used all of your free tokens. Upgrade to a Pro membership plan to unlock unlimited resume assessments and premium keyword analytics.
+              </p>
+              <Button 
+                size="sm" 
+                className="bg-amber-600 hover:bg-amber-700 text-white font-medium mt-1 w-full sm:w-auto self-start"
+                onClick={() => alert("Payment gateway integration coming soon!")}
+              >
+                Upgrade to Pro Plan
+              </Button>
+            </div>
+          )}
+
           {!file ? (
             <div
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-                error
-                  ? "border-red-400 bg-red-50 dark:bg-red-900/10"
-                  : "border-slate-300 hover:border-blue-500 hover:bg-blue-50 dark:border-slate-700 dark:hover:border-blue-500 dark:hover:bg-slate-800"
-              }`}
+              onClick={() => {
+                if (scansRemaining > 0) fileInputRef.current?.click();
+              }}
+              className={cn(
+                "border-2 border-dashed rounded-xl p-12 text-center transition-colors",
+                scansRemaining <= 0 
+                  ? "border-slate-200 bg-slate-100/50 cursor-not-allowed dark:border-slate-800 dark:bg-slate-900/20" 
+                  : error
+                    ? "border-red-400 bg-red-50 dark:bg-red-900/10 cursor-pointer"
+                    : "border-slate-300 hover:border-blue-500 hover:bg-blue-50 dark:border-slate-700 dark:hover:border-blue-500 dark:hover:bg-slate-800 cursor-pointer"
+              )}
             >
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleChange}
                 className="hidden"
+                disabled={scansRemaining <= 0}
                 accept=".pdf,.docx"
               />
               <UploadCloud
-                className={`mx-auto h-12 w-12 mb-4 ${
-                  error ? "text-red-400" : "text-blue-500"
-                }`}
+                className={cn(
+                  "mx-auto h-12 w-12 mb-4",
+                  scansRemaining <= 0 ? "text-slate-400" : error ? "text-red-400" : "text-blue-500"
+                )}
               />
               <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">
-                Click to upload or drag and drop
+                {scansRemaining <= 0 ? "Upload Disabled" : "Click to upload or drag and drop"}
               </p>
               {error && (
                 <p className="text-sm text-red-500 mt-2 flex items-center justify-center">
@@ -321,12 +392,13 @@ export default function ResumeUploadPage() {
                 id="resume-target-job"
                 type="text"
                 value={targetJob}
+                disabled={scansRemaining <= 0}
                 onChange={(e) => {
                   setTargetJob(e.target.value);
                   setSelectedJobUri("");
                 }}
                 onFocus={() => {
-                  if (jobSuggestions.length > 0) {
+                  if (jobSuggestions.length > 0 && scansRemaining > 0) {
                     setShowSuggestions(true);
                   }
                 }}
@@ -335,7 +407,7 @@ export default function ResumeUploadPage() {
                     setShowSuggestions(false);
                   }, 150);
                 }}
-                placeholder="Start typing, e.g. frontend developer"
+                placeholder={scansRemaining <= 0 ? "Upgrade to search rules" : "Start typing, e.g. frontend developer"}
                 autoComplete="off"
                 className="pr-10"
               />
@@ -348,7 +420,7 @@ export default function ResumeUploadPage() {
               </p>
             )}
 
-            {showSuggestions && (
+            {showSuggestions && scansRemaining > 0 && (
               <div className="absolute top-[72px] left-0 right-0 z-30 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
                 {jobSuggestions.map((job) => (
                   <button
@@ -370,11 +442,6 @@ export default function ResumeUploadPage() {
                 ))}
               </div>
             )}
-
-            <p className="text-xs text-slate-500">
-              Search powered by ESCO occupation data. You can also type your own
-              role if no suggestion matches.
-            </p>
           </div>
 
           <div className="mt-6 flex flex-col space-y-2">
@@ -390,6 +457,7 @@ export default function ResumeUploadPage() {
             <textarea
               id="resume-job-description"
               value={targetJobDescription}
+              disabled={scansRemaining <= 0}
               onChange={(e) => setTargetJobDescription(e.target.value)}
               rows={4}
               placeholder="Paste or type a short job description to align feedback with the posting."
@@ -397,39 +465,27 @@ export default function ResumeUploadPage() {
                 "flex min-h-[88px] w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-blue-500"
               )}
             />
-            <p className="text-xs text-slate-500">
-              Optional context from the job posting helps tailor keywords and
-              suggestions.
-            </p>
           </div>
         </CardContent>  
 
-       <CardFooter>
-        <Button
-          className="w-full h-12"
-          onClick={handleUpload}
-          // Use (user as any) to clear the red underlines
-          disabled={
-            !file || 
-            !targetJob.trim() || 
-            isUploading || 
-            (scansRemaining <= 0 && (user as any)?.subscription_tier === 'free')
-          }
-        >
-          {isUploading ? "Processing..." : 
-            (scansRemaining <= 0 && (user as any)?.subscription_tier === 'free') ? 
-            "Limit Reached (Upgrade to Pro)" : 
-            `Generate AI Review (${scansRemaining} left)`}
-        </Button>
-      </CardFooter>
+        <CardFooter>
+          <Button
+            className="w-full h-12"
+            onClick={handleUpload}
+            disabled={
+              !file || 
+              !targetJob.trim() || 
+              isUploading || 
+              scansRemaining <= 0
+            }
+          >
+            {isUploading ? "Processing..." : 
+              scansRemaining <= 0 ? 
+              "Limit Reached (Upgrade to Pro)" : 
+              `Generate AI Review (${scansRemaining} left)`}
+          </Button>
+        </CardFooter>
       </Card>
-
-      {!isAuthenticated && (
-        <p className="mt-6 text-sm text-slate-500 text-center max-w-md">
-          You are not logged in. You will be redirected to the login page before
-          the review can be generated.
-        </p>
-      )}
     </div>
   );
 }
