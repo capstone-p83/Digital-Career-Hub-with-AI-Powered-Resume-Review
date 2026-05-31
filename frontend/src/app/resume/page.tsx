@@ -15,6 +15,7 @@ import {
 import { UploadCloud, File, X, AlertCircle, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { cn } from "../../lib/utils";
 import {
   buildResumeReviewFormData,
@@ -24,6 +25,8 @@ import {
 import { searchJobTitles, type JobSuggestion } from "../../lib/jobSearch";
 
 export default function ResumeUploadPage() {
+  const { t } = useLanguage();
+
   const [file, setFile] = useState<File | null>(null);
   const [targetJob, setTargetJob] = useState("");
   const [targetJobDescription, setTargetJobDescription] = useState("");
@@ -39,6 +42,7 @@ export default function ResumeUploadPage() {
   const router = useRouter();
   const { isAuthenticated, token } = useAuth();
   const skipNextSearchRef = useRef(false);
+
   useEffect(() => {
     const query = targetJob.trim();
 
@@ -98,12 +102,12 @@ export default function ResumeUploadPage() {
     ];
 
     if (!validTypes.includes(selectedFile.type)) {
-      setError("Please upload a PDF or DOCX file.");
+      setError(t("resume.errorFileType"));
       return;
     }
 
     if (selectedFile.size > 5 * 1024 * 1024) {
-      setError("File size should not exceed 5MB.");
+      setError(t("resume.errorFileSize"));
       return;
     }
 
@@ -155,7 +159,7 @@ export default function ResumeUploadPage() {
         setError(
           typeof data.message === "string"
             ? data.message
-            : "Review failed. Try again."
+            : t("resume.errorReviewFailed")
         );
         setIsUploading(false);
         return;
@@ -171,10 +175,10 @@ export default function ResumeUploadPage() {
         return;
       }
 
-      setError("Unexpected response from server.");
+      setError(t("resume.errorUnexpected"));
       setIsUploading(false);
     } catch {
-      setError("Network error. Check your connection and API URL.");
+      setError(t("resume.errorNetwork"));
       setIsUploading(false);
     }
   };
@@ -183,11 +187,10 @@ export default function ResumeUploadPage() {
     <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
       <div className="max-w-2xl w-full text-center mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">
-          AI Resume Review
+          {t("resume.title")}
         </h1>
         <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-          Upload your resume and get intelligent, actionable feedback to
-          increase your chances of landing an interview.
+          {t("resume.subtitle")}
         </p>
       </div>
 
@@ -200,9 +203,7 @@ export default function ResumeUploadPage() {
               className="absolute inset-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 rounded-xl"
             >
               <div className="w-full max-w-xs space-y-4 text-center">
-                <p className="font-medium">
-                  Uploading and analyzing your resume…
-                </p>
+                <p className="font-medium">{t("resume.uploading")}</p>
                 <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-blue-600"
@@ -215,19 +216,15 @@ export default function ResumeUploadPage() {
                     }}
                   />
                 </div>
-                <p className="text-xs text-slate-500">
-                  This may take a moment.
-                </p>
+                <p className="text-xs text-slate-500">{t("resume.wait")}</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         <CardHeader>
-          <CardTitle>Upload Document</CardTitle>
-          <CardDescription>
-            Supported formats: PDF, DOCX (Max 5MB)
-          </CardDescription>
+          <CardTitle>{t("resume.uploadDocument")}</CardTitle>
+          <CardDescription>{t("resume.supportedFormats")}</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -255,7 +252,7 @@ export default function ResumeUploadPage() {
                 }`}
               />
               <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">
-                Click to upload or drag and drop
+                {t("resume.clickUpload")}
               </p>
               {error && (
                 <p className="text-sm text-red-500 mt-2 flex items-center justify-center">
@@ -282,7 +279,7 @@ export default function ResumeUploadPage() {
               <button
                 onClick={() => setFile(null)}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                title="Remove file"
+                title={t("resume.removeFile")}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -294,7 +291,7 @@ export default function ResumeUploadPage() {
               htmlFor="resume-target-job"
               className="text-sm font-medium text-slate-700 dark:text-slate-300"
             >
-              Target job role
+              {t("resume.targetJobRole")}
             </label>
 
             <div className="relative">
@@ -316,7 +313,7 @@ export default function ResumeUploadPage() {
                     setShowSuggestions(false);
                   }, 150);
                 }}
-                placeholder="Start typing, e.g. frontend developer"
+                placeholder={t("resume.targetJobPlaceholder")}
                 autoComplete="off"
                 className="pr-10"
               />
@@ -325,7 +322,7 @@ export default function ResumeUploadPage() {
 
             {isSearchingJobs && (
               <p className="text-xs text-slate-500">
-                Searching ESCO occupations…
+                {t("resume.searching")}
               </p>
             )}
 
@@ -353,8 +350,7 @@ export default function ResumeUploadPage() {
             )}
 
             <p className="text-xs text-slate-500">
-              Search powered by ESCO occupation data. You can also type your own
-              role if no suggestion matches.
+              {t("resume.escoHint")}
             </p>
           </div>
 
@@ -363,9 +359,9 @@ export default function ResumeUploadPage() {
               htmlFor="resume-job-description"
               className="text-sm font-medium text-slate-700 dark:text-slate-300"
             >
-              Job description{" "}
+              {t("resume.jobDescription")}{" "}
               <span className="font-normal text-slate-500 dark:text-slate-400">
-                (optional)
+                ({t("resume.optional")})
               </span>
             </label>
             <textarea
@@ -373,14 +369,13 @@ export default function ResumeUploadPage() {
               value={targetJobDescription}
               onChange={(e) => setTargetJobDescription(e.target.value)}
               rows={4}
-              placeholder="Paste or type a short job description to align feedback with the posting."
+              placeholder={t("resume.jobDescriptionPlaceholder")}
               className={cn(
                 "flex min-h-[88px] w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-blue-500"
               )}
             />
             <p className="text-xs text-slate-500">
-              Optional context from the job posting helps tailor keywords and
-              suggestions.
+              {t("resume.jobDescriptionHint")}
             </p>
           </div>
         </CardContent>
@@ -391,15 +386,14 @@ export default function ResumeUploadPage() {
             onClick={handleUpload}
             disabled={!file || !targetJob.trim() || isUploading}
           >
-            {isUploading ? "Processing..." : "Generate AI Review"}
+            {isUploading ? t("resume.processing") : t("resume.generateReview")}
           </Button>
         </CardFooter>
       </Card>
 
       {!isAuthenticated && (
         <p className="mt-6 text-sm text-slate-500 text-center max-w-md">
-          You are not logged in. You will be redirected to the login page before
-          the review can be generated.
+          {t("resume.loginNotice")}
         </p>
       )}
     </div>

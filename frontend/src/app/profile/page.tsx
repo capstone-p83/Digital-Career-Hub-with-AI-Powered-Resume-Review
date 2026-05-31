@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 type ProfileData = {
   id?: string | number;
@@ -23,6 +24,7 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const { user, token, isAuthenticated, isLoading } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export default function ProfilePage() {
         setError("");
 
         if (!token) {
-          setError("No token provided");
+          setError(t("profile.noToken"));
           return;
         }
 
@@ -49,12 +51,12 @@ export default function ProfilePage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || "Failed to load profile");
+          throw new Error(data.message || t("profile.failedLoad"));
         }
 
         setProfile(data.user);
       } catch (err: any) {
-        setError(err.message || "Failed to load profile");
+        setError(err.message || t("profile.failedLoad"));
       } finally {
         setLoading(false);
       }
@@ -63,14 +65,14 @@ export default function ProfilePage() {
     if (!isLoading) {
       fetchProfile();
     }
-  }, [token, isLoading]);
+  }, [token, isLoading, t]);
 
   if (isLoading || loading) {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
         <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            Loading profile...
+            {t("profile.loading")}
           </div>
         </div>
       </main>
@@ -82,7 +84,7 @@ export default function ProfilePage() {
       <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
         <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
-            Please log in to view your profile.
+            {t("profile.loginRequired")}
           </div>
         </div>
       </main>
@@ -95,10 +97,10 @@ export default function ProfilePage() {
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-              My Profile
+              {t("profile.title")}
             </h1>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-              View your account information.
+              {t("profile.subtitle")}
             </p>
           </div>
 
@@ -106,7 +108,7 @@ export default function ProfilePage() {
             href="/profile/edit"
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
           >
-            Edit Profile
+            {t("profile.editProfile")}
           </Link>
         </div>
 
@@ -120,54 +122,54 @@ export default function ProfilePage() {
           <div className="grid gap-4">
             <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Email
+                {t("profile.email")}
               </p>
               <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
-                {profile?.email || user?.email || "Not set"}
+                {profile?.email || user?.email || t("profile.notSet")}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  First Name
+                  {t("profile.firstName")}
                 </p>
                 <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
-                  {profile?.profile?.first_name || "Not set"}
+                  {profile?.profile?.first_name || t("profile.notSet")}
                 </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Last Name
+                  {t("profile.lastName")}
                 </p>
                 <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
-                  {profile?.profile?.last_name || "Not set"}
+                  {profile?.profile?.last_name || t("profile.notSet")}
                 </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Phone
+                  {t("profile.phone")}
                 </p>
                 <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
-                  {profile?.profile?.phone || "Not set"}
+                  {profile?.profile?.phone || t("profile.notSet")}
                 </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Date of Birth
+                  {t("profile.dateOfBirth")}
                 </p>
                 <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
-                  {profile?.profile?.date_of_birth || "Not set"}
+                  {profile?.profile?.date_of_birth || t("profile.notSet")}
                 </p>
               </div>
             </div>
 
             <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Role
+                {t("profile.role")}
               </p>
               <p className="mt-2 text-base capitalize text-slate-900 dark:text-slate-100">
                 {profile?.role || user?.role || "user"}
@@ -176,21 +178,23 @@ export default function ProfilePage() {
 
             <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Account Status
+                {t("profile.accountStatus")}
               </p>
               <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
-                {profile?.is_active ? "Active" : "Deactivated"}
+                {profile?.is_active
+                  ? t("profile.active")
+                  : t("profile.deactivated")}
               </p>
             </div>
 
             <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/40">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Created At
+                {t("profile.createdAt")}
               </p>
               <p className="mt-2 text-base text-slate-900 dark:text-slate-100">
                 {profile?.created_at
                   ? new Date(profile.created_at).toLocaleString()
-                  : "Not available"}
+                  : t("profile.notAvailable")}
               </p>
             </div>
           </div>

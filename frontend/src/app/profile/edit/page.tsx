@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
+import { useLanguage } from "../../../context/LanguageContext";
 
 type ProfileFormData = {
   email: string;
@@ -22,7 +23,9 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 export default function EditProfilePage() {
+  const { t } = useLanguage();
   const router = useRouter();
+
   const {
     token,
     user,
@@ -65,7 +68,7 @@ export default function EditProfilePage() {
         setProfileError("");
 
         if (!token) {
-          setProfileError("No token provided");
+          setProfileError(t("editProfile.noToken"));
           return;
         }
 
@@ -79,7 +82,7 @@ export default function EditProfilePage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || "Failed to load profile");
+          throw new Error(data.message || t("editProfile.failedLoadProfile"));
         }
 
         setProfileForm({
@@ -90,7 +93,7 @@ export default function EditProfilePage() {
           date_of_birth: data.user?.profile?.date_of_birth || "",
         });
       } catch (err: any) {
-        setProfileError(err.message || "Failed to load profile");
+        setProfileError(err.message || t("editProfile.failedLoadProfile"));
       } finally {
         setLoading(false);
       }
@@ -99,7 +102,7 @@ export default function EditProfilePage() {
     if (!isLoading) {
       fetchProfile();
     }
-  }, [token, isLoading]);
+  }, [token, isLoading, t]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -128,13 +131,13 @@ export default function EditProfilePage() {
       setProfileSuccess("");
 
       if (!token) {
-        throw new Error("No token provided");
+        throw new Error(t("editProfile.noToken"));
       }
 
       const trimmedEmail = profileForm.email.trim();
 
       if (!trimmedEmail) {
-        throw new Error("Email is required");
+        throw new Error(t("editProfile.emailRequired"));
       }
 
       const res = await fetch(`${API_BASE_URL}/users/me`, {
@@ -155,7 +158,7 @@ export default function EditProfilePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to update profile");
+        throw new Error(data.message || t("editProfile.failedUpdateProfile"));
       }
 
       if (data.user && data.token) {
@@ -164,9 +167,9 @@ export default function EditProfilePage() {
         await fetchCurrentUser();
       }
 
-      setProfileSuccess("Profile updated successfully");
+      setProfileSuccess(t("editProfile.profileUpdated"));
     } catch (err: any) {
-      setProfileError(err.message || "Failed to update profile");
+      setProfileError(err.message || t("editProfile.failedUpdateProfile"));
     } finally {
       setProfileSubmitting(false);
     }
@@ -181,7 +184,7 @@ export default function EditProfilePage() {
       setPasswordSuccess("");
 
       if (!token) {
-        throw new Error("No token provided");
+        throw new Error(t("editProfile.noToken"));
       }
 
       if (
@@ -189,15 +192,15 @@ export default function EditProfilePage() {
         !passwordForm.newPassword ||
         !passwordForm.confirmPassword
       ) {
-        throw new Error("Please fill in all password fields");
+        throw new Error(t("editProfile.fillPasswordFields"));
       }
 
       if (passwordForm.newPassword.length < 8) {
-        throw new Error("New password must be at least 8 characters");
+        throw new Error(t("editProfile.passwordMinLength"));
       }
 
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-        throw new Error("New passwords do not match");
+        throw new Error(t("editProfile.passwordsDoNotMatch"));
       }
 
       const res = await fetch(`${API_BASE_URL}/users/update-password`, {
@@ -215,26 +218,24 @@ export default function EditProfilePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to update password");
+        throw new Error(data.message || t("editProfile.failedUpdatePassword"));
       }
 
-      setPasswordSuccess("Password updated successfully");
+      setPasswordSuccess(t("editProfile.passwordUpdated"));
       setPasswordForm({
         oldPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
     } catch (err: any) {
-      setPasswordError(err.message || "Failed to update password");
+      setPasswordError(err.message || t("editProfile.failedUpdatePassword"));
     } finally {
       setPasswordSubmitting(false);
     }
   };
 
   const handleDeactivateAccount = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to deactivate your account?"
-    );
+    const confirmed = window.confirm(t("editProfile.confirmDeactivate"));
 
     if (!confirmed) {
       return;
@@ -245,7 +246,7 @@ export default function EditProfilePage() {
       await deactivateOwnAccount();
       router.replace("/login");
     } catch (err: any) {
-      setProfileError(err.message || "Failed to deactivate account");
+      setProfileError(err.message || t("editProfile.failedDeactivate"));
     } finally {
       setDeactivateSubmitting(false);
     }
@@ -256,7 +257,7 @@ export default function EditProfilePage() {
       <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
         <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            Loading profile...
+            {t("editProfile.loading")}
           </div>
         </div>
       </main>
@@ -268,7 +269,7 @@ export default function EditProfilePage() {
       <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
         <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
-            Please log in to edit your profile.
+            {t("editProfile.loginRequired")}
           </div>
         </div>
       </main>
@@ -280,16 +281,16 @@ export default function EditProfilePage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Edit Profile
+            {t("editProfile.title")}
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Update your account information.
+            {t("editProfile.subtitle")}
           </p>
 
           <form onSubmit={handleProfileSubmit} className="mt-8 space-y-5">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Email
+                {t("editProfile.email")}
               </label>
               <input
                 name="email"
@@ -303,7 +304,7 @@ export default function EditProfilePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  First Name
+                  {t("editProfile.firstName")}
                 </label>
                 <input
                   name="first_name"
@@ -316,7 +317,7 @@ export default function EditProfilePage() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Last Name
+                  {t("editProfile.lastName")}
                 </label>
                 <input
                   name="last_name"
@@ -330,7 +331,7 @@ export default function EditProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Phone
+                {t("editProfile.phone")}
               </label>
               <input
                 name="phone"
@@ -343,7 +344,7 @@ export default function EditProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Date of Birth
+                {t("editProfile.dateOfBirth")}
               </label>
               <input
                 name="date_of_birth"
@@ -356,7 +357,7 @@ export default function EditProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Role
+                {t("editProfile.role")}
               </label>
               <input
                 type="text"
@@ -384,7 +385,9 @@ export default function EditProfilePage() {
                 disabled={profileSubmitting}
                 className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
               >
-                {profileSubmitting ? "Saving..." : "Save Profile"}
+                {profileSubmitting
+                  ? t("editProfile.saving")
+                  : t("editProfile.saveProfile")}
               </button>
 
               <button
@@ -392,7 +395,7 @@ export default function EditProfilePage() {
                 onClick={() => router.push("/profile")}
                 className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Back
+                {t("editProfile.back")}
               </button>
             </div>
           </form>
@@ -400,10 +403,10 @@ export default function EditProfilePage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Change Password
+            {t("editProfile.changePassword")}
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Update your account password.
+            {t("editProfile.changePasswordDesc")}
           </p>
 
           <form onSubmit={handlePasswordSubmit} className="mt-8 space-y-5">
@@ -412,7 +415,7 @@ export default function EditProfilePage() {
               type="password"
               value={passwordForm.oldPassword}
               onChange={handlePasswordChange}
-              placeholder="Current password"
+              placeholder={t("editProfile.currentPassword")}
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
             />
 
@@ -421,7 +424,7 @@ export default function EditProfilePage() {
               type="password"
               value={passwordForm.newPassword}
               onChange={handlePasswordChange}
-              placeholder="New password"
+              placeholder={t("editProfile.newPassword")}
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
             />
 
@@ -430,7 +433,7 @@ export default function EditProfilePage() {
               type="password"
               value={passwordForm.confirmPassword}
               onChange={handlePasswordChange}
-              placeholder="Confirm new password"
+              placeholder={t("editProfile.confirmNewPassword")}
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
             />
 
@@ -451,17 +454,19 @@ export default function EditProfilePage() {
               disabled={passwordSubmitting}
               className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
             >
-              {passwordSubmitting ? "Updating..." : "Update Password"}
+              {passwordSubmitting
+                ? t("editProfile.updating")
+                : t("editProfile.updatePassword")}
             </button>
           </form>
         </div>
 
         <div className="rounded-2xl border border-red-200 bg-white p-8 shadow-sm dark:border-red-900/40 dark:bg-slate-900">
           <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
-            Deactivate Account
+            {t("editProfile.deactivateAccount")}
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Your account will be deactivated, not permanently deleted.
+            {t("editProfile.deactivateDesc")}
           </p>
 
           <button
@@ -470,7 +475,9 @@ export default function EditProfilePage() {
             disabled={deactivateSubmitting}
             className="mt-6 rounded-lg bg-red-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {deactivateSubmitting ? "Deactivating..." : "Deactivate My Account"}
+            {deactivateSubmitting
+              ? t("editProfile.deactivating")
+              : t("editProfile.deactivateMyAccount")}
           </button>
         </div>
       </div>

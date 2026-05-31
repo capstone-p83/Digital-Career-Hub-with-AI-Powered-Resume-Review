@@ -27,6 +27,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../context/AuthContext";
+import { useLanguage } from "../../../context/LanguageContext";
 import {
   RESUME_REVIEW_STORAGE_KEY,
   getResumeFeedbackById,
@@ -65,12 +66,6 @@ function isResumeReviewAnalysis(x: unknown): x is ResumeReviewAnalysis {
   );
 }
 
-function scoreHeadline(score: number): string {
-  if (score >= 85) return "Strong resume";
-  if (score >= 70) return "Solid foundation";
-  return "Room to grow";
-}
-
 function getConfidenceStyle(confidence: string): string {
   const value = confidence.toLowerCase();
 
@@ -91,6 +86,7 @@ function formatDate(value?: string) {
 }
 
 export default function ResumeFeedbackPage() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const requestedFeedbackId = searchParams.get("id");
 
@@ -102,6 +98,13 @@ export default function ResumeFeedbackPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [showFullJobDescription, setShowFullJobDescription] = useState(false);
+
+  const scoreHeadline = (score: number): string => {
+    if (score >= 85) return t("feedback.strongResume");
+    if (score >= 70) return t("feedback.solidFoundation");
+    return t("feedback.roomToGrow");
+  };
+
   const loadFeedbackDetail = useCallback(
     async (feedbackId: number) => {
       try {
@@ -116,7 +119,7 @@ export default function ResumeFeedbackPage() {
           setError(
             typeof data.message === "string"
               ? data.message
-              : "Could not load feedback details."
+              : t("feedback.couldNotLoadDetails")
           );
           return;
         }
@@ -129,18 +132,17 @@ export default function ResumeFeedbackPage() {
             JSON.stringify(data.analysis)
           );
         }
+
         setShowFullJobDescription(false);
       } catch {
-        setError("Network error. Could not load feedback details.");
+        setError(t("feedback.networkLoadError"));
       }
     },
-    [token]
+    [token, t]
   );
 
   async function handleDeleteFeedback(feedbackId: number) {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this feedback record?"
-    );
+    const confirmed = window.confirm(t("feedback.confirmDelete"));
 
     if (!confirmed) return;
 
@@ -149,7 +151,7 @@ export default function ResumeFeedbackPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.message || "Failed to delete feedback.");
+        setError(data.message || t("feedback.failedDelete"));
         return;
       }
 
@@ -171,9 +173,10 @@ export default function ResumeFeedbackPage() {
         }
       }
     } catch {
-      setError("Network error. Could not delete feedback.");
+      setError(t("feedback.networkDeleteError"));
     }
   }
+
   useEffect(() => {
     async function loadInitialData() {
       if (!isAuthenticated) {
@@ -216,19 +219,19 @@ export default function ResumeFeedbackPage() {
           }
         }
       } catch {
-        setError("Could not load resume feedback.");
+        setError(t("feedback.couldNotLoadFeedback"));
       } finally {
         setReady(true);
       }
     }
 
     loadInitialData();
-  }, [isAuthenticated, token, requestedFeedbackId, loadFeedbackDetail]);
+  }, [isAuthenticated, token, requestedFeedbackId, loadFeedbackDetail, t]);
 
   if (!ready) {
     return (
       <div className="flex-1 flex items-center justify-center py-24 px-4 text-slate-500 dark:text-slate-400">
-        Loading results…
+        {t("feedback.loadingResults")}
       </div>
     );
   }
@@ -237,11 +240,11 @@ export default function ResumeFeedbackPage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-24 px-4 bg-slate-50 dark:bg-slate-900 text-center">
         <p className="text-slate-700 dark:text-slate-300 mb-2 max-w-md">
-          No review results found. Generate a review from the upload page first.
+          {t("feedback.noResults")}
         </p>
         {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
         <Link href="/resume">
-          <Button>Go to resume upload</Button>
+          <Button>{t("feedback.goToUpload")}</Button>
         </Link>
       </div>
     );
@@ -257,7 +260,7 @@ export default function ResumeFeedbackPage() {
               className="pl-0 hover:bg-transparent -ml-2 text-slate-500 hover:text-slate-900 dark:hover:text-white"
             >
               <ArrowLeft className="mr-2 w-4 h-4" />
-              Back to Upload
+              {t("feedback.backToUpload")}
             </Button>
           </Link>
 
@@ -265,17 +268,17 @@ export default function ResumeFeedbackPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => alert("Share to LinkedIn will be implemented later.")}
+              onClick={() => alert(t("feedback.shareLater"))}
             >
               <Share2 className="mr-2 w-4 h-4" />
-              Share
+              {t("feedback.share")}
             </Button>
             <Button
               size="sm"
-              onClick={() => alert("Export PDF will be implemented later.")}
+              onClick={() => alert(t("feedback.exportLater"))}
             >
               <Download className="mr-2 w-4 h-4" />
-              Export PDF
+              {t("feedback.exportPdf")}
             </Button>
           </div>
         </div>
@@ -291,12 +294,14 @@ export default function ResumeFeedbackPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center">
                 <History className="mr-2 w-5 h-5 text-blue-600" />
-                Resume Feedback History
+                {t("feedback.historyTitle")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {history.length === 0 ? (
-                <p className="text-sm text-slate-500">No history found.</p>
+                <p className="text-sm text-slate-500">
+                  {t("feedback.noHistory")}
+                </p>
               ) : (
                 history.map((item) => {
                   const isActive = selectedId === item.feedback_id;
@@ -333,7 +338,7 @@ export default function ResumeFeedbackPage() {
                           type="button"
                           onClick={() => handleDeleteFeedback(item.feedback_id)}
                           className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                          title="Delete feedback"
+                          title={t("feedback.deleteFeedback")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -350,13 +355,13 @@ export default function ResumeFeedbackPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center">
                   <Briefcase className="mr-2 w-5 h-5 text-blue-600" />
-                  Target Position
+                  {t("feedback.targetPosition")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">
-                    Target Job Role
+                    {t("feedback.targetJobRole")}
                   </p>
                   <p className="text-base font-semibold text-slate-900 dark:text-white">
                     {analysis.target_job_role}
@@ -366,7 +371,7 @@ export default function ResumeFeedbackPage() {
                 {analysis.target_job_description ? (
                   <div>
                     <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Target Job Description
+                      {t("feedback.targetJobDescription")}
                     </p>
 
                     <p
@@ -383,17 +388,16 @@ export default function ResumeFeedbackPage() {
                         onClick={() => setShowFullJobDescription((prev) => !prev)}
                         className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                       >
-                        {showFullJobDescription ? "Show less" : "Show full description"}
+                        {showFullJobDescription
+                          ? t("feedback.showLess")
+                          : t("feedback.showFullDescription")}
                       </button>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
                     <Info className="w-4 h-4 mt-0.5 shrink-0" />
-                    <p>
-                      No detailed job description was provided. The analysis is based on common
-                      industry requirements for this target role.
-                    </p>
+                    <p>{t("feedback.noJobDescription")}</p>
                   </div>
                 )}
               </CardContent>
@@ -456,26 +460,28 @@ export default function ResumeFeedbackPage() {
                       analysis.confidence
                     )}`}
                   >
-                    Confidence: {analysis.confidence}
+                    {t("feedback.confidence")}: {analysis.confidence}
                   </span>
                 </Card>
               </motion.div>
 
               <div className="col-span-1 md:col-span-2 grid grid-rows-2 gap-6">
                 <FeedbackListCard
-                  title="Strengths"
+                  title={t("feedback.strengths")}
                   icon={<CheckCircle2 className="mr-2 w-5 h-5" />}
                   titleClass="text-emerald-600 dark:text-emerald-500"
                   bulletClass="text-emerald-500"
                   items={analysis.strengths}
+                  emptyText={t("feedback.noneListed")}
                 />
 
                 <FeedbackListCard
-                  title="Areas for Improvement"
+                  title={t("feedback.areasForImprovement")}
                   icon={<AlertCircle className="mr-2 w-5 h-5" />}
                   titleClass="text-red-600 dark:text-red-500"
                   bulletClass="text-red-500"
                   items={analysis.areas_for_improvement}
+                  emptyText={t("feedback.noneListed")}
                 />
               </div>
             </div>
@@ -484,13 +490,13 @@ export default function ResumeFeedbackPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center text-amber-700 dark:text-amber-400">
                   <Info className="mr-2 w-5 h-5" />
-                  Evaluation Notes
+                  {t("feedback.evaluationNotes")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div>
                   <p className="font-medium text-slate-900 dark:text-white">
-                    Evaluation Basis
+                    {t("feedback.evaluationBasis")}
                   </p>
                   <p className="text-slate-600 dark:text-slate-300">
                     {analysis.evaluation_basis}
@@ -510,7 +516,7 @@ export default function ResumeFeedbackPage() {
                 {analysis.missing_resume_sections.length > 0 && (
                   <div>
                     <p className="font-medium text-slate-900 dark:text-white">
-                      Missing Resume Sections
+                      {t("feedback.missingResumeSections")}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {analysis.missing_resume_sections.map((item, i) => (
@@ -526,13 +532,13 @@ export default function ResumeFeedbackPage() {
                 )}
 
                 {analysis.missing_job_information && (
-                  <WarningBox message="The job description is missing or limited, so the analysis may rely on general industry standards." />
+                  <WarningBox message={t("feedback.missingJobInfoWarning")} />
                 )}
 
                 {analysis.impact_explanation && (
                   <div>
                     <p className="font-medium text-slate-900 dark:text-white">
-                      Impact on Score
+                      {t("feedback.impactOnScore")}
                     </p>
                     <p className="text-slate-600 dark:text-slate-300">
                       {analysis.impact_explanation}
@@ -552,13 +558,15 @@ export default function ResumeFeedbackPage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center text-blue-700 dark:text-blue-400">
                       <Lightbulb className="mr-2 w-5 h-5" />
-                      Actionable Suggestions
+                      {t("feedback.actionableSuggestions")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-4">
                       {analysis.actionable_suggestions.length === 0 ? (
-                        <li className="text-sm text-slate-500">None listed.</li>
+                        <li className="text-sm text-slate-500">
+                          {t("feedback.noneListed")}
+                        </li>
                       ) : (
                         analysis.actionable_suggestions.map((item, i) => (
                           <li
@@ -583,34 +591,36 @@ export default function ResumeFeedbackPage() {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center">
                       <TrendingUp className="mr-2 w-5 h-5 text-purple-600" />
-                      ATS Keyword Analysis
+                      {t("feedback.atsKeywordAnalysis")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <p className="text-sm text-slate-500">
-                      This section compares your resume skills with the target
-                      job requirements.
+                      {t("feedback.atsDescription")}
                     </p>
 
                     <SkillGroup
-                      title="Matched Skills"
-                      description="Required or useful skills found in your resume."
+                      title={t("feedback.matchedSkills")}
+                      description={t("feedback.matchedSkillsDesc")}
                       items={analysis.matched_skills}
                       type="matched"
+                      emptyText={t("feedback.noneListed")}
                     />
 
                     <SkillGroup
-                      title="Missing Skills"
-                      description="Important skills for this role that were not found."
+                      title={t("feedback.missingSkills")}
+                      description={t("feedback.missingSkillsDesc")}
                       items={analysis.missing_skills}
                       type="missing"
+                      emptyText={t("feedback.noneListed")}
                     />
 
                     <SkillGroup
-                      title="Extra Skills / Bonus"
-                      description="Additional skills that may still support your application."
+                      title={t("feedback.extraSkills")}
+                      description={t("feedback.extraSkillsDesc")}
                       items={analysis.extra_skills}
                       type="extra"
+                      emptyText={t("feedback.noneListed")}
                     />
                   </CardContent>
                 </Card>
@@ -629,12 +639,14 @@ function FeedbackListCard({
   titleClass,
   bulletClass,
   items,
+  emptyText,
 }: {
   title: string;
   icon: React.ReactNode;
   titleClass: string;
   bulletClass: string;
   items: string[];
+  emptyText: string;
 }) {
   return (
     <motion.div
@@ -651,7 +663,7 @@ function FeedbackListCard({
         <CardContent className="pt-4">
           <ul className="space-y-2">
             {items.length === 0 ? (
-              <li className="text-sm text-slate-500">None listed.</li>
+              <li className="text-sm text-slate-500">{emptyText}</li>
             ) : (
               items.map((item, i) => (
                 <li key={i} className="flex items-start">
@@ -683,11 +695,13 @@ function SkillGroup({
   description,
   items,
   type,
+  emptyText,
 }: {
   title: string;
   description: string;
   items: string[];
   type: "matched" | "missing" | "extra";
+  emptyText: string;
 }) {
   const styleMap = {
     matched:
@@ -708,7 +722,7 @@ function SkillGroup({
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-slate-500">None listed.</p>
+        <p className="text-sm text-slate-500">{emptyText}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {items.map((item, i) => (

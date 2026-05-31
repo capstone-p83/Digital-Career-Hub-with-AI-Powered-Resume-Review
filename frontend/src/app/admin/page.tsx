@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
@@ -44,6 +45,7 @@ type EditingUserState = {
 } | null;
 
 export default function AdminDashboard() {
+  const { t } = useLanguage();
   const { user, token, isAuthenticated, isAdmin, isLoading } = useAuth();
   const router = useRouter();
 
@@ -76,7 +78,7 @@ export default function AdminDashboard() {
       setPageSuccess("");
 
       if (!token) {
-        throw new Error("No token provided");
+        throw new Error(t("admin.noToken"));
       }
 
       const res = await fetch(`${API_BASE_URL}/admin/users`, {
@@ -89,12 +91,12 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to fetch users");
+        throw new Error(data.message || t("admin.failedFetchUsers"));
       }
 
       setUsers(data.users || []);
     } catch (err: any) {
-      setPageError(err.message || "Failed to fetch users");
+      setPageError(err.message || t("admin.failedFetchUsers"));
     } finally {
       setLoading(false);
     }
@@ -104,6 +106,7 @@ export default function AdminDashboard() {
     if (!isLoading && isAuthenticated && isAdmin) {
       fetchUsers();
     }
+
     if (!isLoading && (!isAuthenticated || !isAdmin)) {
       setLoading(false);
     }
@@ -143,7 +146,7 @@ export default function AdminDashboard() {
     const trimmedEmail = editingUser.email.trim();
 
     if (!trimmedEmail) {
-      setPageError("Email is required");
+      setPageError(t("admin.emailRequired"));
       return;
     }
 
@@ -168,7 +171,7 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to update user");
+        throw new Error(data.message || t("admin.failedUpdateUser"));
       }
 
       setUsers((prev) =>
@@ -182,10 +185,10 @@ export default function AdminDashboard() {
         )
       );
 
-      setPageSuccess("User updated successfully");
+      setPageSuccess(t("admin.userUpdated"));
       setEditingUser(null);
     } catch (err: any) {
-      setPageError(err.message || "Failed to update user");
+      setPageError(err.message || t("admin.failedUpdateUser"));
     } finally {
       setSavingUserId(null);
     }
@@ -195,11 +198,11 @@ export default function AdminDashboard() {
     if (!token) return;
 
     if (user?.id === userId) {
-      setPageError("You cannot deactivate your own admin account from this page.");
+      setPageError(t("admin.cannotDeactivateSelf"));
       return;
     }
 
-    const confirmed = window.confirm("Are you sure you want to deactivate this user?");
+    const confirmed = window.confirm(t("admin.confirmDeactivateUser"));
     if (!confirmed) return;
 
     try {
@@ -217,7 +220,7 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to deactivate user");
+        throw new Error(data.message || t("admin.failedDeactivateUser"));
       }
 
       setUsers((prev) =>
@@ -236,9 +239,9 @@ export default function AdminDashboard() {
         setEditingUser(null);
       }
 
-      setPageSuccess("User deactivated successfully");
+      setPageSuccess(t("admin.userDeactivated"));
     } catch (err: any) {
-      setPageError(err.message || "Failed to deactivate user");
+      setPageError(err.message || t("admin.failedDeactivateUser"));
     } finally {
       setDeletingUserId(null);
     }
@@ -262,7 +265,7 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to restore user");
+        throw new Error(data.message || t("admin.failedRestoreUser"));
       }
 
       setUsers((prev) =>
@@ -277,9 +280,9 @@ export default function AdminDashboard() {
         )
       );
 
-      setPageSuccess("User restored successfully");
+      setPageSuccess(t("admin.userRestored"));
     } catch (err: any) {
-      setPageError(err.message || "Failed to restore user");
+      setPageError(err.message || t("admin.failedRestoreUser"));
     } finally {
       setRestoringUserId(null);
     }
@@ -313,20 +316,20 @@ export default function AdminDashboard() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Admin Panel
+            {t("admin.title")}
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Manage registered users across the platform.
+            {t("admin.subtitle")}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Back to Dashboard
+            {t("admin.backToDashboard")}
           </Button>
           <Button onClick={fetchUsers} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("admin.refresh")}
           </Button>
         </div>
       </div>
@@ -339,7 +342,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                Total Users
+                {t("admin.totalUsers")}
               </p>
               <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {totalUsers}
@@ -355,7 +358,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                Admin Users
+                {t("admin.adminUsers")}
               </p>
               <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {totalAdmins}
@@ -371,7 +374,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                Regular Users
+                {t("admin.regularUsers")}
               </p>
               <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {totalRegularUsers}
@@ -384,7 +387,7 @@ export default function AdminDashboard() {
       <Card>
         <CardHeader className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <CardTitle>All Users</CardTitle>
+            <CardTitle>{t("admin.allUsers")}</CardTitle>
 
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -392,7 +395,7 @@ export default function AdminDashboard() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by id, email, role, status"
+                placeholder={t("admin.searchPlaceholder")}
                 className="w-full rounded-lg border border-slate-300 bg-white px-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-slate-300"
               />
             </div>
@@ -414,11 +417,11 @@ export default function AdminDashboard() {
         <CardContent>
           {loading ? (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              Loading users...
+              {t("admin.loadingUsers")}
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              No users found.
+              {t("admin.noUsersFound")}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -426,11 +429,13 @@ export default function AdminDashboard() {
                 <thead className="border-b border-slate-200 dark:border-slate-800">
                   <tr className="text-slate-500 dark:text-slate-400">
                     <th className="px-4 py-3 font-medium">ID</th>
-                    <th className="px-4 py-3 font-medium">Email</th>
-                    <th className="px-4 py-3 font-medium">Role</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">Created At</th>
-                    <th className="px-4 py-3 font-medium text-right">Actions</th>
+                    <th className="px-4 py-3 font-medium">{t("admin.email")}</th>
+                    <th className="px-4 py-3 font-medium">{t("admin.role")}</th>
+                    <th className="px-4 py-3 font-medium">{t("admin.status")}</th>
+                    <th className="px-4 py-3 font-medium">{t("admin.createdAt")}</th>
+                    <th className="px-4 py-3 font-medium text-right">
+                      {t("admin.actions")}
+                    </th>
                   </tr>
                 </thead>
 
@@ -499,8 +504,10 @@ export default function AdminDashboard() {
                               disabled={isCurrentUser}
                               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
                             >
-                              <option value="active">active</option>
-                              <option value="deactivated">deactivated</option>
+                              <option value="active">{t("admin.active")}</option>
+                              <option value="deactivated">
+                                {t("admin.deactivated")}
+                              </option>
                             </select>
                           ) : (
                             <span
@@ -510,7 +517,9 @@ export default function AdminDashboard() {
                                   : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
                               }`}
                             >
-                              {item.is_active ? "Active" : "Deactivated"}
+                              {item.is_active
+                                ? t("admin.active")
+                                : t("admin.deactivated")}
                             </span>
                           )}
                         </td>
@@ -530,7 +539,7 @@ export default function AdminDashboard() {
                                   onClick={handleSaveUser}
                                   disabled={savingUserId === item.id}
                                   className="inline-flex items-center justify-center rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                                  title="Save"
+                                  title={t("admin.save")}
                                 >
                                   <Save className="w-4 h-4" />
                                 </button>
@@ -540,7 +549,7 @@ export default function AdminDashboard() {
                                   onClick={cancelEditingUser}
                                   disabled={savingUserId === item.id}
                                   className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800"
-                                  title="Cancel"
+                                  title={t("admin.cancel")}
                                 >
                                   <X className="w-4 h-4" />
                                 </button>
@@ -551,7 +560,7 @@ export default function AdminDashboard() {
                                   type="button"
                                   onClick={() => startEditingUser(item)}
                                   className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
-                                  title="Edit"
+                                  title={t("admin.edit")}
                                 >
                                   <Pencil className="w-4 h-4" />
                                 </button>
@@ -562,7 +571,7 @@ export default function AdminDashboard() {
                                     onClick={() => handleDeactivateUser(item.id)}
                                     disabled={deletingUserId === item.id || isCurrentUser}
                                     className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
-                                    title="Deactivate"
+                                    title={t("admin.deactivate")}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -572,7 +581,7 @@ export default function AdminDashboard() {
                                     onClick={() => handleRestoreUser(item.id)}
                                     disabled={restoringUserId === item.id}
                                     className="inline-flex items-center justify-center rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                                    title="Restore"
+                                    title={t("admin.restore")}
                                   >
                                     <RotateCcw className="w-4 h-4" />
                                   </button>
