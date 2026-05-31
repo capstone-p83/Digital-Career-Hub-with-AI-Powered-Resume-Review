@@ -41,55 +41,30 @@ export default function ResumeUploadPage() {
   const skipNextSearchRef = useRef(false);
 
   // Job query search effect
-  useEffect(() => {
-    const query = targetJob.trim();
-
-    if (skipNextSearchRef.current) {
-      skipNextSearchRef.current = false;
-      setShowSuggestions(false);
-      setJobSuggestions([]);
-      return;
-    }
-
-    if (query.length < 1) {
-      setJobSuggestions([]);
-      setShowSuggestions(false);
-      setSelectedJobUri("");
-      return;
-    }
-
-    const timer = window.setTimeout(async () => {
-      setIsSearchingJobs(true);
-
-      try {
-        const jobs = await searchJobTitles(query, token);
-        setJobSuggestions(jobs);
-        setShowSuggestions(jobs.length > 0);
-      } finally {
-        setIsSearchingJobs(false);
-      }
-    }, 350);
-
-    return () => window.clearTimeout(timer);
-  }, [targetJob, token]);
-
   // Auth synchronization effect with Direct Fetch Fallback
   useEffect(() => {
     console.log("LOG 1: User object received from AuthContext:", user);
     
     if (!user) return;
 
+    const userId = (user as any).id;
+    const tier = (user as any).subscription_tier;
+    const rawScans = (user as any).scans_remaining;
+
+    // Safety Override: Handle raw database nulls for brand-new registered accounts
+    const isFreeTier = !tier || tier === "free" || tier === null;
+    
     // Hard Override: If localStorage shows they just used their last scan on this device, lock it at 0
-    const forceLock = localStorage.getItem(`lock_scans_user_${(user as any).id}`);
+    const forceLock = localStorage.getItem(`lock_scans_user_${userId}`);
     if (forceLock === "true") {
       console.log("LOG 2 (Safety Lock): Enforcing local limit lock down to 0.");
       setScansRemaining(0);
       return;
     }
 
-    if ((user as any).scans_remaining !== undefined && (user as any).scans_remaining !== null) {
-      console.log("LOG 2: Setting local scansRemaining state to:", (user as any).scans_remaining);
-      setScansRemaining((user as any).scans_remaining);
+    if (rawScans !== undefined && rawScans !== null) {
+      console.log("LOG 2: Setting local scansRemaining state to:", rawScans);
+      setScansRemaining(Number(rawScans));
     } else {
       const fetchFreshCredits = async () => {
         try {
@@ -105,16 +80,19 @@ export default function ResumeUploadPage() {
 
           if (response.ok) {
             const data = await response.json();
-            const trueScans = data.user?.scans_remaining;
+            const serverUser = data.user;
             
-            if (trueScans !== undefined && trueScans !== null) {
-              // Re-verify the local storage lock rule inside the async block
-              if (localStorage.getItem(`lock_scans_user_${(user as any).id}`) === "true") {
-                setScansRemaining(0);
-              } else {
-                console.log("LOG 2 (Direct Fetch API): Setting local scansRemaining state to:", trueScans);
-                setScansRemaining(trueScans);
-              }
+            // Fallback checking: treat null/undefined as 2 for a new free tier user, or 0 if locked
+            let trueScans = serverUser?.scans_remaining;
+            if (trueScans === null || trueScans === undefined) {
+              trueScans = 2; // Default starting budget for new signups
+            }
+            
+            if (localStorage.getItem(`lock_scans_user_${userId}`) === "true" || serverUser?.scans_remaining === 0) {
+              setScansRemaining(0);
+            } else {
+              console.log("LOG 2 (Direct Fetch API): Setting local scansRemaining state to:", trueScans);
+              setScansRemaining(Number(trueScans));
             }
           }
         } catch (err) {
@@ -125,7 +103,6 @@ export default function ResumeUploadPage() {
       fetchFreshCredits(); 
     }
   }, [user, token]);
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
