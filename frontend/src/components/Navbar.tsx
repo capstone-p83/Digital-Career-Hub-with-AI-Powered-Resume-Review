@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '../context/AppContext';
 import { Globe, User, LogOut, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -11,6 +11,7 @@ const Navbar = () => {
   const { language, setLanguage, t, user, setUser } = useAppContext();
   const [isOpen, setIsOpen] = React.useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
     { name: t.nav.home, path: '/' },
@@ -19,12 +20,37 @@ const Navbar = () => {
     { name: t.nav.dashboard, path: '/dashboard' },
   ];
 
+  const handleLogout = () => {
+    setUser(null);
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+      localStorage.removeItem('auth');
+      localStorage.removeItem('authUser');
+
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('currentUser');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('auth');
+      sessionStorage.removeItem('authUser');
+    }
+
+    setIsOpen(false);
+    router.push('/login');
+  };
+
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-emerald-600 tracking-tight">
+            <Link
+              href="/"
+              className="text-2xl font-bold text-emerald-600 tracking-tight"
+              onClick={() => setIsOpen(false)}
+            >
               CareerHub<span className="text-zinc-900">AI</span>
             </Link>
           </div>
@@ -42,22 +68,29 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
-            
+
             <div className="flex items-center space-x-4 border-l border-zinc-200 pl-8">
               <button
+                type="button"
                 onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
                 className="flex items-center space-x-1 text-sm font-medium text-zinc-600 hover:text-emerald-600 transition-colors"
               >
                 <Globe className="w-4 h-4" />
                 <span>{language === 'en' ? 'BN' : 'EN'}</span>
               </button>
-              
+
               {user ? (
                 <div className="flex items-center space-x-4">
                   <Link href="/dashboard" className="text-zinc-600 hover:text-emerald-600">
                     <User className="w-5 h-5" />
                   </Link>
-                  <button onClick={() => setUser(null)} className="text-zinc-600 hover:text-red-600">
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="text-zinc-600 hover:text-red-600"
+                    aria-label="Logout"
+                  >
                     <LogOut className="w-5 h-5" />
                   </button>
                 </div>
@@ -75,12 +108,20 @@ const Navbar = () => {
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-4">
             <button
-                onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-                className="text-zinc-600"
-              >
-                <Globe className="w-5 h-5" />
+              type="button"
+              onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
+              className="text-zinc-600"
+              aria-label="Change language"
+            >
+              <Globe className="w-5 h-5" />
             </button>
-            <button onClick={() => setIsOpen(!isOpen)} className="text-zinc-600">
+
+            <button
+              type="button"
+              onClick={() => setIsOpen((prev) => !prev)}
+              className="text-zinc-600"
+              aria-label="Toggle menu"
+            >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -102,16 +143,37 @@ const Navbar = () => {
                   key={item.path}
                   href={item.path}
                   onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-zinc-700 hover:text-emerald-600 hover:bg-zinc-50"
+                  className={`block px-3 py-2 rounded-md text-base font-medium hover:text-emerald-600 hover:bg-zinc-50 ${
+                    pathname === item.path ? 'text-emerald-600' : 'text-zinc-700'
+                  }`}
                 >
                   {item.name}
                 </Link>
               ))}
-              {!user && (
+
+              {user ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-zinc-700 hover:text-emerald-600 hover:bg-zinc-50"
+                  >
+                    Dashboard
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-zinc-50"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
                 <Link
                   href="/login"
                   onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-emerald-600"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-emerald-600 hover:bg-zinc-50"
                 >
                   {t.nav.login}
                 </Link>

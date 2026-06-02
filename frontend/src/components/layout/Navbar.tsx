@@ -43,7 +43,6 @@ export default function Navbar() {
     { href: "/", label: t("nav.home") },
     { href: "/resources", label: t("nav.resources") },
     { href: "/resume", label: t("nav.resume") },
-    { href: "/chatbot", label: t("nav.chatbot") },
   ];
 
   if (isAuthenticated) {
@@ -85,6 +84,7 @@ export default function Navbar() {
               <div className="px-2 text-slate-500">
                 <Globe size={14} />
               </div>
+
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as Language)}
@@ -101,10 +101,16 @@ export default function Navbar() {
             </div>
 
             <button
+              type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Toggle theme"
             >
-              {mounted && theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              {mounted && theme === "dark" ? (
+                <Sun size={18} />
+              ) : (
+                <Moon size={18} />
+              )}
             </button>
 
             {isAuthenticated ? (
@@ -128,6 +134,7 @@ export default function Navbar() {
                 </Link>
 
                 <button
+                  type="button"
                   onClick={handleLogout}
                   className="text-sm font-medium bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition"
                 >
@@ -146,8 +153,10 @@ export default function Navbar() {
 
           <div className="md:hidden flex items-center">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -195,6 +204,7 @@ export default function Navbar() {
                 )}
 
                 <button
+                  type="button"
                   onClick={async () => {
                     setMobileMenuOpen(false);
                     await handleLogout();
