@@ -157,10 +157,14 @@ router.post(
     try {
       const {
         title,
+        title_bn,
         candidate_name,
+        candidate_name_bn,
         job_title,
+        job_title_bn,
         image_url,
         description,
+        description_bn,
         subcategory,
       } = req.body;
 
@@ -175,21 +179,29 @@ router.post(
       const result = await db.query(
         `INSERT INTO resume_examples (
            title,
+           title_bn,
            candidate_name,
+           candidate_name_bn,
            job_title,
+           job_title_bn,
            image_url,
            description,
+           description_bn,
            subcategory,
            created_by
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING *`,
         [
           title,
+          title_bn || title,
           candidate_name,
+          candidate_name_bn || candidate_name,
           job_title,
+          job_title_bn || job_title,
           image_url || null,
           description,
+          description_bn || description,
           subcategory || null,
           req.user.id,
         ]
@@ -221,10 +233,14 @@ router.put(
       const { id } = req.params;
       const {
         title,
+        title_bn,
         candidate_name,
+        candidate_name_bn,
         job_title,
+        job_title_bn,
         image_url,
         description,
+        description_bn,
         subcategory,
       } = req.body;
 
@@ -239,20 +255,28 @@ router.put(
       const result = await db.query(
         `UPDATE resume_examples
          SET title = $1,
-             candidate_name = $2,
-             job_title = $3,
-             image_url = $4,
-             description = $5,
-             subcategory = $6,
+             title_bn = $2,
+             candidate_name = $3,
+             candidate_name_bn = $4,
+             job_title = $5,
+             job_title_bn = $6,
+             image_url = $7,
+             description = $8,
+             description_bn = $9,
+             subcategory = $10,
              updated_at = NOW()
-         WHERE id = $7 AND is_deleted = false
+         WHERE id = $11 AND is_deleted = false
          RETURNING *`,
         [
           title,
+          title_bn || title,
           candidate_name,
+          candidate_name_bn || candidate_name,
           job_title,
+          job_title_bn || job_title,
           image_url || null,
           description,
+          description_bn || description,
           subcategory || null,
           id,
         ]

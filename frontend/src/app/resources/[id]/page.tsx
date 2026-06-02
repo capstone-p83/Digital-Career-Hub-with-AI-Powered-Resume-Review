@@ -10,7 +10,7 @@ const API_BASE_URL =
 export default function ResourceDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
 
   const [resource, setResource] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
@@ -161,7 +161,11 @@ export default function ResourceDetailsPage() {
     const token = getStoredToken();
 
     if (!token) {
-      alert(language === "bn" ? "মন্তব্য করতে লগ ইন করুন।" : "Please log in to comment.");
+      alert(
+        language === "bn"
+          ? "মন্তব্য করতে লগ ইন করুন।"
+          : "Please log in to comment."
+      );
       return;
     }
 
@@ -190,7 +194,11 @@ export default function ResourceDetailsPage() {
     const token = getStoredToken();
 
     if (!token) {
-      alert(language === "bn" ? "উত্তর দিতে লগ ইন করুন।" : "Please log in to reply.");
+      alert(
+        language === "bn"
+          ? "উত্তর দিতে লগ ইন করুন।"
+          : "Please log in to reply."
+      );
       return;
     }
 
@@ -243,7 +251,11 @@ export default function ResourceDetailsPage() {
     const token = getStoredToken();
 
     if (!token) {
-      alert(language === "bn" ? "প্রতিক্রিয়া দিতে লগ ইন করুন।" : "Please log in to react.");
+      alert(
+        language === "bn"
+          ? "প্রতিক্রিয়া দিতে লগ ইন করুন।"
+          : "Please log in to react."
+      );
       return;
     }
 
@@ -277,22 +289,35 @@ export default function ResourceDetailsPage() {
     );
   }
 
-  const parentComments = comments.filter((comment) => !comment.parent_comment_id);
+  const parentComments = comments.filter(
+    (comment) => !comment.parent_comment_id
+  );
 
   const displayTitle =
-    isArticle && language === "bn" && resource.title_bn
-      ? resource.title_bn
-      : resource.title;
+    language === "bn" && resource.title_bn ? resource.title_bn : resource.title;
 
-  const displayContent =
-    isArticle && language === "bn" && resource.content_bn
+  const displayContent = isArticle
+    ? language === "bn" && resource.content_bn
       ? resource.content_bn
-      : resource.content_en || resource.description;
+      : resource.content_en
+    : language === "bn" && resource.description_bn
+    ? resource.description_bn
+    : resource.description;
+
+  const displayCandidateName =
+    language === "bn" && resource.candidate_name_bn
+      ? resource.candidate_name_bn
+      : resource.candidate_name;
+
+  const displayJobTitle =
+    language === "bn" && resource.job_title_bn
+      ? resource.job_title_bn
+      : resource.job_title;
 
   const authorText = resource.author
     ? `${language === "bn" ? "লেখক" : "By"} ${resource.author}`
-    : resource.candidate_name && resource.job_title
-    ? `${resource.candidate_name} • ${resource.job_title}`
+    : displayCandidateName && displayJobTitle
+    ? `${displayCandidateName} • ${displayJobTitle}`
     : language === "bn"
     ? "রিজুমে উদাহরণ"
     : "Resume Example";
@@ -385,7 +410,9 @@ export default function ResourceDetailsPage() {
 
                     <button
                       onClick={() =>
-                        setReplyingTo(replyingTo === comment.id ? null : comment.id)
+                        setReplyingTo(
+                          replyingTo === comment.id ? null : comment.id
+                        )
                       }
                       className="text-sm text-blue-400 hover:text-blue-300"
                     >
@@ -408,7 +435,9 @@ export default function ResourceDetailsPage() {
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder={
-                          language === "bn" ? "উত্তর লিখুন..." : "Write a reply..."
+                          language === "bn"
+                            ? "উত্তর লিখুন..."
+                            : "Write a reply..."
                         }
                         className="w-full min-h-20 rounded-lg border border-slate-300 bg-white p-3 text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                       />

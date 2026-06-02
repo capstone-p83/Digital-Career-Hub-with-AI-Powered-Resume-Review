@@ -26,10 +26,14 @@ type Article = {
 type ResumeExample = {
   id: number;
   title: string;
+  title_bn: string | null;
   candidate_name: string;
+  candidate_name_bn: string | null;
   job_title: string;
+  job_title_bn: string | null;
   image_url: string | null;
   description: string;
+  description_bn: string | null;
   subcategory: string | null;
   created_at: string;
 };
@@ -42,6 +46,9 @@ type ResourceItem = {
   content_en: string;
   content_bn: string;
   author: string;
+  author_bn: string | null;
+  job_title?: string;
+  job_title_bn?: string | null;
   image_url: string | null;
   subcategory: string | null;
 };
@@ -92,6 +99,7 @@ export default function ResourcesPage() {
             content_en: a.content_en,
             content_bn: a.content_bn,
             author: a.author,
+            author_bn: null,
             image_url: a.image_url,
             subcategory: a.subcategory,
           })
@@ -101,11 +109,14 @@ export default function ResourcesPage() {
           (r: ResumeExample) => ({
             id: `resume-${r.id}`,
             title: r.title,
-            title_bn: null,
+            title_bn: r.title_bn || r.title,
             category: "Resume Example" as const,
             content_en: r.description,
-            content_bn: r.description,
+            content_bn: r.description_bn || r.description,
             author: r.candidate_name,
+            author_bn: r.candidate_name_bn || r.candidate_name,
+            job_title: r.job_title,
+            job_title_bn: r.job_title_bn || r.job_title,
             image_url: r.image_url,
             subcategory: r.subcategory,
           })
@@ -126,11 +137,16 @@ export default function ResourcesPage() {
     const content = language === "bn" ? res.content_bn : res.content_en;
     const displayTitle =
       language === "bn" && res.title_bn ? res.title_bn : res.title;
+    const displayAuthor =
+      language === "bn" && res.author_bn ? res.author_bn : res.author;
+    const displayJobTitle =
+      language === "bn" && res.job_title_bn ? res.job_title_bn : res.job_title;
 
     const matchesSearch =
       displayTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      res.author.toLowerCase().includes(searchTerm.toLowerCase());
+      displayAuthor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (displayJobTitle || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory =
       selectedCategory === "all" ||
@@ -224,6 +240,16 @@ export default function ResourcesPage() {
                 ? resource.title_bn
                 : resource.title;
 
+            const displayAuthor =
+              language === "bn" && resource.author_bn
+                ? resource.author_bn
+                : resource.author;
+
+            const displayJobTitle =
+              language === "bn" && resource.job_title_bn
+                ? resource.job_title_bn
+                : resource.job_title;
+
             return (
               <motion.div
                 key={resource.id}
@@ -275,7 +301,9 @@ export default function ResourcesPage() {
                     </CardTitle>
 
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      {t("resources.by")} {resource.author}
+                      {resource.category === "Resume Example" && displayJobTitle
+                        ? `${displayAuthor} • ${displayJobTitle}`
+                        : `${t("resources.by")} ${displayAuthor}`}
                     </p>
                   </CardHeader>
 

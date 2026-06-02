@@ -41,6 +41,7 @@ type ResourceType = "article" | "resume";
 type Article = {
   id: number;
   title: string;
+  title_bn: string | null;
   author: string;
   image_url: string | null;
   content_en: string;
@@ -56,10 +57,14 @@ type Article = {
 type ResumeExample = {
   id: number;
   title: string;
+  title_bn: string | null;
   candidate_name: string;
+  candidate_name_bn: string | null;
   job_title: string;
+  job_title_bn: string | null;
   image_url: string | null;
   description: string | null;
+  description_bn: string | null;
   subcategory: string | null;
   created_by: number;
   is_deleted: boolean;
@@ -70,43 +75,54 @@ type ResumeExample = {
 
 type ArticleForm = {
   title: string;
+  title_bn: string;
   author: string;
   image_url: string;
-  content: string;
+  content_en: string;
+  content_bn: string;
   subcategory: string;
   customSubcategory: string;
 };
 
 type ResumeForm = {
   title: string;
+  title_bn: string;
   candidate_name: string;
+  candidate_name_bn: string;
   job_title: string;
+  job_title_bn: string;
   image_url: string;
   description: string;
+  description_bn: string;
   subcategory: string;
   customSubcategory: string;
 };
 
 const emptyArticleForm: ArticleForm = {
   title: "",
+  title_bn: "",
   author: "",
   image_url: "",
-  content: "",
+  content_en: "",
+  content_bn: "",
   subcategory: "",
   customSubcategory: "",
 };
 
 const emptyResumeForm: ResumeForm = {
   title: "",
+  title_bn: "",
   candidate_name: "",
+  candidate_name_bn: "",
   job_title: "",
+  job_title_bn: "",
   image_url: "",
   description: "",
+  description_bn: "",
   subcategory: "",
   customSubcategory: "",
 };
 
-// Helper to determine if a subcategory is predefined or custom
 const getSubcategoryFormState = (subcategory: string | null) => {
   if (!subcategory) return { subcategory: "", customSubcategory: "" };
   if (SUBCATEGORY_OPTIONS.includes(subcategory) && subcategory !== "Other") {
@@ -115,7 +131,6 @@ const getSubcategoryFormState = (subcategory: string | null) => {
   return { subcategory: "Other", customSubcategory: subcategory };
 };
 
-// Helper to get the final subcategory value to send to the backend
 const resolveSubcategory = (sub: string, custom: string): string | null => {
   if (!sub) return null;
   if (sub === "Other") return custom.trim() || null;
@@ -171,8 +186,13 @@ export default function LearningResourcesPage() {
       const articlesData = await articlesRes.json();
       const resumesData = await resumesRes.json();
 
-      if (!articlesRes.ok) throw new Error(articlesData.message || "Failed to fetch articles");
-      if (!resumesRes.ok) throw new Error(resumesData.message || "Failed to fetch resumes");
+      if (!articlesRes.ok) {
+        throw new Error(articlesData.message || "Failed to fetch articles");
+      }
+
+      if (!resumesRes.ok) {
+        throw new Error(resumesData.message || "Failed to fetch resumes");
+      }
 
       setArticles(articlesData.articles || []);
       setResumes(resumesData.resumes || []);
@@ -209,15 +229,20 @@ export default function LearningResourcesPage() {
     setSelectedType("article");
     setEditingArticle(article);
     setEditingResume(null);
+
     const subState = getSubcategoryFormState(article.subcategory);
+
     setArticleForm({
       title: article.title,
+      title_bn: article.title_bn || "",
       author: article.author,
       image_url: article.image_url || "",
-      content: article.content_en,
+      content_en: article.content_en || "",
+      content_bn: article.content_bn || "",
       subcategory: subState.subcategory,
       customSubcategory: subState.customSubcategory,
     });
+
     setPageError("");
     setPageSuccess("");
     setShowTypeSelector(false);
@@ -228,16 +253,23 @@ export default function LearningResourcesPage() {
     setSelectedType("resume");
     setEditingResume(resume);
     setEditingArticle(null);
+
     const subState = getSubcategoryFormState(resume.subcategory);
+
     setResumeForm({
       title: resume.title,
+      title_bn: resume.title_bn || "",
       candidate_name: resume.candidate_name,
+      candidate_name_bn: resume.candidate_name_bn || "",
       job_title: resume.job_title,
+      job_title_bn: resume.job_title_bn || "",
       image_url: resume.image_url || "",
       description: resume.description || "",
+      description_bn: resume.description_bn || "",
       subcategory: subState.subcategory,
       customSubcategory: subState.customSubcategory,
     });
+
     setPageError("");
     setPageSuccess("");
     setShowTypeSelector(false);
@@ -263,12 +295,15 @@ export default function LearningResourcesPage() {
       setPageSuccess("");
 
       if (selectedType === "article") {
-        if (!articleForm.title || !articleForm.author || !articleForm.content) {
-          setPageError("Title, author and content are required.");
+        if (!articleForm.title || !articleForm.author || !articleForm.content_en) {
+          setPageError("English title, author and English content are required.");
           return;
         }
 
-        const finalSubcategory = resolveSubcategory(articleForm.subcategory, articleForm.customSubcategory);
+        const finalSubcategory = resolveSubcategory(
+          articleForm.subcategory,
+          articleForm.customSubcategory
+        );
 
         const isEditing = !!editingArticle;
         const url = isEditing
@@ -277,13 +312,17 @@ export default function LearningResourcesPage() {
 
         const res = await fetch(url, {
           method: isEditing ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({
             title: articleForm.title,
+            title_bn: articleForm.title_bn || articleForm.title,
             author: articleForm.author,
             image_url: articleForm.image_url || null,
-            content_en: articleForm.content,
-            content_bn: articleForm.content,
+            content_en: articleForm.content_en,
+            content_bn: articleForm.content_bn || articleForm.content_en,
             subcategory: finalSubcategory,
           }),
         });
@@ -292,7 +331,9 @@ export default function LearningResourcesPage() {
         if (!res.ok) throw new Error(data.message || "Failed to save article");
 
         if (isEditing) {
-          setArticles((prev) => prev.map((a) => (a.id === editingArticle.id ? data.article : a)));
+          setArticles((prev) =>
+            prev.map((a) => (a.id === editingArticle.id ? data.article : a))
+          );
           setPageSuccess("Article updated successfully");
         } else {
           setArticles((prev) => [data.article, ...prev]);
@@ -301,12 +342,22 @@ export default function LearningResourcesPage() {
       }
 
       if (selectedType === "resume") {
-        if (!resumeForm.title || !resumeForm.candidate_name || !resumeForm.job_title || !resumeForm.description) {
-          setPageError("Title, candidate name, job title and description are required.");
+        if (
+          !resumeForm.title ||
+          !resumeForm.candidate_name ||
+          !resumeForm.job_title ||
+          !resumeForm.description
+        ) {
+          setPageError(
+            "English title, candidate name, job title and description are required."
+          );
           return;
         }
 
-        const finalSubcategory = resolveSubcategory(resumeForm.subcategory, resumeForm.customSubcategory);
+        const finalSubcategory = resolveSubcategory(
+          resumeForm.subcategory,
+          resumeForm.customSubcategory
+        );
 
         const isEditing = !!editingResume;
         const url = isEditing
@@ -315,22 +366,34 @@ export default function LearningResourcesPage() {
 
         const res = await fetch(url, {
           method: isEditing ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({
             title: resumeForm.title,
+            title_bn: resumeForm.title_bn || resumeForm.title,
             candidate_name: resumeForm.candidate_name,
+            candidate_name_bn:
+              resumeForm.candidate_name_bn || resumeForm.candidate_name,
             job_title: resumeForm.job_title,
+            job_title_bn: resumeForm.job_title_bn || resumeForm.job_title,
             image_url: resumeForm.image_url || null,
             description: resumeForm.description,
+            description_bn: resumeForm.description_bn || resumeForm.description,
             subcategory: finalSubcategory,
           }),
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to save resume example");
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to save resume example");
+        }
 
         if (isEditing) {
-          setResumes((prev) => prev.map((r) => (r.id === editingResume.id ? data.resume : r)));
+          setResumes((prev) =>
+            prev.map((r) => (r.id === editingResume.id ? data.resume : r))
+          );
           setPageSuccess("Resume example updated successfully");
         } else {
           setResumes((prev) => [data.resume, ...prev]);
@@ -375,7 +438,9 @@ export default function LearningResourcesPage() {
 
   const handleDeleteResume = async (resumeId: number) => {
     if (!token) return;
-    const confirmed = window.confirm("Are you sure you want to delete this resume example?");
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this resume example?"
+    );
     if (!confirmed) return;
 
     try {
@@ -404,14 +469,14 @@ export default function LearningResourcesPage() {
 
   return (
     <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
-
-      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
             {t("mgmt.title")}
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">{t("mgmt.subtitle")}</p>
+          <p className="text-slate-600 dark:text-slate-400">
+            {t("mgmt.subtitle")}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -429,7 +494,6 @@ export default function LearningResourcesPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardContent className="p-6 flex items-center space-x-4">
@@ -437,8 +501,12 @@ export default function LearningResourcesPage() {
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("mgmt.totalArticles")}</p>
-              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">{articles.length}</h4>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                {t("mgmt.totalArticles")}
+              </p>
+              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {articles.length}
+              </h4>
             </div>
           </CardContent>
         </Card>
@@ -449,26 +517,34 @@ export default function LearningResourcesPage() {
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("mgmt.totalResumes")}</p>
-              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">{resumes.length}</h4>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                {t("mgmt.totalResumes")}
+              </p>
+              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {resumes.length}
+              </h4>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Type Selector */}
       {showTypeSelector && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>{t("mgmt.createTitle")}</CardTitle>
-              <button onClick={closeForm} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <button
+                onClick={closeForm}
+                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{t("mgmt.createPrompt")}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              {t("mgmt.createPrompt")}
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
                 onClick={() => handleTypeSelect("article")}
@@ -476,8 +552,12 @@ export default function LearningResourcesPage() {
               >
                 <FileText className="w-10 h-10 text-blue-600 group-hover:scale-110 transition-transform" />
                 <div className="text-center">
-                  <p className="font-semibold text-slate-900 dark:text-white">{t("mgmt.articles")}</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{t("mgmt.articleDesc")}</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {t("mgmt.articles")}
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {t("mgmt.articleDesc")}
+                  </p>
                 </div>
               </button>
 
@@ -487,8 +567,12 @@ export default function LearningResourcesPage() {
               >
                 <FileText className="w-10 h-10 text-emerald-600 group-hover:scale-110 transition-transform" />
                 <div className="text-center">
-                  <p className="font-semibold text-slate-900 dark:text-white">{t("mgmt.resumes")}</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{t("mgmt.resumeDesc")}</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {t("mgmt.resumes")}
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {t("mgmt.resumeDesc")}
+                  </p>
                 </div>
               </button>
             </div>
@@ -496,13 +580,17 @@ export default function LearningResourcesPage() {
         </Card>
       )}
 
-      {/* Article Form */}
       {showForm && selectedType === "article" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>{editingArticle ? t("mgmt.editArticle") : t("mgmt.createArticle")}</CardTitle>
-              <button onClick={closeForm} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <CardTitle>
+                {editingArticle ? t("mgmt.editArticle") : t("mgmt.createArticle")}
+              </CardTitle>
+              <button
+                onClick={closeForm}
+                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -515,102 +603,101 @@ export default function LearningResourcesPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {t("mgmt.title_field")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={articleForm.title}
-                  onChange={(e) => setArticleForm((p) => ({ ...p, title: e.target.value }))}
-                  placeholder={t("mgmt.title_field")}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-                />
-              </div>
+              <TextInput
+                label="Title (English)"
+                value={articleForm.title}
+                onChange={(value) =>
+                  setArticleForm((p) => ({ ...p, title: value }))
+                }
+                required
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {t("mgmt.author")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={articleForm.author}
-                  onChange={(e) => setArticleForm((p) => ({ ...p, author: e.target.value }))}
-                  placeholder={t("mgmt.author")}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Subcategory
-              </label>
-              <select
-                value={articleForm.subcategory}
-                onChange={(e) => setArticleForm((p) => ({ ...p, subcategory: e.target.value, customSubcategory: "" }))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-              >
-                <option value="">Select a subcategory...</option>
-                {SUBCATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-              {articleForm.subcategory === "Other" && (
-                <input
-                  type="text"
-                  value={articleForm.customSubcategory}
-                  onChange={(e) => setArticleForm((p) => ({ ...p, customSubcategory: e.target.value }))}
-                  placeholder="Enter custom subcategory"
-                  className="w-full mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-                />
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {t("mgmt.thumbnailUrl")}
-              </label>
-              <input
-                type="text"
-                value={articleForm.image_url}
-                onChange={(e) => setArticleForm((p) => ({ ...p, image_url: e.target.value }))}
-                placeholder="https://example.com/image.jpg"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+              <TextInput
+                label="Title (Bangla)"
+                value={articleForm.title_bn}
+                onChange={(value) =>
+                  setArticleForm((p) => ({ ...p, title_bn: value }))
+                }
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {t("mgmt.content")} <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={articleForm.content}
-                onChange={(e) => setArticleForm((p) => ({ ...p, content: e.target.value }))}
-                placeholder={t("mgmt.content")}
-                rows={8}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-              />
-            </div>
+            <TextInput
+              label={t("mgmt.author")}
+              value={articleForm.author}
+              onChange={(value) =>
+                setArticleForm((p) => ({ ...p, author: value }))
+              }
+              required
+            />
 
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={closeForm} disabled={submitting}>{t("mgmt.cancel")}</Button>
-              <Button onClick={handleSubmit} disabled={submitting}>
-                <Save className="w-4 h-4 mr-2" />
-                {submitting ? t("mgmt.saving") : editingArticle ? t("mgmt.updateArticle") : t("mgmt.createArticleBtn")}
-              </Button>
-            </div>
+            <SubcategoryInput
+              value={articleForm.subcategory}
+              customValue={articleForm.customSubcategory}
+              onSubcategoryChange={(value) =>
+                setArticleForm((p) => ({
+                  ...p,
+                  subcategory: value,
+                  customSubcategory: "",
+                }))
+              }
+              onCustomChange={(value) =>
+                setArticleForm((p) => ({ ...p, customSubcategory: value }))
+              }
+            />
+
+            <TextInput
+              label={t("mgmt.thumbnailUrl")}
+              value={articleForm.image_url}
+              onChange={(value) =>
+                setArticleForm((p) => ({ ...p, image_url: value }))
+              }
+              placeholder="https://example.com/image.jpg"
+            />
+
+            <TextareaInput
+              label="Content (English)"
+              value={articleForm.content_en}
+              onChange={(value) =>
+                setArticleForm((p) => ({ ...p, content_en: value }))
+              }
+              required
+              rows={8}
+            />
+
+            <TextareaInput
+              label="Content (Bangla)"
+              value={articleForm.content_bn}
+              onChange={(value) =>
+                setArticleForm((p) => ({ ...p, content_bn: value }))
+              }
+              rows={8}
+            />
+
+            <FormActions
+              submitting={submitting}
+              onCancel={closeForm}
+              submitLabel={
+                editingArticle ? t("mgmt.updateArticle") : t("mgmt.createArticleBtn")
+              }
+              loadingLabel={t("mgmt.saving")}
+              cancelLabel={t("mgmt.cancel")}
+              onSubmit={handleSubmit}
+            />
           </CardContent>
         </Card>
       )}
 
-      {/* Resume Form */}
       {showForm && selectedType === "resume" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>{editingResume ? t("mgmt.editResume") : t("mgmt.uploadResume")}</CardTitle>
-              <button onClick={closeForm} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <CardTitle>
+                {editingResume ? t("mgmt.editResume") : t("mgmt.uploadResume")}
+              </CardTitle>
+              <button
+                onClick={closeForm}
+                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -623,264 +710,494 @@ export default function LearningResourcesPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {t("mgmt.title_field")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={resumeForm.title}
-                  onChange={(e) => setResumeForm((p) => ({ ...p, title: e.target.value }))}
-                  placeholder={t("mgmt.title_field")}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-                />
-              </div>
+              <TextInput
+                label="Title (English)"
+                value={resumeForm.title}
+                onChange={(value) =>
+                  setResumeForm((p) => ({ ...p, title: value }))
+                }
+                required
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {t("mgmt.candidateName")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={resumeForm.candidate_name}
-                  onChange={(e) => setResumeForm((p) => ({ ...p, candidate_name: e.target.value }))}
-                  placeholder={t("mgmt.candidateName")}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-                />
-              </div>
+              <TextInput
+                label="Title (Bangla)"
+                value={resumeForm.title_bn}
+                onChange={(value) =>
+                  setResumeForm((p) => ({ ...p, title_bn: value }))
+                }
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {t("mgmt.jobTitle")} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextInput
+                label="Candidate Name (English)"
+                value={resumeForm.candidate_name}
+                onChange={(value) =>
+                  setResumeForm((p) => ({ ...p, candidate_name: value }))
+                }
+                required
+              />
+
+              <TextInput
+                label="Candidate Name (Bangla)"
+                value={resumeForm.candidate_name_bn}
+                onChange={(value) =>
+                  setResumeForm((p) => ({ ...p, candidate_name_bn: value }))
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextInput
+                label="Job Title (English)"
                 value={resumeForm.job_title}
-                onChange={(e) => setResumeForm((p) => ({ ...p, job_title: e.target.value }))}
-                placeholder={t("mgmt.jobTitle")}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+                onChange={(value) =>
+                  setResumeForm((p) => ({ ...p, job_title: value }))
+                }
+                required
+              />
+
+              <TextInput
+                label="Job Title (Bangla)"
+                value={resumeForm.job_title_bn}
+                onChange={(value) =>
+                  setResumeForm((p) => ({ ...p, job_title_bn: value }))
+                }
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Subcategory
-              </label>
-              <select
-                value={resumeForm.subcategory}
-                onChange={(e) => setResumeForm((p) => ({ ...p, subcategory: e.target.value, customSubcategory: "" }))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-              >
-                <option value="">Select a subcategory...</option>
-                {SUBCATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-              {resumeForm.subcategory === "Other" && (
-                <input
-                  type="text"
-                  value={resumeForm.customSubcategory}
-                  onChange={(e) => setResumeForm((p) => ({ ...p, customSubcategory: e.target.value }))}
-                  placeholder="Enter custom subcategory"
-                  className="w-full mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-                />
-              )}
-            </div>
+            <SubcategoryInput
+              value={resumeForm.subcategory}
+              customValue={resumeForm.customSubcategory}
+              onSubcategoryChange={(value) =>
+                setResumeForm((p) => ({
+                  ...p,
+                  subcategory: value,
+                  customSubcategory: "",
+                }))
+              }
+              onCustomChange={(value) =>
+                setResumeForm((p) => ({ ...p, customSubcategory: value }))
+              }
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {t("mgmt.thumbnailUrl")}
-              </label>
-              <input
-                type="text"
-                value={resumeForm.image_url}
-                onChange={(e) => setResumeForm((p) => ({ ...p, image_url: e.target.value }))}
-                placeholder="https://example.com/thumbnail.jpg"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-              />
-            </div>
+            <TextInput
+              label={t("mgmt.thumbnailUrl")}
+              value={resumeForm.image_url}
+              onChange={(value) =>
+                setResumeForm((p) => ({ ...p, image_url: value }))
+              }
+              placeholder="https://example.com/thumbnail.jpg"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {t("mgmt.description")} <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={resumeForm.description}
-                onChange={(e) => setResumeForm((p) => ({ ...p, description: e.target.value }))}
-                placeholder={t("mgmt.description")}
-                rows={4}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
-              />
-            </div>
+            <TextareaInput
+              label="Description (English)"
+              value={resumeForm.description}
+              onChange={(value) =>
+                setResumeForm((p) => ({ ...p, description: value }))
+              }
+              required
+              rows={4}
+            />
 
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={closeForm} disabled={submitting}>{t("mgmt.cancel")}</Button>
-              <Button onClick={handleSubmit} disabled={submitting}>
-                <Save className="w-4 h-4 mr-2" />
-                {submitting ? t("mgmt.saving") : editingResume ? t("mgmt.updateResume") : t("mgmt.createResumeBtn")}
-              </Button>
-            </div>
+            <TextareaInput
+              label="Description (Bangla)"
+              value={resumeForm.description_bn}
+              onChange={(value) =>
+                setResumeForm((p) => ({ ...p, description_bn: value }))
+              }
+              rows={4}
+            />
+
+            <FormActions
+              submitting={submitting}
+              onCancel={closeForm}
+              submitLabel={
+                editingResume ? t("mgmt.updateResume") : t("mgmt.createResumeBtn")
+              }
+              loadingLabel={t("mgmt.saving")}
+              cancelLabel={t("mgmt.cancel")}
+              onSubmit={handleSubmit}
+            />
           </CardContent>
         </Card>
       )}
 
-      {/* Articles List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("mgmt.articles")}</CardTitle>
-          {!showForm && !showTypeSelector && pageError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
-              {pageError}
-            </div>
-          )}
-          {pageSuccess && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
-              {pageSuccess}
-            </div>
-          )}
-        </CardHeader>
+      <ResourceTableSection
+        title={t("mgmt.articles")}
+        loading={loading}
+        loadingText={t("mgmt.loadingArticles")}
+        emptyText={t("mgmt.noArticles")}
+        headers={[
+          t("mgmt.id"),
+          t("mgmt.title_field"),
+          "Bangla Title",
+          t("mgmt.author"),
+          "Subcategory",
+          t("mgmt.thumbnailCol"),
+          t("mgmt.createdAt"),
+          t("mgmt.actions"),
+        ]}
+      >
+        {articles.map((article) => (
+          <tr
+            key={article.id}
+            className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+          >
+            <td className="px-4 py-4 text-slate-900 dark:text-white">{article.id}</td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">
+              {article.title}
+            </td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">
+              {article.title_bn || t("mgmt.none")}
+            </td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300">
+              {article.author}
+            </td>
+            <td className="px-4 py-4">
+              <SubcategoryBadge subcategory={article.subcategory} noneText={t("mgmt.none")} />
+            </td>
+            <td className="px-4 py-4">
+              <ImageLink url={article.image_url} viewText={t("mgmt.viewImage")} noneText={t("mgmt.none")} />
+            </td>
+            <td className="px-4 py-4 text-slate-500 dark:text-slate-400">
+              {new Date(article.created_at).toLocaleString()}
+            </td>
+            <td className="px-4 py-4">
+              <ActionButtons
+                onEdit={() => openEditArticleForm(article)}
+                onDelete={() => handleDeleteArticle(article.id)}
+                deleting={deletingId === article.id}
+              />
+            </td>
+          </tr>
+        ))}
+      </ResourceTableSection>
 
-        <CardContent>
-          {loading ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              {t("mgmt.loadingArticles")}
-            </div>
-          ) : articles.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              {t("mgmt.noArticles")}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] text-sm text-left">
-                <thead className="border-b border-slate-200 dark:border-slate-800">
-                  <tr className="text-slate-500 dark:text-slate-400">
-                    <th className="px-4 py-3 font-medium">{t("mgmt.id")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.title_field")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.author")}</th>
-                    <th className="px-4 py-3 font-medium">Subcategory</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.thumbnailCol")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.createdAt")}</th>
-                    <th className="px-4 py-3 font-medium text-right">{t("mgmt.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {articles.map((article) => (
-                    <tr key={article.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-4 text-slate-900 dark:text-white">{article.id}</td>
-                      <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{article.title}</td>
-                      <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{article.author}</td>
-                      <td className="px-4 py-4 text-slate-700 dark:text-slate-300">
-                        {article.subcategory ? (
-                          <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                            {article.subcategory}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        {article.image_url ? (
-                          <a href={article.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]">
-                            {t("mgmt.viewImage")}
-                          </a>
-                        ) : (
-                          <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-slate-500 dark:text-slate-400">{new Date(article.created_at).toLocaleString()}</td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button type="button" onClick={() => openEditArticleForm(article)} className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30" title={t("mgmt.actions")}>
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button type="button" onClick={() => handleDeleteArticle(article.id)} disabled={deletingId === article.id} className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <ResourceTableSection
+        title={t("mgmt.resumes")}
+        loading={loading}
+        loadingText={t("mgmt.loadingResumes")}
+        emptyText={t("mgmt.noResumes")}
+        headers={[
+          t("mgmt.id"),
+          t("mgmt.title_field"),
+          "Bangla Title",
+          t("mgmt.candidateName"),
+          "Bangla Candidate",
+          t("mgmt.jobTitle"),
+          "Bangla Job Title",
+          "Subcategory",
+          t("mgmt.thumbnailCol"),
+          t("mgmt.createdAt"),
+          t("mgmt.actions"),
+        ]}
+      >
+        {resumes.map((resume) => (
+          <tr
+            key={resume.id}
+            className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+          >
+            <td className="px-4 py-4 text-slate-900 dark:text-white">{resume.id}</td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[180px] truncate">
+              {resume.title}
+            </td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[180px] truncate">
+              {resume.title_bn || t("mgmt.none")}
+            </td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300">
+              {resume.candidate_name}
+            </td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300">
+              {resume.candidate_name_bn || t("mgmt.none")}
+            </td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300">
+              {resume.job_title}
+            </td>
+            <td className="px-4 py-4 text-slate-700 dark:text-slate-300">
+              {resume.job_title_bn || t("mgmt.none")}
+            </td>
+            <td className="px-4 py-4">
+              <SubcategoryBadge subcategory={resume.subcategory} noneText={t("mgmt.none")} />
+            </td>
+            <td className="px-4 py-4">
+              <ImageLink url={resume.image_url} viewText={t("mgmt.viewImage")} noneText={t("mgmt.none")} />
+            </td>
+            <td className="px-4 py-4 text-slate-500 dark:text-slate-400">
+              {new Date(resume.created_at).toLocaleString()}
+            </td>
+            <td className="px-4 py-4">
+              <ActionButtons
+                onEdit={() => openEditResumeForm(resume)}
+                onDelete={() => handleDeleteResume(resume.id)}
+                deleting={deletingId === resume.id}
+              />
+            </td>
+          </tr>
+        ))}
+      </ResourceTableSection>
+    </div>
+  );
+}
 
-      {/* Resume Examples List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("mgmt.resumes")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              {t("mgmt.loadingResumes")}
-            </div>
-          ) : resumes.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-              {t("mgmt.noResumes")}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] text-sm text-left">
-                <thead className="border-b border-slate-200 dark:border-slate-800">
-                  <tr className="text-slate-500 dark:text-slate-400">
-                    <th className="px-4 py-3 font-medium">{t("mgmt.id")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.title_field")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.candidateName")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.jobTitle")}</th>
-                    <th className="px-4 py-3 font-medium">Subcategory</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.thumbnailCol")}</th>
-                    <th className="px-4 py-3 font-medium">{t("mgmt.createdAt")}</th>
-                    <th className="px-4 py-3 font-medium text-right">{t("mgmt.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {resumes.map((resume) => (
-                    <tr key={resume.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-4 text-slate-900 dark:text-white">{resume.id}</td>
-                      <td className="px-4 py-4 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{resume.title}</td>
-                      <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{resume.candidate_name}</td>
-                      <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{resume.job_title}</td>
-                      <td className="px-4 py-4">
-                        {resume.subcategory ? (
-                          <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                            {resume.subcategory}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        {resume.image_url ? (
-                          <a href={resume.image_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]">
-                            {t("mgmt.viewImage")}
-                          </a>
-                        ) : (
-                          <span className="text-slate-400 text-xs">{t("mgmt.none")}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-slate-500 dark:text-slate-400">{new Date(resume.created_at).toLocaleString()}</td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button type="button" onClick={() => openEditResumeForm(resume)} className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30">
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button type="button" onClick={() => handleDeleteResume(resume.id)} disabled={deletingId === resume.id} className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+function TextInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || label}
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+      />
+    </div>
+  );
+}
+
+function TextareaInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  rows?: number;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || label}
+        rows={rows}
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+      />
+    </div>
+  );
+}
+
+function SubcategoryInput({
+  value,
+  customValue,
+  onSubcategoryChange,
+  onCustomChange,
+}: {
+  value: string;
+  customValue: string;
+  onSubcategoryChange: (value: string) => void;
+  onCustomChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+        Subcategory
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onSubcategoryChange(e.target.value)}
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+      >
+        <option value="">Select a subcategory...</option>
+        {SUBCATEGORY_OPTIONS.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+
+      {value === "Other" && (
+        <input
+          type="text"
+          value={customValue}
+          onChange={(e) => onCustomChange(e.target.value)}
+          placeholder="Enter custom subcategory"
+          className="w-full mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+        />
+      )}
+    </div>
+  );
+}
+
+function FormActions({
+  submitting,
+  onCancel,
+  onSubmit,
+  submitLabel,
+  loadingLabel,
+  cancelLabel,
+}: {
+  submitting: boolean;
+  onCancel: () => void;
+  onSubmit: () => void;
+  submitLabel: string;
+  loadingLabel: string;
+  cancelLabel: string;
+}) {
+  return (
+    <div className="flex justify-end gap-3 pt-2">
+      <Button variant="outline" onClick={onCancel} disabled={submitting}>
+        {cancelLabel}
+      </Button>
+      <Button onClick={onSubmit} disabled={submitting}>
+        <Save className="w-4 h-4 mr-2" />
+        {submitting ? loadingLabel : submitLabel}
+      </Button>
+    </div>
+  );
+}
+
+function ResourceTableSection({
+  title,
+  loading,
+  loadingText,
+  emptyText,
+  headers,
+  children,
+}: {
+  title: string;
+  loading: boolean;
+  loadingText: string;
+  emptyText: string;
+  headers: string[];
+  children: React.ReactNode;
+}) {
+  const hasRows = Array.isArray(children) ? children.length > 0 : !!children;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            {loadingText}
+          </div>
+        ) : !hasRows ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            {emptyText}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1100px] text-sm text-left">
+              <thead className="border-b border-slate-200 dark:border-slate-800">
+                <tr className="text-slate-500 dark:text-slate-400">
+                  {headers.map((header, index) => (
+                    <th
+                      key={`${header}-${index}`}
+                      className={`px-4 py-3 font-medium ${
+                        index === headers.length - 1 ? "text-right" : ""
+                      }`}
+                    >
+                      {header}
+                    </th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {children}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SubcategoryBadge({
+  subcategory,
+  noneText,
+}: {
+  subcategory: string | null;
+  noneText: string;
+}) {
+  if (!subcategory) {
+    return <span className="text-slate-400 text-xs">{noneText}</span>;
+  }
+
+  return (
+    <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+      {subcategory}
+    </span>
+  );
+}
+
+function ImageLink({
+  url,
+  viewText,
+  noneText,
+}: {
+  url: string | null;
+  viewText: string;
+  noneText: string;
+}) {
+  if (!url) {
+    return <span className="text-slate-400 text-xs">{noneText}</span>;
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]"
+    >
+      {viewText}
+    </a>
+  );
+}
+
+function ActionButtons({
+  onEdit,
+  onDelete,
+  deleting,
+}: {
+  onEdit: () => void;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
+      >
+        <Pencil className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        disabled={deleting}
+        className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
     </div>
   );
 }
