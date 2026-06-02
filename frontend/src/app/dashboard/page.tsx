@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -31,7 +32,9 @@ import {
 } from "../../lib/resumeReviewSubmit";
 
 export default function Dashboard() {
-const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAuth();
+  const { t } = useLanguage();
+  const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } =
+    useAuth();
   const router = useRouter();
 
   const [latestFeedback, setLatestFeedback] =
@@ -75,42 +78,42 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
   const isPrivileged = isAdmin || isAdminStaff;
 
   const displayName =
-    user?.profile?.first_name?.trim() || user?.email || "User";
+    user?.profile?.first_name?.trim() || user?.email || t("dashboard.user");
 
   const upcomingInterviews = [
     {
       company: "TechNova Corp",
       role: "Frontend Dev",
-      date: "Tomorrow, 10:00 AM",
+      date: t("dashboard.interviewDateOne"),
     },
     {
       company: "FinServe Inc",
       role: "UI Engineer",
-      date: "Apr 12, 2:30 PM",
+      date: t("dashboard.interviewDateTwo"),
     },
   ];
 
   const careerTools = [
     {
-      name: "Mock Interview",
+      name: t("dashboard.mockInterview"),
       icon: <PlayCircle className="w-6 h-6 mb-2" />,
       color:
         "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
     },
     {
-      name: "Cover Letter",
+      name: t("dashboard.coverLetter"),
       icon: <Edit3 className="w-6 h-6 mb-2" />,
       color:
         "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     },
     {
-      name: "Salary Insights",
+      name: t("dashboard.salaryInsights"),
       icon: <BarChart2 className="w-6 h-6 mb-2" />,
       color:
         "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     },
     {
-      name: "Job Tracker",
+      name: t("dashboard.jobTracker"),
       icon: <Briefcase className="w-6 h-6 mb-2" />,
       color:
         "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -122,10 +125,10 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
-            Welcome back, {displayName}!
+            {t("dashboard.welcome")} {displayName}!
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Let&apos;s keep your career momentum going today.
+            {t("dashboard.subtitle")}
           </p>
         </div>
 
@@ -134,7 +137,7 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
             <Link href="/admin">
               <Button variant="outline" className="shrink-0">
                 <Shield className="w-4 h-4 mr-2" />
-                Admin Panel
+                {t("dashboard.adminPanel")}
               </Button>
             </Link>
           )}
@@ -143,7 +146,7 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
             <Link href="/learningresources">
               <Button variant="outline" className="shrink-0">
                 <BookOpen className="w-4 h-4 mr-2" />
-                Learning Resources
+                {t("dashboard.learningResources")}
               </Button>
             </Link>
           )}
@@ -151,7 +154,7 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
           <Link href="/profile">
             <Button variant="outline" className="shrink-0">
               <Edit3 className="w-4 h-4 mr-2" />
-              My Profile
+              {t("dashboard.myProfile")}
             </Button>
           </Link>
         </div>
@@ -166,15 +169,15 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-                  Administrator Access Enabled
+                  {t("dashboard.adminAccessTitle")}
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  You can manage registered users from the admin panel.
+                  {t("dashboard.adminAccessDesc")}
                 </p>
               </div>
               <Link href="/admin">
                 <Button>
-                  Open Admin Panel
+                  {t("dashboard.openAdminPanel")}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
@@ -189,15 +192,15 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-                  Learning Resource Management
+                  {t("dashboard.learningManagementTitle")}
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Create, edit and manage articles and resume examples for users.
+                  {t("dashboard.learningManagementDesc")}
                 </p>
               </div>
               <Link href="/learningresources">
                 <Button>
-                  Manage Resources
+                  {t("dashboard.manageResources")}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
@@ -215,10 +218,11 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
           <Card className="bg-blue-600 text-white border-none h-full shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex justify-between items-center">
-                Resume Score <FileText className="w-5 h-5 text-blue-200" />
+                {t("dashboard.resumeScore")}{" "}
+                <FileText className="w-5 h-5 text-blue-200" />
               </CardTitle>
               <CardDescription className="text-blue-200">
-                Based on your latest upload
+                {t("dashboard.basedOnLatestUpload")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -240,22 +244,24 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
                       variant="outline"
                       className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
                     >
-                      View Full Report
+                      {t("dashboard.viewFullReport")}
                     </Button>
                   </Link>
                 </>
               ) : (
                 <>
-                  <div className="text-3xl font-extrabold mb-2">No Score</div>
+                  <div className="text-3xl font-extrabold mb-2">
+                    {t("dashboard.noScore")}
+                  </div>
                   <p className="text-sm text-blue-100 mb-4">
-                    Upload a resume to generate your first review.
+                    {t("dashboard.uploadResumeHint")}
                   </p>
                   <Link href="/resume">
                     <Button
                       variant="outline"
                       className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
                     >
-                      Upload Resume
+                      {t("dashboard.uploadResume")}
                     </Button>
                   </Link>
                 </>
@@ -272,7 +278,7 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
           <Card className="h-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex justify-between items-center">
-                Upcoming Interviews{" "}
+                {t("dashboard.upcomingInterviews")}{" "}
                 <Calendar className="w-5 h-5 text-slate-400" />
               </CardTitle>
             </CardHeader>
@@ -302,7 +308,7 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
                 </ul>
               ) : (
                 <p className="text-sm text-slate-500 py-4 text-center">
-                  No upcoming interviews scheduled.
+                  {t("dashboard.noUpcomingInterviews")}
                 </p>
               )}
             </CardContent>
@@ -316,9 +322,9 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
         >
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>Career Tools</CardTitle>
+              <CardTitle>{t("dashboard.careerTools")}</CardTitle>
               <CardDescription>
-                Quick access to your favorite tools.
+                {t("dashboard.careerToolsDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
@@ -338,22 +344,26 @@ const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } = useAu
 
       <Card>
         <CardHeader>
-          <CardTitle>Account Status</CardTitle>
+          <CardTitle>{t("dashboard.accountStatus")}</CardTitle>
           <CardDescription>
-            Your current access state from the backend.
+            {t("dashboard.accountStatusDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div>
-            <span className="font-medium">Role:</span>{" "}
+            <span className="font-medium">{t("dashboard.role")}:</span>{" "}
             <span className="capitalize">{user?.role}</span>
           </div>
           <div>
-            <span className="font-medium">Status:</span>{" "}
-            <span>{user?.is_active ? "Active" : "Deactivated"}</span>
+            <span className="font-medium">{t("dashboard.status")}:</span>{" "}
+            <span>
+              {user?.is_active
+                ? t("dashboard.active")
+                : t("dashboard.deactivated")}
+            </span>
           </div>
           <div>
-            <span className="font-medium">Created At:</span>{" "}
+            <span className="font-medium">{t("dashboard.createdAt")}:</span>{" "}
             <span>
               {user?.created_at
                 ? new Date(user.created_at).toLocaleString()

@@ -24,23 +24,20 @@ export default function Home() {
 
   const features = [
     {
-      title: "AI Resume Review",
-      description:
-        "Get instant, actionable feedback on your resume powered by advanced AI.",
+      title: t("home.feature.resume.title"),
+      description: t("home.feature.resume.description"),
       icon: <FileText className="w-10 h-10 text-blue-600 mb-4" />,
       href: "/resume",
     },
     {
-      title: "Career Resources",
-      description:
-        "Access a curated library of interview guides, skillset roadmaps, and more.",
+      title: t("home.feature.resources.title"),
+      description: t("home.feature.resources.description"),
       icon: <BookOpen className="w-10 h-10 text-blue-600 mb-4" />,
       href: "/resources",
     },
     {
-      title: "AI Assistant",
-      description:
-        "Chat with our intelligent career bot from the floating chat box.",
+      title: t("home.feature.assistant.title"),
+      description: t("home.feature.assistant.description"),
       icon: <Bot className="w-10 h-10 text-blue-600 mb-4" />,
       action: "chatbot",
     },
@@ -96,12 +93,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-              Everything you need to land your dream job
+              {t("home.features.title")}
             </h2>
 
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-              Our platform provides the modern tools necessary for today's
-              competitive job market.
+              {t("home.features.subtitle")}
             </p>
           </div>
 

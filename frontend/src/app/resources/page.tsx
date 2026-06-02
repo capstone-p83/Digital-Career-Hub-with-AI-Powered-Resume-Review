@@ -14,6 +14,7 @@ const API_BASE_URL =
 type Article = {
   id: number;
   title: string;
+  title_bn: string | null;
   author: string;
   image_url: string | null;
   content_en: string;
@@ -25,10 +26,14 @@ type Article = {
 type ResumeExample = {
   id: number;
   title: string;
+  title_bn: string | null;
   candidate_name: string;
+  candidate_name_bn: string | null;
   job_title: string;
+  job_title_bn: string | null;
   image_url: string | null;
   description: string;
+  description_bn: string | null;
   subcategory: string | null;
   created_at: string;
 };
@@ -36,10 +41,14 @@ type ResumeExample = {
 type ResourceItem = {
   id: string;
   title: string;
+  title_bn: string | null;
   category: "Article" | "Resume Example";
   content_en: string;
   content_bn: string;
   author: string;
+  author_bn: string | null;
+  job_title?: string;
+  job_title_bn?: string | null;
   image_url: string | null;
   subcategory: string | null;
 };
@@ -59,7 +68,6 @@ export default function ResourcesPage() {
     { key: "resumes", label: t("resources.resumes") },
   ];
 
-  // Dynamically build subcategory list from resources
   const SUBCATEGORIES = useMemo(() => {
     const unique = new Set<string>();
     resources.forEach((r) => {
@@ -86,10 +94,12 @@ export default function ResourcesPage() {
           (a: Article) => ({
             id: `article-${a.id}`,
             title: a.title,
+            title_bn: a.title_bn,
             category: "Article" as const,
             content_en: a.content_en,
             content_bn: a.content_bn,
             author: a.author,
+            author_bn: null,
             image_url: a.image_url,
             subcategory: a.subcategory,
           })
@@ -99,10 +109,14 @@ export default function ResourcesPage() {
           (r: ResumeExample) => ({
             id: `resume-${r.id}`,
             title: r.title,
+            title_bn: r.title_bn || r.title,
             category: "Resume Example" as const,
             content_en: r.description,
-            content_bn: r.description,
+            content_bn: r.description_bn || r.description,
             author: r.candidate_name,
+            author_bn: r.candidate_name_bn || r.candidate_name,
+            job_title: r.job_title,
+            job_title_bn: r.job_title_bn || r.job_title,
             image_url: r.image_url,
             subcategory: r.subcategory,
           })
@@ -110,7 +124,7 @@ export default function ResourcesPage() {
 
         setResources([...articleItems, ...resumeItems]);
       } catch (err: any) {
-        setError("Failed to load resources. Please try again later.");
+        setError("resources.failedLoad");
       } finally {
         setLoading(false);
       }
@@ -121,10 +135,18 @@ export default function ResourcesPage() {
 
   const filteredResources = resources.filter((res) => {
     const content = language === "bn" ? res.content_bn : res.content_en;
+    const displayTitle =
+      language === "bn" && res.title_bn ? res.title_bn : res.title;
+    const displayAuthor =
+      language === "bn" && res.author_bn ? res.author_bn : res.author;
+    const displayJobTitle =
+      language === "bn" && res.job_title_bn ? res.job_title_bn : res.job_title;
+
     const matchesSearch =
-      res.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      displayTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      res.author.toLowerCase().includes(searchTerm.toLowerCase());
+      displayAuthor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (displayJobTitle || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory =
       selectedCategory === "all" ||
@@ -148,7 +170,6 @@ export default function ResourcesPage() {
         </p>
       </div>
 
-      {/* Search and Type Filter */}
       <div className="flex flex-col md:flex-row gap-4 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
@@ -159,6 +180,7 @@ export default function ResourcesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+
         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
           {CATEGORIES.map((category) => (
             <Button
@@ -173,10 +195,11 @@ export default function ResourcesPage() {
         </div>
       </div>
 
-      {/* Subcategory Filter */}
       {SUBCATEGORIES.length > 1 && (
         <div className="mb-8">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Filter by Subcategory</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+            {t("resources.filterBySubcategory")}
+          </p>
           <div className="flex flex-wrap gap-2">
             {SUBCATEGORIES.map((sub) => (
               <Button
@@ -186,14 +209,13 @@ export default function ResourcesPage() {
                 className="whitespace-nowrap h-9 text-sm"
                 size="sm"
               >
-                {sub === "all" ? "All Subcategories" : sub}
+                {sub === "all" ? t("resources.allSubcategories") : sub}
               </Button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
           <FileText className="w-10 h-10 text-slate-400 mx-auto mb-4 animate-pulse" />
@@ -201,18 +223,33 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      {/* Error */}
       {!loading && error && (
         <div className="text-center py-20 bg-red-50 dark:bg-red-950/20 rounded-xl border border-dashed border-red-300 dark:border-red-800">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-red-600 dark:text-red-400">{t(error)}</p>
         </div>
       )}
 
-      {/* Resource Grid */}
       {!loading && !error && filteredResources.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredResources.map((resource, idx) => {
-            const content = language === "bn" ? resource.content_bn : resource.content_en;
+            const content =
+              language === "bn" ? resource.content_bn : resource.content_en;
+
+            const displayTitle =
+              language === "bn" && resource.title_bn
+                ? resource.title_bn
+                : resource.title;
+
+            const displayAuthor =
+              language === "bn" && resource.author_bn
+                ? resource.author_bn
+                : resource.author;
+
+            const displayJobTitle =
+              language === "bn" && resource.job_title_bn
+                ? resource.job_title_bn
+                : resource.job_title;
+
             return (
               <motion.div
                 key={resource.id}
@@ -226,11 +263,12 @@ export default function ResourcesPage() {
                     <div className="w-full h-40 overflow-hidden rounded-t-xl">
                       <img
                         src={resource.image_url}
-                        alt={resource.title}
+                        alt={displayTitle}
                         className="w-full h-full object-cover"
                       />
                     </div>
                   )}
+
                   <CardHeader>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex flex-wrap gap-2">
@@ -241,32 +279,44 @@ export default function ResourcesPage() {
                               : "text-emerald-600 bg-emerald-50 dark:bg-slate-800 dark:text-emerald-400"
                           }`}
                         >
-                          {resource.category === "Article" ? t("resources.articles") : t("resources.resumes")}
+                          {resource.category === "Article"
+                            ? t("resources.articles")
+                            : t("resources.resumes")}
                         </span>
+
                         {resource.subcategory && (
                           <span className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300">
                             {resource.subcategory}
                           </span>
                         )}
                       </div>
+
                       <button className="text-slate-400 hover:text-blue-600 transition">
                         <Bookmark className="w-5 h-5" />
                       </button>
                     </div>
-                    <CardTitle className="text-xl leading-snug">{resource.title}</CardTitle>
+
+                    <CardTitle className="text-xl leading-snug">
+                      {displayTitle}
+                    </CardTitle>
+
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      {t("resources.by")} {resource.author}
+                      {resource.category === "Resume Example" && displayJobTitle
+                        ? `${displayAuthor} • ${displayJobTitle}`
+                        : `${t("resources.by")} ${displayAuthor}`}
                     </p>
                   </CardHeader>
+
                   <CardContent className="flex-1">
                     <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
                       {content}
                     </p>
+
                     <a
                       href={`/resources/${resource.id}`}
                       className="inline-flex items-center mt-4 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
-                      View full resource
+                      {t("resources.viewFullResource")}
                     </a>
                   </CardContent>
                 </Card>
@@ -276,14 +326,16 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      {/* Empty State */}
       {!loading && !error && filteredResources.length === 0 && (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
           <Bookmark className="w-10 h-10 text-slate-400 mx-auto mb-4" />
+
           <h3 className="text-lg font-medium text-slate-900 dark:text-white">
             {t("resources.noResults")}
           </h3>
+
           <p className="text-slate-500">{t("resources.noResultsHint")}</p>
+
           <Button
             variant="outline"
             className="mt-4"

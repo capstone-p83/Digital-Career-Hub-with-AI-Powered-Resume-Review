@@ -48,7 +48,7 @@ function getEnglishResponse(message) {
   }
 
   if (text.includes("resume") || text.includes("cv")) {
-    return "For your resume, focus on clear structure, strong action verbs, and measurable achievements. If you want detailed feedback, please use the Resume Review page and upload your resume with your target job role or job description.";
+    return "For your resume, focus on clear structure, strong action verbs, and measurable achievements. If you want detailed feedback, please use the Resume Review page and upload your resume with your target job role or job description. For a detailed resume review, please go to the Resume Review page on this website and upload your resume together with your target job role or job description.";
   }
 
   if (text.includes("interview")) {
