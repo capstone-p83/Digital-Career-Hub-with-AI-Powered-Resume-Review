@@ -12,8 +12,18 @@ const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login
-    setUser({ id: '1', name: 'John Doe', email: 'john@example.com' });
+
+    const loggedInUser = {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+    };
+
+    // Only save login state in React memory.
+    // Do not save to localStorage/sessionStorage.
+    // After closing/reopening or refreshing the app, user will be logged out.
+    setUser(loggedInUser);
+
     router.push('/dashboard');
   };
 
@@ -23,13 +33,21 @@ const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
         <div className="p-8 sm:p-12">
           <div className="text-center mb-10">
             <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              {mode === 'login' ? <LogIn className="w-8 h-8 text-emerald-600" /> : <UserPlus className="w-8 h-8 text-emerald-600" />}
+              {mode === 'login' ? (
+                <LogIn className="w-8 h-8 text-emerald-600" />
+              ) : (
+                <UserPlus className="w-8 h-8 text-emerald-600" />
+              )}
             </div>
+
             <h1 className="text-3xl font-bold text-zinc-900">
               {mode === 'login' ? 'Welcome Back' : 'Create Account'}
             </h1>
+
             <p className="text-zinc-500 mt-2">
-              {mode === 'login' ? 'Login to access your career hub' : 'Start your journey with CareerHub AI'}
+              {mode === 'login'
+                ? 'Login to access your career hub'
+                : 'Start your journey with CareerHub AI'}
             </p>
           </div>
 
@@ -86,7 +104,7 @@ const AuthPage = ({ mode }: { mode: 'login' | 'register' }) => {
 
           <div className="mt-8 text-center">
             <p className="text-zinc-500 text-sm">
-              {mode === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
+              {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
               <Link
                 href={mode === 'login' ? '/register' : '/login'}
                 className="text-emerald-600 font-bold hover:underline"
