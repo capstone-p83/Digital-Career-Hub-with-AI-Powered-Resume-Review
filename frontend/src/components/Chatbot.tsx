@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bot, MessageSquare, Send, X } from "lucide-react";
+import { sendChatMessage } from "../services/chatService";
 
 interface Message {
   id: string;
@@ -10,15 +11,19 @@ interface Message {
   text: string;
 }
 
-export default function Chatbot() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
+function getInitialMessages(): Message[] {
+  return [
     {
       id: "1",
       sender: "bot",
-      text: "Hi! I'm your AI Career Assistant. Ask me about resumes, interviews, career planning, or job applications.",
+      text: "Hi! I'm your AI Career Assistant. I can help with resumes, interviews, cover letters, job search, career planning, and professional skills.",
     },
-  ]);
+  ];
+}
+
+export default function Chatbot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(getInitialMessages);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -28,10 +33,19 @@ export default function Chatbot() {
       setIsOpen(true);
     };
 
+    const resetChatbot = () => {
+      setMessages(getInitialMessages());
+      setInputValue("");
+      setIsTyping(false);
+      setIsOpen(false);
+    };
+
     window.addEventListener("open-chatbot", openChatbot);
+    window.addEventListener("reset-chatbot", resetChatbot);
 
     return () => {
       window.removeEventListener("open-chatbot", openChatbot);
+      window.removeEventListener("reset-chatbot", resetChatbot);
     };
   }, []);
 
@@ -39,29 +53,7 @@ export default function Chatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const getMockResponse = (input: string) => {
-    const lower = input.toLowerCase();
-
-    if (lower.includes("resume") || lower.includes("cv")) {
-      return "For a strong resume, keep it clear and targeted. Use bullet points, start with action verbs, and include measurable results such as percentages, time saved, or project outcomes.";
-    }
-
-    if (lower.includes("interview")) {
-      return "For interview preparation, use the STAR method: Situation, Task, Action, and Result. It helps you answer behavioural questions with clear examples.";
-    }
-
-    if (lower.includes("salary")) {
-      return "For salary negotiation, research the market rate first. Try to discuss your value and experience before giving a specific number.";
-    }
-
-    if (lower.includes("job") || lower.includes("career")) {
-      return "A good career plan should include your target role, required skills, current gaps, and short-term actions such as improving your resume, building projects, and applying consistently.";
-    }
-
-    return "That's a good question. This is currently a front-end demo chatbot. Later, it can be connected to the backend AI service to provide more personalised career advice.";
-  };
-
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const trimmedInput = inputValue.trim();
 
     if (!trimmedInput || isTyping) {
@@ -78,16 +70,27 @@ export default function Chatbot() {
     setInputValue("");
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      const reply = await sendChatMessage(trimmedInput);
+
       const botMessage: Message = {
         id: `${Date.now()}-bot`,
         sender: "bot",
-        text: getMockResponse(trimmedInput),
+        text: reply,
       };
 
       setMessages((prev) => [...prev, botMessage]);
+    } catch {
+      const errorMessage: Message = {
+        id: `${Date.now()}-error`,
+        sender: "bot",
+        text: "Sorry, something went wrong. Please try again later.",
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 900);
+    }
   };
 
   return (
@@ -106,6 +109,7 @@ export default function Chatbot() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                   <Bot className="h-5 w-5" />
                 </div>
+
                 <div>
                   <p className="text-sm font-semibold">AI Career Assistant</p>
                   <p className="text-xs text-blue-100">Online</p>
@@ -168,7 +172,7 @@ export default function Chatbot() {
                       handleSendMessage();
                     }
                   }}
-                  placeholder="Ask me anything..."
+                  placeholder="Ask about resumes, interviews, or job search..."
                   className="flex-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-blue-900"
                 />
 
