@@ -29,6 +29,8 @@ function generateToken(user) {
       id: user.id,
       email: user.email,
       role: user.role,
+      subscription_tier: user.subscription_tier,
+      scans_remaining: user.scans_remaining, 
     },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
@@ -46,6 +48,8 @@ async function findUserByIdentity(provider, providerUserId) {
       u.id,
       u.email,
       u.role,
+      u.subscription_tier,
+      u.scans_remaining,
       u.is_active,
       u.deleted_at,
       u.created_at
@@ -56,7 +60,6 @@ async function findUserByIdentity(provider, providerUserId) {
     `,
     [provider, providerUserId]
   );
-
   return result.rows[0] || null;
 }
 
@@ -67,6 +70,8 @@ async function findUserByEmail(email) {
       id,
       email,
       role,
+      subscription_tier,
+      scans_remaining,
       is_active,
       deleted_at,
       created_at
@@ -76,7 +81,6 @@ async function findUserByEmail(email) {
     `,
     [normalizeEmail(email)]
   );
-
   return result.rows[0] || null;
 }
 
@@ -85,11 +89,11 @@ async function createOAuthUser(email) {
     `
     INSERT INTO users (email, password, role)
     VALUES ($1, $2, 'user')
-    RETURNING id, email, role, is_active, deleted_at, created_at
+    -- Add the two columns below so they aren't missing on first login
+    RETURNING id, email, role, subscription_tier, scans_remaining, is_active, deleted_at, created_at
     `,
     [normalizeEmail(email), ""]
   );
-
   return result.rows[0];
 }
 
@@ -133,6 +137,7 @@ async function getUserProfileByUserId(userId) {
   );
 }
 
+
 async function buildAuthResponseUser(user) {
   const profile = await getUserProfileByUserId(user.id);
 
@@ -140,6 +145,8 @@ async function buildAuthResponseUser(user) {
     id: user.id,
     email: user.email,
     role: user.role,
+    subscription_tier: user.subscription_tier,
+    scans_remaining: user.scans_remaining,     
     is_active: user.is_active,
     deleted_at: user.deleted_at,
     created_at: user.created_at,
@@ -240,7 +247,8 @@ router.post("/register", async (req, res) => {
       `
       INSERT INTO users (email, password, role)
       VALUES ($1, $2, $3)
-      RETURNING id, email, role, is_active, deleted_at, created_at
+      -- Add the columns here too
+      RETURNING id, email, role, subscription_tier, scans_remaining, is_active, deleted_at, created_at
       `,
       [trimmedEmail, hashedPassword, role]
     );
@@ -260,12 +268,26 @@ router.post("/register", async (req, res) => {
 
     const token = generateToken(user);
 
-    return res.status(201).json({
+    return res.status(200).json({
       status: "ok",
-      message: "User registered successfully",
+      message: "Login successful",
       user: {
-        ...user,
-        profile: profileResult.rows[0],
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        subscription_tier: user.subscription_tier, 
+        scans_remaining: user.scans_remaining,     
+        is_active: user.is_active,
+        deleted_at: user.deleted_at,
+        created_at: user.created_at,
+        profile: {
+          id: user.profile_id,
+          user_id: user.user_id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
+          date_of_birth: user.date_of_birth,
+        },
       },
       token,
     });
@@ -296,28 +318,31 @@ router.post("/login", async (req, res) => {
 
     const trimmedEmail = email.trim().toLowerCase();
 
-    const result = await db.query(
-      `
-      SELECT
-        u.id,
-        u.email,
-        u.password,
-        u.role,
-        u.is_active,
-        u.deleted_at,
-        u.created_at,
-        up.id AS profile_id,
-        up.user_id,
-        up.first_name,
-        up.last_name,
-        up.phone,
-        up.date_of_birth
-      FROM users u
-      LEFT JOIN user_profile up ON up.user_id = u.id
-      WHERE u.email = $1
-      `,
-      [trimmedEmail]
-    );
+      // Update the query around line 248
+  const result = await db.query(
+    `
+    SELECT
+      u.id,
+      u.email,
+      u.password,
+      u.role,
+      u.subscription_tier,
+      u.scans_remaining,
+      u.is_active,
+      u.deleted_at,
+      u.created_at,
+      up.id AS profile_id,
+      up.user_id,
+      up.first_name,
+      up.last_name,
+      up.phone,
+      up.date_of_birth
+    FROM users u
+    LEFT JOIN user_profile up ON up.user_id = u.id
+    WHERE u.email = $1
+    `,
+    [trimmedEmail]
+  );
 
     const user = result.rows[0];
 
@@ -346,6 +371,7 @@ router.post("/login", async (req, res) => {
 
     const token = generateToken(user);
 
+    // Update the return statement around line 282
     return res.status(200).json({
       status: "ok",
       message: "Login successful",
@@ -353,6 +379,8 @@ router.post("/login", async (req, res) => {
         id: user.id,
         email: user.email,
         role: user.role,
+        subscription_tier: user.subscription_tier, // ADD THIS
+        scans_remaining: user.scans_remaining,     // ADD THIS
         is_active: user.is_active,
         deleted_at: user.deleted_at,
         created_at: user.created_at,

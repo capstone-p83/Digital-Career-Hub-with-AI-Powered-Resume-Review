@@ -8,22 +8,15 @@ function getUserId(req) {
   return req.user?.id || req.user?.userId || req.user?.user_id;
 }
 
+// backend/controllers/resumeController.js
+
 async function getCurrentUser(req) {
   const userId = getUserId(req);
+  if (!userId) return null;
 
-  if (!userId) {
-    return null;
-  }
-
-  if (req.user?.role) {
-    return {
-      id: userId,
-      role: req.user.role,
-    };
-  }
-
+  // Update query to include the new tier and scan columns
   const result = await pool.query(
-    "SELECT id, role FROM users WHERE id = $1",
+    "SELECT id, role, subscription_tier, scans_remaining FROM users WHERE id = $1",
     [userId]
   );
 
@@ -49,32 +42,21 @@ function isAdminRole(role) {
   return role === "admin" || role === "adminstaff";
 }
 
-async function checkDailyLimit(userId, role) {
-  if (isAdminRole(role)) {
+async function checkScanLimit(user) {
+  // Admins still get a pass
+  if (isAdminRole(user.role)) {
+    return { allowed: true };
+  }
+
+  // Check the new subscription_tier column
+  if (user.subscription_tier === 'free' && user.scans_remaining <= 0) {
     return {
-      allowed: true,
-      usedToday: 0,
-      limit: null,
+      allowed: false,
+      message: "You have used your 2 free scans. Upgrade to Pro for unlimited access!"
     };
   }
 
-  const result = await pool.query(
-    `
-    SELECT COUNT(*)::int AS count
-    FROM resume_feedback
-    WHERE user_id = $1
-    AND created_at >= date_trunc('day', NOW())
-    `,
-    [userId]
-  );
-
-  const usedToday = result.rows[0]?.count || 0;
-
-  return {
-    allowed: usedToday < FREE_USER_DAILY_LIMIT,
-    usedToday,
-    limit: FREE_USER_DAILY_LIMIT,
-  };
+  return { allowed: true };
 }
 
 function safeArray(value) {
@@ -136,6 +118,7 @@ async function reviewResume(req, res) {
 
   try {
     const currentUser = await getCurrentUser(req);
+    console.log("BACKEND LOG A: Current User Role:", currentUser?.role, "Tier:", currentUser?.subscription_tier);
 
     if (!currentUser) {
       return res.status(401).json({
@@ -144,15 +127,13 @@ async function reviewResume(req, res) {
       });
     }
 
-    const limitStatus = await checkDailyLimit(currentUser.id, currentUser.role);
+    const isFreeTier = currentUser.subscription_tier === 'free';
+    const isAdmin = isAdminRole(currentUser.role);
 
-    if (!limitStatus.allowed) {
-      return res.status(429).json({
+    if (!isAdmin && isFreeTier && currentUser.scans_remaining <= 0) {
+      return res.status(403).json({
         status: "error",
-        message:
-          "You have reached your daily free resume review limit. Please try again tomorrow or upgrade your plan.",
-        used_today: limitStatus.usedToday,
-        daily_limit: limitStatus.limit,
+        message: "You have reached your 2 free resume reviews. Please upgrade to Pro for unlimited access.",
       });
     }
 
@@ -182,8 +163,7 @@ async function reviewResume(req, res) {
     if (!extractedText || extractedText.trim().length < 50) {
       return res.status(400).json({
         status: "error",
-        message:
-          "Could not extract enough readable text from the resume. Please upload a clearer PDF or DOCX file.",
+        message: "Could not extract enough readable text from the resume. Please upload a clearer PDF or DOCX file.",
       });
     }
 
@@ -194,13 +174,23 @@ async function reviewResume(req, res) {
     });
 
     const analysis = normalizeAnalysis(
-
       aiResult,
       targetJobRole,
       targetJobDescription
     );
 
     await client.query("BEGIN");
+
+    if (currentUser.role === 'user' && currentUser.subscription_tier === 'free') {
+      console.log("BACKEND LOG B: Attempting to decrement scan for user ID:", currentUser.id);
+      const dbUpdate = await client.query(
+        "UPDATE users SET scans_remaining = scans_remaining - 1 WHERE id = $1 RETURNING scans_remaining",
+        [currentUser.id]
+      );
+      console.log("BACKEND LOG C: Database now says scans remaining:", dbUpdate.rows[0]?.scans_remaining);
+    } else {
+      console.log("BACKEND LOG D: Skipped decrement. Reason: Not a free user or admin role.");
+    }
 
     const resumeInsert = await client.query(
       `
