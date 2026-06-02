@@ -36,6 +36,12 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logout();
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("reset-chatbot"));
+    }
+
+    setMobileMenuOpen(false);
     router.replace("/login");
   };
 
@@ -205,10 +211,7 @@ export default function Navbar() {
 
                 <button
                   type="button"
-                  onClick={async () => {
-                    setMobileMenuOpen(false);
-                    await handleLogout();
-                  }}
+                  onClick={handleLogout}
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   {t("nav.logout")}
