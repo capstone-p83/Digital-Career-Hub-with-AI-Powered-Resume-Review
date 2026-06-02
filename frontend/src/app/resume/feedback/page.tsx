@@ -94,7 +94,10 @@ export default function ResumeFeedbackPage() {
   const searchParams = useSearchParams();
   const requestedFeedbackId = searchParams.get("id");
 
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
+
+  // Only admin can delete feedback history from the UI.
+  const isAdminUser = (user as any)?.role === "admin";
 
   const [ready, setReady] = useState(false);
   const [analysis, setAnalysis] = useState<ResumeReviewAnalysis | null>(null);
@@ -102,6 +105,7 @@ export default function ResumeFeedbackPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [showFullJobDescription, setShowFullJobDescription] = useState(false);
+
   const loadFeedbackDetail = useCallback(
     async (feedbackId: number) => {
       try {
@@ -129,6 +133,7 @@ export default function ResumeFeedbackPage() {
             JSON.stringify(data.analysis)
           );
         }
+
         setShowFullJobDescription(false);
       } catch {
         setError("Network error. Could not load feedback details.");
@@ -138,6 +143,11 @@ export default function ResumeFeedbackPage() {
   );
 
   async function handleDeleteFeedback(feedbackId: number) {
+    if (!isAdminUser) {
+      setError("Only admin users can delete feedback history.");
+      return;
+    }
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this feedback record?"
     );
@@ -174,6 +184,7 @@ export default function ResumeFeedbackPage() {
       setError("Network error. Could not delete feedback.");
     }
   }
+
   useEffect(() => {
     async function loadInitialData() {
       if (!isAuthenticated) {
@@ -294,6 +305,7 @@ export default function ResumeFeedbackPage() {
                 Resume Feedback History
               </CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-3">
               {history.length === 0 ? (
                 <p className="text-sm text-slate-500">No history found.</p>
@@ -324,19 +336,22 @@ export default function ResumeFeedbackPage() {
                               {item.score}/100
                             </span>
                           </div>
+
                           <p className="mt-1 text-xs text-slate-500">
                             {formatDate(item.created_at)}
                           </p>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteFeedback(item.feedback_id)}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                          title="Delete feedback"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {isAdminUser && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFeedback(item.feedback_id)}
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                            title="Delete feedback"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -353,6 +368,7 @@ export default function ResumeFeedbackPage() {
                   Target Position
                 </CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">
@@ -380,10 +396,14 @@ export default function ResumeFeedbackPage() {
                     {analysis.target_job_description.length > 180 && (
                       <button
                         type="button"
-                        onClick={() => setShowFullJobDescription((prev) => !prev)}
+                        onClick={() =>
+                          setShowFullJobDescription((prev) => !prev)
+                        }
                         className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                       >
-                        {showFullJobDescription ? "Show less" : "Show full description"}
+                        {showFullJobDescription
+                          ? "Show less"
+                          : "Show full description"}
                       </button>
                     )}
                   </div>
@@ -391,8 +411,8 @@ export default function ResumeFeedbackPage() {
                   <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
                     <Info className="w-4 h-4 mt-0.5 shrink-0" />
                     <p>
-                      No detailed job description was provided. The analysis is based on common
-                      industry requirements for this target role.
+                      No detailed job description was provided. The analysis is
+                      based on common industry requirements for this target role.
                     </p>
                   </div>
                 )}
@@ -487,6 +507,7 @@ export default function ResumeFeedbackPage() {
                   Evaluation Notes
                 </CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-3 text-sm">
                 <div>
                   <p className="font-medium text-slate-900 dark:text-white">
@@ -586,6 +607,7 @@ export default function ResumeFeedbackPage() {
                       ATS Keyword Analysis
                     </CardTitle>
                   </CardHeader>
+
                   <CardContent className="space-y-5">
                     <p className="text-sm text-slate-500">
                       This section compares your resume skills with the target
@@ -648,6 +670,7 @@ function FeedbackListCard({
             {title}
           </CardTitle>
         </CardHeader>
+
         <CardContent className="pt-4">
           <ul className="space-y-2">
             {items.length === 0 ? (
