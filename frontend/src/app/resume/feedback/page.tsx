@@ -90,7 +90,10 @@ export default function ResumeFeedbackPage() {
   const searchParams = useSearchParams();
   const requestedFeedbackId = searchParams.get("id");
 
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
+
+  // Only admin can delete feedback history from the UI.
+  const isAdminUser = (user as any)?.role === "admin";
 
   const [ready, setReady] = useState(false);
   const [analysis, setAnalysis] = useState<ResumeReviewAnalysis | null>(null);
@@ -104,7 +107,6 @@ export default function ResumeFeedbackPage() {
     if (score >= 70) return t("feedback.solidFoundation");
     return t("feedback.roomToGrow");
   };
-
   const loadFeedbackDetail = useCallback(
     async (feedbackId: number) => {
       try {
@@ -142,6 +144,11 @@ export default function ResumeFeedbackPage() {
   );
 
   async function handleDeleteFeedback(feedbackId: number) {
+    if (!isAdminUser) {
+      setError(t("feedback.onlyAdminCanDelete"));
+      return;
+    }
+
     const confirmed = window.confirm(t("feedback.confirmDelete"));
 
     if (!confirmed) return;
@@ -297,6 +304,7 @@ export default function ResumeFeedbackPage() {
                 {t("feedback.historyTitle")}
               </CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-3">
               {history.length === 0 ? (
                 <p className="text-sm text-slate-500">
@@ -329,19 +337,22 @@ export default function ResumeFeedbackPage() {
                               {item.score}/100
                             </span>
                           </div>
+
                           <p className="mt-1 text-xs text-slate-500">
                             {formatDate(item.created_at)}
                           </p>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteFeedback(item.feedback_id)}
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                          title={t("feedback.deleteFeedback")}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {isAdminUser && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFeedback(item.feedback_id)}
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                            title={t("feedback.deleteFeedback")}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -358,6 +369,7 @@ export default function ResumeFeedbackPage() {
                   {t("feedback.targetPosition")}
                 </CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-500">
@@ -385,7 +397,9 @@ export default function ResumeFeedbackPage() {
                     {analysis.target_job_description.length > 180 && (
                       <button
                         type="button"
-                        onClick={() => setShowFullJobDescription((prev) => !prev)}
+                        onClick={() =>
+                          setShowFullJobDescription((prev) => !prev)
+                        }
                         className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                       >
                         {showFullJobDescription
@@ -493,6 +507,7 @@ export default function ResumeFeedbackPage() {
                   {t("feedback.evaluationNotes")}
                 </CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-3 text-sm">
                 <div>
                   <p className="font-medium text-slate-900 dark:text-white">
@@ -594,6 +609,7 @@ export default function ResumeFeedbackPage() {
                       {t("feedback.atsKeywordAnalysis")}
                     </CardTitle>
                   </CardHeader>
+
                   <CardContent className="space-y-5">
                     <p className="text-sm text-slate-500">
                       {t("feedback.atsDescription")}
@@ -660,6 +676,7 @@ function FeedbackListCard({
             {title}
           </CardTitle>
         </CardHeader>
+
         <CardContent className="pt-4">
           <ul className="space-y-2">
             {items.length === 0 ? (

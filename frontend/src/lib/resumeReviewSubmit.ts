@@ -82,6 +82,10 @@ function getAuthHeaders(token?: string | null): HeadersInit {
   return headers;
 }
 
+function getApiBaseUrl(): string {
+  return apiBase.replace(/\/$/, "");
+}
+
 export function buildResumeReviewFormData({
   resume,
   target_job_role,
@@ -100,7 +104,7 @@ export async function postResumeReview(
   formData: FormData,
   token?: string | null
 ): Promise<Response> {
-  const url = `${apiBase.replace(/\/$/, "")}/resume/review`;
+  const url = `${getApiBaseUrl()}/resumes/review`;
 
   return fetch(url, {
     method: "POST",
@@ -112,7 +116,7 @@ export async function postResumeReview(
 export async function getLatestResumeFeedback(
   token?: string | null
 ): Promise<Response> {
-  const url = `${apiBase.replace(/\/$/, "")}/resume/feedback/latest`;
+  const url = `${getApiBaseUrl()}/resumes/feedback/latest`;
 
   return fetch(url, {
     method: "GET",
@@ -123,7 +127,7 @@ export async function getLatestResumeFeedback(
 export async function getResumeFeedbackHistory(
   token?: string | null
 ): Promise<Response> {
-  const url = `${apiBase.replace(/\/$/, "")}/resume/feedback`;
+  const url = `${getApiBaseUrl()}/resumes/feedback`;
 
   return fetch(url, {
     method: "GET",
@@ -135,7 +139,7 @@ export async function getResumeFeedbackById(
   feedbackId: number,
   token?: string | null
 ): Promise<Response> {
-  const url = `${apiBase.replace(/\/$/, "")}/resume/feedback/${feedbackId}`;
+  const url = `${getApiBaseUrl()}/resumes/feedback/${feedbackId}`;
 
   return fetch(url, {
     method: "GET",
@@ -147,7 +151,7 @@ export async function deleteResumeFeedbackById(
   feedbackId: number,
   token?: string | null
 ): Promise<Response> {
-  const url = `${apiBase.replace(/\/$/, "")}/resume/feedback/${feedbackId}`;
+  const url = `${getApiBaseUrl()}/resumes/feedback/${feedbackId}`;
 
   return fetch(url, {
     method: "DELETE",

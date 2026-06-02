@@ -23,6 +23,9 @@ function generateToken(user) {
   );
 }
 
+// =========================================================================
+// GET CURRENT USER PORTAL (Syncs with page.tsx LOG 1 & LOG 2 fallbacks)
+// =========================================================================
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const result = await db.query(
@@ -34,6 +37,8 @@ router.get("/me", authMiddleware, async (req, res) => {
         u.is_active,
         u.deleted_at,
         u.created_at,
+        u.subscription_tier,
+        u.scans_remaining,
         up.id AS profile_id,
         up.user_id,
         up.first_name,
@@ -65,6 +70,8 @@ router.get("/me", authMiddleware, async (req, res) => {
         is_active: row.is_active,
         deleted_at: row.deleted_at,
         created_at: row.created_at,
+        subscription_tier: row.subscription_tier,
+        scans_remaining: row.scans_remaining,
         profile: {
           id: row.profile_id,
           user_id: row.user_id,
@@ -86,6 +93,9 @@ router.get("/me", authMiddleware, async (req, res) => {
   }
 });
 
+// =========================================================================
+// UPDATE USER PROFILE DATA TRANSACTION
+// =========================================================================
 router.put("/me", authMiddleware, async (req, res) => {
   const client = await db.connect();
 
@@ -210,6 +220,9 @@ router.put("/me", authMiddleware, async (req, res) => {
   }
 });
 
+// =========================================================================
+// UPDATE USER CREDENTIAL PASSWORD ROUTE
+// =========================================================================
 router.put("/update-password", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -281,6 +294,9 @@ router.put("/update-password", authMiddleware, async (req, res) => {
   }
 });
 
+// =========================================================================
+// ADMINISTRATIVE ROLES RE-ASSIGNMENT (Admin / Staff Only)
+// =========================================================================
 router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -326,6 +342,9 @@ router.patch("/:id/role", authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// =========================================================================
+// SELF DEACTIVATION TERMINATION ROUTE
+// =========================================================================
 router.delete("/me", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;

@@ -16,6 +16,12 @@ import { useLanguage } from "../context/LanguageContext";
 export default function Home() {
   const { t } = useLanguage();
 
+  const openChatbot = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("open-chatbot"));
+    }
+  };
+
   const features = [
     {
       title: t("home.feature.resume.title"),
@@ -33,7 +39,7 @@ export default function Home() {
       title: t("home.feature.assistant.title"),
       description: t("home.feature.assistant.description"),
       icon: <Bot className="w-10 h-10 text-blue-600 mb-4" />,
-      href: "/chatbot",
+      action: "chatbot",
     },
   ];
 
@@ -69,15 +75,14 @@ export default function Home() {
                 </Button>
               </Link>
 
-              <Link href="/chatbot">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto h-12 px-8 text-base"
-                >
-                  {t("cta.askAI")}
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={openChatbot}
+                className="w-full sm:w-auto h-12 px-8 text-base"
+              >
+                {t("cta.askAI")}
+              </Button>
             </div>
           </motion.div>
         </div>
@@ -97,32 +102,48 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.href}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <Link
-                  href={feature.href}
-                  className="block h-full transition-transform hover:-translate-y-2"
-                >
-                  <Card className="h-full border-slate-200 dark:border-slate-800 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 transition-all">
-                    <CardHeader>
-                      {feature.icon}
-                      <CardTitle>{feature.title}</CardTitle>
-                    </CardHeader>
+            {features.map((feature, index) => {
+              const card = (
+                <Card className="h-full border-slate-200 dark:border-slate-800 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 transition-all">
+                  <CardHeader>
+                    {feature.icon}
+                    <CardTitle>{feature.title}</CardTitle>
+                  </CardHeader>
 
-                    <CardContent>
-                      <CardDescription className="text-base">
-                        {feature.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+                  <CardContent>
+                    <CardDescription className="text-base">
+                      {feature.description}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              );
+
+              return (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  {feature.href ? (
+                    <Link
+                      href={feature.href}
+                      className="block h-full transition-transform hover:-translate-y-2"
+                    >
+                      {card}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={openChatbot}
+                      className="block h-full w-full text-left transition-transform hover:-translate-y-2"
+                    >
+                      {card}
+                    </button>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>

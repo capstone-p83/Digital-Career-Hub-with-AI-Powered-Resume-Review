@@ -6,6 +6,7 @@ const commentRoutes = require("./commentRoutes");
 const learningResourceRoutes = require("./learningResourceRoutes");
 const resumeRoutes = require("./resumeRoutes");
 const jobRoutes = require("./jobRoutes");
+const chatRoutes = require("./chatRoutes");
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use("/jobs", jobRoutes);
 router.use("/users", userRoutes);
 router.use("/admin/users", adminUserRoutes);
 router.use("/comments", commentRoutes);
+router.use("/chat", chatRoutes);
 
 module.exports = router;
