@@ -62,12 +62,10 @@ export default function LoginPage() {
       auth: {
         clientId: MICROSOFT_CLIENT_ID,
         authority: `https://login.microsoftonline.com/${MICROSOFT_TENANT_ID}`,
-        redirectUri: "http://localhost:3000/login",
-        navigateToLoginRequestUrl: false,
+        redirectUri: "/login",
       },
       cache: {
-        cacheLocation: "sessionStorage",
-        storeAuthStateInCookie: false,
+        cacheLocation: "sessionStorage"
       },
     });
   }, []);
@@ -165,7 +163,7 @@ export default function LoginPage() {
       await msalInstance.loginRedirect({
         scopes: ["openid", "profile", "email"],
         prompt: "select_account",
-        redirectUri: "http://localhost:3000/login",
+        redirectUri: "/login",
       });
     } catch (err) {
       const rawMessage =
@@ -220,7 +218,9 @@ export default function LoginPage() {
         setMicrosoftProcessing(true);
 
         await msalInstance.initialize();
-        const result = await msalInstance.handleRedirectPromise();
+        const result = await msalInstance.handleRedirectPromise({
+          navigateToLoginRequestUrl: false,
+        });
 
         if (result?.idToken) {
           const user = await loginWithMicrosoft(result.idToken);

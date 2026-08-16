@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppContext } from '../context/AppContext';
 import { Globe, User, LogOut, Menu, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
   const { language, setLanguage, t, user, setUser } = useAppContext();

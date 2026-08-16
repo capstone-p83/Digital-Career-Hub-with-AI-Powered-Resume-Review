@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -85,7 +85,7 @@ function formatDate(value?: string) {
   return new Date(value).toLocaleDateString();
 }
 
-export default function ResumeFeedbackPage() {
+function ResumeFeedbackContent() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const requestedFeedbackId = searchParams.get("id");
@@ -117,14 +117,14 @@ export default function ResumeFeedbackPage() {
           | ResumeReviewSuccessBody
           | { message?: string };
 
-        if (!res.ok || !("analysis" in data)) {
-          setError(
-            typeof data.message === "string"
-              ? data.message
-              : t("feedback.couldNotLoadDetails")
-          );
-          return;
-        }
+          if (!res.ok || !("analysis" in data)) {
+            setError(
+              "message" in data && typeof data.message === "string"
+                ? data.message
+                : t("feedback.couldNotLoadDetails")
+            );
+            return;
+          }
 
         if (isResumeReviewAnalysis(data.analysis)) {
           setAnalysis(data.analysis);
@@ -756,5 +756,12 @@ function SkillGroup({
         </div>
       )}
     </div>
+  );
+}
+export default function ResumeFeedbackPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <ResumeFeedbackContent />
+    </Suspense>
   );
 }
