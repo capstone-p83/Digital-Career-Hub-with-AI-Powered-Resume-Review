@@ -30,6 +30,8 @@ import {
   RESUME_REVIEW_STORAGE_KEY,
 } from "../../lib/resumeReviewSubmit";
 import { searchJobTitles, type JobSuggestion } from "../../lib/jobSearch";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 export default function ResumeUploadPage() {
   const { t } = useLanguage();
@@ -124,7 +126,7 @@ export default function ResumeUploadPage() {
 
         if (!storedToken) return;
 
-        const response = await fetch("http://localhost:5001/api/users/me", {
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
           headers: {
             Authorization: `Bearer ${storedToken}`,
             Accept: "application/json",
@@ -169,7 +171,7 @@ export default function ResumeUploadPage() {
 
       if (!storedToken) return;
 
-      const response = await fetch("http://localhost:5001/api/users/me", {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         headers: {
           Authorization: `Bearer ${storedToken}`,
           Accept: "application/json",
