@@ -1,17 +1,27 @@
 const mammoth = require("mammoth");
 
 async function parsePdfBuffer(buffer) {
+  const workerModule = await import("pdf-parse/worker");
   const pdfModule = await import("pdf-parse");
+
+  const CanvasFactory = workerModule.CanvasFactory;
   const PDFParse = pdfModule.PDFParse || pdfModule.default?.PDFParse;
 
   if (!PDFParse) {
     throw new Error("PDFParse class was not found in pdf-parse.");
   }
 
-  const parser = new PDFParse(new Uint8Array(buffer));
-  const result = await parser.getText();
+  const parser = new PDFParse({
+    data: new Uint8Array(buffer),
+    CanvasFactory,
+  });
 
-  return result?.text || "";
+  try {
+    const result = await parser.getText();
+    return result?.text || "";
+  } finally {
+    await parser.destroy();
+  }
 }
 
 async function parseResumeFile(file) {
