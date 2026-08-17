@@ -7,6 +7,7 @@ const learningResourceRoutes = require("./learningResourceRoutes");
 const resumeRoutes = require("./resumeRoutes");
 const jobRoutes = require("./jobRoutes");
 const chatRoutes = require("./chatRoutes");
+const interviewRoutes = require("./interviewRoutes");
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use("/users", userRoutes);
 router.use("/admin/users", adminUserRoutes);
 router.use("/comments", commentRoutes);
 router.use("/chat", chatRoutes);
+router.use("/interview", interviewRoutes);
 
 module.exports = router;
