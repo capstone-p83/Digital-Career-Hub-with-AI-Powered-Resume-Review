@@ -81,24 +81,25 @@ export default function Dashboard() {
     user?.profile?.first_name?.trim() || user?.email || t("dashboard.user");
 
   const upcomingInterviews = [
-    {
-      company: "TechNova Corp",
-      role: "Frontend Dev",
-      date: t("dashboard.interviewDateOne"),
-    },
-    {
-      company: "FinServe Inc",
-      role: "UI Engineer",
-      date: t("dashboard.interviewDateTwo"),
-    },
-  ];
+      {
+        company: "TechNova Corp",
+        role: "Frontend Dev",
+        date: t("dashboard.interviewDateOne"),
+      },
+      {
+        company: "FinServe Inc",
+        role: "UI Engineer",
+        date: t("dashboard.interviewDateTwo"),
+      },
+    ];
 
-  const careerTools = [
+    const careerTools = [
     {
       name: t("dashboard.mockInterview"),
       icon: <PlayCircle className="w-6 h-6 mb-2" />,
       color:
         "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+      href: "/learning",
     },
     {
       name: t("dashboard.coverLetter"),
@@ -328,15 +329,30 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
-              {careerTools.map((tool) => (
-                <div
-                  key={tool.name}
-                  className={`rounded-xl p-4 ${tool.color} flex flex-col items-center justify-center text-center`}
-                >
-                  {tool.icon}
-                  <span className="text-sm font-semibold">{tool.name}</span>
-                </div>
-              ))}
+              {careerTools.map((tool) =>
+                tool.href ? (
+                  <Link
+                    key={tool.name}
+                    href={tool.href}
+                    className={`rounded-xl p-4 ${tool.color} flex flex-col items-center justify-center text-center transition hover:opacity-80 cursor-pointer`}
+                  >
+                    {tool.icon}
+                    <span className="text-sm font-semibold">
+                      {tool.name}
+                    </span>
+                  </Link>
+                ) : (
+                  <div
+                    key={tool.name}
+                    className={`rounded-xl p-4 ${tool.color} flex flex-col items-center justify-center text-center`}
+                  >
+                    {tool.icon}
+                    <span className="text-sm font-semibold">
+                      {tool.name}
+                    </span>
+                  </div>
+                )
+              )}
             </CardContent>
           </Card>
         </motion.div>
