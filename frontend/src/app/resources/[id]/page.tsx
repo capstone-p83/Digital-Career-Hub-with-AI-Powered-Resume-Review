@@ -339,7 +339,7 @@ export default function ResourceDetailsPage() {
   const hasLessComments = visibleComments > COMMENTS_PER_PAGE;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 text-slate-900 dark:text-white">
+    <div className="max-w-6xl mx-auto px-4 py-10 text-slate-900 dark:text-white">
       {resource.image_url && (
         <img
           src={resource.image_url}
