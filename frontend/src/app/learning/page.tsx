@@ -516,11 +516,14 @@ export default function InterviewQuestionsPage() {
       const title =
         jobTitle.trim();
 
-      if (!title) {
+      if (
+        !selectedJobTitle ||
+        title !== selectedJobTitle
+      ) {
         setError(
           currentLanguage === "bn"
-            ? "অনুগ্রহ করে একটি চাকরির পদ নির্বাচন করুন।"
-            : "Please select a job title."
+            ? "অনুগ্রহ করে তালিকা থেকে একটি বৈধ পেশা নির্বাচন করুন।"
+            : "Please select a valid job title from the search results."
         );
 
         return;
@@ -626,24 +629,21 @@ export default function InterviewQuestionsPage() {
           <Input
             value={jobTitle}
             onChange={(event) => {
-              const value =
-                event.target.value;
+              const value = event.target.value;
 
               setJobTitle(value);
+              setError("");
 
-              if (
-                value !==
-                selectedJobTitle
-              ) {
-                setSelectedJobTitle(
-                  ""
-                );
+              if (value !== selectedJobTitle) {
+                setSelectedJobTitle("");
               }
             }}
             onKeyDown={(event) => {
               if (
-                event.key ===
-                "Enter"
+                event.key === "Enter" &&
+                selectedJobTitle &&
+                jobTitle.trim() === selectedJobTitle &&
+                !generating
               ) {
                 generateQuestions();
               }
@@ -663,7 +663,8 @@ export default function InterviewQuestionsPage() {
             }
             disabled={
               generating ||
-              !jobTitle.trim()
+              !selectedJobTitle ||
+              jobTitle.trim() !== selectedJobTitle
             }
             className="absolute right-2 top-2 h-10"
           >
