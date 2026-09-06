@@ -15,13 +15,11 @@ import { Button } from "../../components/ui/Button";
 import {
   FileText,
   ArrowRight,
-  Calendar,
-  Briefcase,
   PlayCircle,
-  BarChart2,
   Edit3,
   Shield,
   BookOpen,
+  FileEdit,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -80,49 +78,10 @@ export default function Dashboard() {
   const displayName =
     user?.profile?.first_name?.trim() || user?.email || t("dashboard.user");
 
-  const upcomingInterviews = [
-      {
-        company: "TechNova Corp",
-        role: "Frontend Dev",
-        date: t("dashboard.interviewDateOne"),
-      },
-      {
-        company: "FinServe Inc",
-        role: "UI Engineer",
-        date: t("dashboard.interviewDateTwo"),
-      },
-    ];
-
-    const careerTools = [
-    {
-      name: t("dashboard.mockInterview"),
-      icon: <PlayCircle className="w-6 h-6 mb-2" />,
-      color:
-        "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-      href: "/learning",
-    },
-    {
-      name: t("dashboard.coverLetter"),
-      icon: <Edit3 className="w-6 h-6 mb-2" />,
-      color:
-        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    },
-    {
-      name: t("dashboard.salaryInsights"),
-      icon: <BarChart2 className="w-6 h-6 mb-2" />,
-      color:
-        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    },
-    {
-      name: t("dashboard.jobTracker"),
-      icon: <Briefcase className="w-6 h-6 mb-2" />,
-      color:
-        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    },
-  ];
-
   return (
     <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
+
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
@@ -161,6 +120,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Admin Banner */}
       {isAdmin && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -187,6 +147,7 @@ export default function Dashboard() {
         </motion.div>
       )}
 
+      {/* Learning Resource Management Banner */}
       {isPrivileged && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="border-emerald-200 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-900 dark:to-slate-900">
@@ -210,16 +171,20 @@ export default function Dashboard() {
         </motion.div>
       )}
 
+      {/* Three Card Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {/* Card 1 — Resume Score */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="h-full"
         >
           <Card className="bg-blue-600 text-white border-none h-full shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex justify-between items-center">
-                {t("dashboard.resumeScore")}{" "}
+                {t("dashboard.resumeScore")}
                 <FileText className="w-5 h-5 text-blue-200" />
               </CardTitle>
               <CardDescription className="text-blue-200">
@@ -233,14 +198,10 @@ export default function Dashboard() {
                     {latestFeedback.score}
                     <span className="text-2xl text-blue-300">/100</span>
                   </div>
-
                   <p className="text-sm text-blue-100 mb-4 line-clamp-1">
                     {latestFeedback.target_job_role}
                   </p>
-
-                  <Link
-                    href={`/resume/feedback?id=${latestFeedback.feedback_id}`}
-                  >
+                  <Link href={`/resume/feedback?id=${latestFeedback.feedback_id}`}>
                     <Button
                       variant="outline"
                       className="w-full bg-white/10 border-white/20 hover:bg-white/20 text-white border-none"
@@ -271,93 +232,64 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
+        {/* Card 2 — Interview Questions */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="h-full"
         >
-          <Card className="h-full">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex justify-between items-center">
-                {t("dashboard.upcomingInterviews")}{" "}
-                <Calendar className="w-5 h-5 text-slate-400" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-2">
-              {upcomingInterviews.length > 0 ? (
-                <ul className="space-y-3">
-                  {upcomingInterviews.map((interview, idx) => (
-                    <li
-                      key={idx}
-                      className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">
-                          {interview.company}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {interview.role}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full whitespace-nowrap">
-                          {interview.date}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-slate-500 py-4 text-center">
-                  {t("dashboard.noUpcomingInterviews")}
-                </p>
-              )}
-            </CardContent>
+          <Card className="h-full flex flex-col items-center justify-center text-center px-6 py-10">
+            <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
+              <PlayCircle className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            </div>
+            <CardTitle className="text-xl mb-2">
+              {t("dashboard.interviewQuestions")}
+            </CardTitle>
+            <CardDescription className="mb-6">
+              {t("dashboard.interviewQuestionsDesc")}
+            </CardDescription>
+            <Link href="/learning" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full border-purple-300 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-950/30"
+              >
+                {t("dashboard.startPractice")}
+              </Button>
+            </Link>
           </Card>
         </motion.div>
 
+        {/* Card 3 — Cover Letter Templates */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          className="h-full"
         >
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>{t("dashboard.careerTools")}</CardTitle>
-              <CardDescription>
-                {t("dashboard.careerToolsDesc")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
-              {careerTools.map((tool) =>
-                tool.href ? (
-                  <Link
-                    key={tool.name}
-                    href={tool.href}
-                    className={`rounded-xl p-4 ${tool.color} flex flex-col items-center justify-center text-center transition hover:opacity-80 cursor-pointer`}
-                  >
-                    {tool.icon}
-                    <span className="text-sm font-semibold">
-                      {tool.name}
-                    </span>
-                  </Link>
-                ) : (
-                  <div
-                    key={tool.name}
-                    className={`rounded-xl p-4 ${tool.color} flex flex-col items-center justify-center text-center`}
-                  >
-                    {tool.icon}
-                    <span className="text-sm font-semibold">
-                      {tool.name}
-                    </span>
-                  </div>
-                )
-              )}
-            </CardContent>
+          <Card className="h-full flex flex-col items-center justify-center text-center px-6 py-10">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
+              <FileEdit className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <CardTitle className="text-xl mb-2">
+              {t("dashboard.coverLetterTemplates")}
+            </CardTitle>
+            <CardDescription className="mb-6">
+              {t("dashboard.coverLetterDesc")}
+            </CardDescription>
+            <Link href="/resources" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full border-emerald-300 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+              >
+                {t("dashboard.openTemplates")}
+              </Button>
+            </Link>
           </Card>
         </motion.div>
       </div>
 
+      {/* Account Status */}
       <Card>
         <CardHeader>
           <CardTitle>{t("dashboard.accountStatus")}</CardTitle>
