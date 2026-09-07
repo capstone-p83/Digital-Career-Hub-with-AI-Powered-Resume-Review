@@ -30,8 +30,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.adminPanel": "Admin Panel",
 
     "hero.title": "AI-Powered Career Hub",
-    "hero.subtitle":
-      "Elevate your career with intelligent tools, curated resources, and AI feedback.",
+    "hero.subtitle": "Elevate your career with intelligent tools, curated resources, and AI feedback.",
 
     "cta.upload": "Upload Resume",
     "cta.askAI": "Ask AI Assistant",
@@ -46,8 +45,7 @@ const translations: Record<Language, Record<string, string>> = {
     "home.feature.assistant.description": "Chat with our intelligent career bot for personalized advice and answers.",
 
     "resources.title": "Career Resource Hub",
-    "resources.subtitle":
-      "Explore our curated collection of guides, templates, and advice to help you land your dream job.",
+    "resources.subtitle": "Explore our curated collection of guides, templates, and advice to help you land your dream job.",
     "resources.search": "Search resources...",
     "resources.all": "All",
     "resources.articles": "Articles",
@@ -66,8 +64,7 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.failedLoad": "Failed to load resources. Please try again later.",
 
     "footer.brand": "Digital Career Hub",
-    "footer.description":
-      "AI-Powered Resume Review & Career Resources to help you land your dream job faster. Empowering professionals worldwide.",
+    "footer.description": "AI-Powered Resume Review & Career Resources to help you land your dream job faster. Empowering professionals worldwide.",
     "footer.resources": "Resources",
     "footer.resumeTemplates": "Resume Templates",
     "footer.coverLetterBuilder": "Cover Letter Builder",
@@ -184,6 +181,19 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.noScore": "No Score",
     "dashboard.uploadResumeHint": "Upload a resume to generate your first review.",
     "dashboard.uploadResume": "Upload Resume",
+    "dashboard.interviewQuestions": "Interview Questions",
+    "dashboard.interviewQuestionsDesc": "Generate interview questions based on your target role.",
+    "dashboard.startPractice": "Start Practice",
+    "dashboard.coverLetterTemplates": "Cover Letter Templates",
+    "dashboard.coverLetterDesc": "Browse templates and get writing guidance.",
+    "dashboard.openTemplates": "Open Templates",
+    "dashboard.accountStatus": "Account Status",
+    "dashboard.accountStatusDesc": "Your current access state from the backend.",
+    "dashboard.role": "Role",
+    "dashboard.status": "Status",
+    "dashboard.createdAt": "Created At",
+    "dashboard.active": "Active",
+    "dashboard.deactivated": "Deactivated",
     "dashboard.upcomingInterviews": "Upcoming Interviews",
     "dashboard.noUpcomingInterviews": "No upcoming interviews scheduled.",
     "dashboard.careerTools": "Career Tools",
@@ -192,13 +202,6 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.coverLetter": "Cover Letter",
     "dashboard.salaryInsights": "Salary Insights",
     "dashboard.jobTracker": "Job Tracker",
-    "dashboard.accountStatus": "Account Status",
-    "dashboard.accountStatusDesc": "Your current access state from the backend.",
-    "dashboard.role": "Role",
-    "dashboard.status": "Status",
-    "dashboard.createdAt": "Created At",
-    "dashboard.active": "Active",
-    "dashboard.deactivated": "Deactivated",
     "dashboard.interviewDateOne": "Tomorrow, 10:00 AM",
     "dashboard.interviewDateTwo": "Apr 12, 2:30 PM",
 
@@ -351,14 +354,13 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.profile": "প্রোফাইল",
     "nav.adminPanel": "অ্যাডমিন প্যানেল",
 
-    "hero.title": "এআই-চালিত ক্যারিয়ার হাব",
-    "hero.subtitle":
-      "বুদ্ধিমান টুলস, বাছাইকৃত রিসোর্স এবং এআই ফিডব্যাকের মাধ্যমে আপনার ক্যারিয়ার উন্নত করুন।",
+    "hero.title": "এআই-চালিত ক্যারিয়ার হাব",
+    "hero.subtitle": "বুদ্ধিমান টুলস, বাছাইকৃত রিসোর্স এবং এআই ফিডব্যাকের মাধ্যমে আপনার ক্যারিয়ার উন্নত করুন।",
 
     "cta.upload": "রিজুমে আপলোড করুন",
     "cta.askAI": "এআই অ্যাসিস্ট্যান্টকে জিজ্ঞাসা করুন",
 
-    "home.features.title": "আপনার স্বপ্নের চাকরি পেতে যা যা প্রয়োজন",
+    "home.features.title": "আপনার স্বপ্নের চাকরি পেতে যা যা প্রয়োজন",
     "home.features.subtitle": "আজকের প্রতিযোগিতামূলক চাকরির বাজারের জন্য আমাদের প্ল্যাটফর্ম আধুনিক টুল সরবরাহ করে।",
     "home.feature.resume.title": "এআই রিজুমে রিভিউ",
     "home.feature.resume.description": "উন্নত এআই ব্যবহার করে আপনার রিজুমের জন্য দ্রুত এবং কার্যকর ফিডব্যাক পান।",
@@ -368,8 +370,7 @@ const translations: Record<Language, Record<string, string>> = {
     "home.feature.assistant.description": "ব্যক্তিগত পরামর্শ ও উত্তর পেতে আমাদের বুদ্ধিমান ক্যারিয়ার বটের সঙ্গে চ্যাট করুন।",
 
     "resources.title": "ক্যারিয়ার রিসোর্স হাব",
-    "resources.subtitle":
-      "আপনার স্বপ্নের চাকরি পেতে সাহায্য করার জন্য আমাদের বাছাইকৃত গাইড, টেমপ্লেট এবং পরামর্শ অন্বেষণ করুন।",
+    "resources.subtitle": "আপনার স্বপ্নের চাকরি পেতে সাহায্য করার জন্য আমাদের বাছাইকৃত গাইড, টেমপ্লেট এবং পরামর্শ অন্বেষণ করুন।",
     "resources.search": "রিসোর্স খুঁজুন...",
     "resources.all": "সব",
     "resources.articles": "নিবন্ধ",
@@ -388,8 +389,7 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.failedLoad": "রিসোর্স লোড করা যায়নি। পরে আবার চেষ্টা করুন।",
 
     "footer.brand": "ডিজিটাল ক্যারিয়ার হাব",
-    "footer.description":
-      "এআই-চালিত রিজুমে রিভিউ এবং ক্যারিয়ার রিসোর্স, যা আপনাকে দ্রুত আপনার স্বপ্নের চাকরি পেতে সাহায্য করে।",
+    "footer.description": "এআই-চালিত রিজুমে রিভিউ এবং ক্যারিয়ার রিসোর্স, যা আপনাকে দ্রুত আপনার স্বপ্নের চাকরি পেতে সাহায্য করে।",
     "footer.resources": "রিসোর্স",
     "footer.resumeTemplates": "রিজুমে টেমপ্লেট",
     "footer.coverLetterBuilder": "কভার লেটার বিল্ডার",
@@ -456,37 +456,37 @@ const translations: Record<Language, Record<string, string>> = {
     "resume.subtitle": "আপনার রিজুমে আপলোড করুন এবং ইন্টারভিউ পাওয়ার সুযোগ বাড়াতে কার্যকর ফিডব্যাক পান।",
     "resume.uploading": "আপনার রিজুমে আপলোড ও বিশ্লেষণ করা হচ্ছে…",
     "resume.wait": "এতে কিছু সময় লাগতে পারে।",
-    "resume.removeFile": "ফাইল সরান",
-    "resume.searching": "ESCO পেশা খোঁজা হচ্ছে…",
-    "resume.processing": "প্রসেস হচ্ছে...",
-    "resume.errorFileType": "অনুগ্রহ করে PDF বা DOCX ফাইল আপলোড করুন।",
-    "resume.errorFileSize": "ফাইলের আকার ৫MB এর বেশি হওয়া যাবে না।",
-    "resume.errorReviewFailed": "রিভিউ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
-    "resume.errorUnexpected": "সার্ভার থেকে অপ্রত্যাশিত response এসেছে।",
-    "resume.errorNetwork": "নেটওয়ার্ক সমস্যা। আপনার connection এবং API URL চেক করুন।",
     "resume.uploadDocument": "ডকুমেন্ট আপলোড করুন",
     "resume.supportedFormats": "সমর্থিত ফরম্যাট: PDF, DOCX (সর্বোচ্চ ৫MB)",
     "resume.clickUpload": "আপলোড করতে ক্লিক করুন অথবা ফাইল টেনে এনে ছেড়ে দিন",
+    "resume.removeFile": "ফাইল সরান",
     "resume.targetJobRole": "লক্ষ্য চাকরির পদ",
     "resume.targetJobPlaceholder": "টাইপ করা শুরু করুন, যেমন frontend developer",
+    "resume.searching": "ESCO পেশা খোঁজা হচ্ছে…",
     "resume.escoHint": "ESCO occupation data ব্যবহার করে সার্চ করা হচ্ছে। মিল না পেলে আপনি নিজের পদ লিখতে পারেন।",
     "resume.jobDescription": "চাকরির বিবরণ",
     "resume.optional": "ঐচ্ছিক",
     "resume.jobDescriptionPlaceholder": "ফিডব্যাক চাকরির বিজ্ঞপ্তির সাথে মিলাতে একটি ছোট চাকরির বিবরণ লিখুন বা পেস্ট করুন।",
     "resume.jobDescriptionHint": "চাকরির বিজ্ঞপ্তির অতিরিক্ত তথ্য দিলে কীওয়ার্ড ও পরামর্শ আরও ভালোভাবে সাজানো যায়।",
+    "resume.processing": "প্রসেস হচ্ছে...",
     "resume.generateReview": "এআই রিভিউ তৈরি করুন",
     "resume.loginNotice": "আপনি লগ ইন করেননি। রিভিউ তৈরি করার আগে আপনাকে লগইন পেজে পাঠানো হবে।",
+    "resume.errorFileType": "অনুগ্রহ করে PDF বা DOCX ফাইল আপলোড করুন।",
+    "resume.errorFileSize": "ফাইলের আকার ৫MB এর বেশি হওয়া যাবে না।",
+    "resume.errorReviewFailed": "রিভিউ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
+    "resume.errorUnexpected": "সার্ভার থেকে অপ্রত্যাশিত response এসেছে।",
+    "resume.errorNetwork": "নেটওয়ার্ক সমস্যা। আপনার connection এবং API URL চেক করুন।",
 
     "chatbot.title": "ক্যারিয়ার অ্যাসিস্ট্যান্ট",
     "chatbot.poweredBy": "এআই দ্বারা পরিচালিত",
-    "chatbot.welcomeMessage": "হ্যালো! আমি আপনার এআই ক্যারিয়ার অ্যাসিস্ট্যান্ট। আজ আমি কীভাবে সাহায্য করতে পারি? আপনি আমাকে রিজুমে টিপস, ইন্টারভিউ প্রস্তুতি বা বেতন আলোচনা সম্পর্কে জিজ্ঞাসা করতে পারেন।",
+    "chatbot.welcomeMessage": "হ্যালো! আমি আপনার এআই ক্যারিয়ার অ্যাসিস্ট্যান্ট। আজ আমি কীভাবে সাহায্য করতে পারি?",
     "chatbot.placeholder": "আমাকে যেকোনো কিছু জিজ্ঞাসা করুন...",
     "chatbot.pressEnter": "Enter চাপুন",
     "chatbot.toSend": "পাঠাতে",
-    "chatbot.responseResume": "ভালো রিজুমে সংক্ষিপ্ত ও প্রভাবশালী হয়। বুলেট পয়েন্ট ব্যবহার করুন, শক্তিশালী action verbs দিয়ে শুরু করুন এবং আপনার অর্জনগুলো সংখ্যায় দেখান। আমরা কি আপনার রিজুমে রিভিউ করব?",
-    "chatbot.responseInterview": "ইন্টারভিউর জন্য আমি STAR পদ্ধতি ব্যবহার করার পরামর্শ দিই: Situation, Task, Action, Result। আপনি চাইলে mock interview practice করতে পারেন।",
-    "chatbot.responseSalary": "বেতন আলোচনার আগে আপনার role এবং location অনুযায়ী market rate খুঁজে দেখুন। সম্ভব হলে প্রথমে নিজে salary number বলবেন না।",
-    "chatbot.responseDefault": "এটি একটি ভালো প্রশ্ন। এখন আমি demo AI, কিন্তু বাস্তব version backend-এর সাথে যুক্ত হয়ে আপনার career profile অনুযায়ী ব্যক্তিগত উত্তর দিতে পারবে।",
+    "chatbot.responseResume": "ভালো রিজুমে সংক্ষিপ্ত ও প্রভাবশালী হয়।",
+    "chatbot.responseInterview": "ইন্টারভিউর জন্য আমি STAR পদ্ধতি ব্যবহার করার পরামর্শ দিই।",
+    "chatbot.responseSalary": "বেতন আলোচনার আগে আপনার role এবং location অনুযায়ী market rate খুঁজে দেখুন।",
+    "chatbot.responseDefault": "এটি একটি ভালো প্রশ্ন।",
 
     "dashboard.user": "ব্যবহারকারী",
     "dashboard.welcome": "আবার স্বাগতম,",
@@ -506,6 +506,19 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.noScore": "কোনো স্কোর নেই",
     "dashboard.uploadResumeHint": "প্রথম রিভিউ তৈরি করতে একটি রিজুমে আপলোড করুন।",
     "dashboard.uploadResume": "রিজুমে আপলোড করুন",
+    "dashboard.interviewQuestions": "ইন্টারভিউ প্রশ্ন",
+    "dashboard.interviewQuestionsDesc": "আপনার লক্ষ্য ভূমিকার উপর ভিত্তি করে ইন্টারভিউ প্রশ্ন তৈরি করুন।",
+    "dashboard.startPractice": "অনুশীলন শুরু করুন",
+    "dashboard.coverLetterTemplates": "কভার লেটার টেমপ্লেট",
+    "dashboard.coverLetterDesc": "টেমপ্লেট দেখুন এবং লেখার নির্দেশনা পান।",
+    "dashboard.openTemplates": "টেমপ্লেট খুলুন",
+    "dashboard.accountStatus": "অ্যাকাউন্ট স্ট্যাটাস",
+    "dashboard.accountStatusDesc": "ব্যাকএন্ড থেকে আপনার বর্তমান অ্যাক্সেস অবস্থা।",
+    "dashboard.role": "ভূমিকা",
+    "dashboard.status": "স্ট্যাটাস",
+    "dashboard.createdAt": "তৈরির তারিখ",
+    "dashboard.active": "সক্রিয়",
+    "dashboard.deactivated": "নিষ্ক্রিয়",
     "dashboard.upcomingInterviews": "আসন্ন ইন্টারভিউ",
     "dashboard.noUpcomingInterviews": "কোনো আসন্ন ইন্টারভিউ নির্ধারিত নেই।",
     "dashboard.careerTools": "ক্যারিয়ার টুলস",
@@ -514,13 +527,6 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.coverLetter": "কভার লেটার",
     "dashboard.salaryInsights": "বেতন তথ্য",
     "dashboard.jobTracker": "চাকরি ট্র্যাকার",
-    "dashboard.accountStatus": "অ্যাকাউন্ট স্ট্যাটাস",
-    "dashboard.accountStatusDesc": "ব্যাকএন্ড থেকে আপনার বর্তমান অ্যাক্সেস অবস্থা।",
-    "dashboard.role": "ভূমিকা",
-    "dashboard.status": "স্ট্যাটাস",
-    "dashboard.createdAt": "তৈরির তারিখ",
-    "dashboard.active": "সক্রিয়",
-    "dashboard.deactivated": "নিষ্ক্রিয়",
     "dashboard.interviewDateOne": "আগামীকাল, সকাল ১০:০০",
     "dashboard.interviewDateTwo": "১২ এপ্রিল, দুপুর ২:৩০",
 
@@ -582,7 +588,7 @@ const translations: Record<Language, Record<string, string>> = {
     "editProfile.deactivateMyAccount": "আমার অ্যাকাউন্ট নিষ্ক্রিয় করুন",
 
     "feedback.loadingResults": "রেজাল্ট লোড হচ্ছে…",
-    "feedback.noResults": "কোনো রিভিউ রেজাল্ট পাওয়া যায়নি। আগে আপলোড পেজ থেকে একটি রিভিউ তৈরি করুন।",
+    "feedback.noResults": "কোনো রিভিউ রেজাল্ট পাওয়া যায়নি।",
     "feedback.goToUpload": "রিজুমে আপলোডে যান",
     "feedback.backToUpload": "আপলোড পেজে ফিরে যান",
     "feedback.share": "শেয়ার",
@@ -600,7 +606,7 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.targetJobDescription": "লক্ষ্য চাকরির বিবরণ",
     "feedback.showLess": "কম দেখান",
     "feedback.showFullDescription": "সম্পূর্ণ বিবরণ দেখান",
-    "feedback.noJobDescription": "বিস্তারিত চাকরির বিবরণ দেওয়া হয়নি। এই বিশ্লেষণটি এই লক্ষ্য পদের সাধারণ industry requirements-এর ভিত্তিতে করা হয়েছে।",
+    "feedback.noJobDescription": "বিস্তারিত চাকরির বিবরণ দেওয়া হয়নি।",
     "feedback.strongResume": "শক্তিশালী রিজুমে",
     "feedback.solidFoundation": "ভালো ভিত্তি",
     "feedback.roomToGrow": "আরও উন্নতির সুযোগ আছে",
@@ -610,7 +616,7 @@ const translations: Record<Language, Record<string, string>> = {
     "feedback.evaluationNotes": "মূল্যায়ন নোট",
     "feedback.evaluationBasis": "মূল্যায়নের ভিত্তি",
     "feedback.missingResumeSections": "অনুপস্থিত রিজুমে সেকশন",
-    "feedback.missingJobInfoWarning": "চাকরির বিবরণ অনুপস্থিত বা সীমিত, তাই বিশ্লেষণটি সাধারণ industry standards-এর উপর নির্ভর করতে পারে।",
+    "feedback.missingJobInfoWarning": "চাকরির বিবরণ অনুপস্থিত বা সীমিত।",
     "feedback.impactOnScore": "স্কোরে প্রভাব",
     "feedback.actionableSuggestions": "কার্যকর পরামর্শ",
     "feedback.atsKeywordAnalysis": "ATS কীওয়ার্ড বিশ্লেষণ",
@@ -674,15 +680,13 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.adminPanel": "Panel de Administración",
 
     "hero.title": "Centro de Carreras con AI",
-    "hero.subtitle":
-      "Eleva tu carrera con herramientas inteligentes, recursos seleccionados y comentarios de AI.",
+    "hero.subtitle": "Eleva tu carrera con herramientas inteligentes, recursos seleccionados y comentarios de AI.",
 
     "cta.upload": "Subir Currículum",
     "cta.askAI": "Preguntar al Asistente AI",
 
     "resources.title": "Centro de Recursos de Carrera",
-    "resources.subtitle":
-      "Explora nuestra colección de guías, plantillas y consejos para conseguir tu trabajo ideal.",
+    "resources.subtitle": "Explora nuestra colección de guías, plantillas y consejos para conseguir tu trabajo ideal.",
     "resources.search": "Buscar recursos...",
     "resources.all": "Todos",
     "resources.articles": "Artículos",
@@ -701,8 +705,7 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.failedLoad": "No se pudieron cargar los recursos. Inténtalo de nuevo más tarde.",
 
     "footer.brand": "Digital Career Hub",
-    "footer.description":
-      "Revisión de currículum con AI y recursos profesionales para ayudarte a conseguir tu trabajo ideal más rápido.",
+    "footer.description": "Revisión de currículum con AI y recursos profesionales para ayudarte a conseguir tu trabajo ideal más rápido.",
     "footer.resources": "Recursos",
     "footer.resumeTemplates": "Plantillas de CV",
     "footer.coverLetterBuilder": "Constructor de cartas",
@@ -764,6 +767,48 @@ const translations: Record<Language, Record<string, string>> = {
     "mgmt.viewImage": "Ver Imagen",
     "mgmt.viewArticle": "Ver Artículo",
     "mgmt.none": "Ninguno",
+
+    "dashboard.user": "Usuario",
+    "dashboard.welcome": "Bienvenido de nuevo,",
+    "dashboard.subtitle": "Sigamos con tu impulso profesional hoy.",
+    "dashboard.adminPanel": "Panel de Administración",
+    "dashboard.learningResources": "Recursos de Aprendizaje",
+    "dashboard.myProfile": "Mi Perfil",
+    "dashboard.adminAccessTitle": "Acceso de Administrador Habilitado",
+    "dashboard.adminAccessDesc": "Puedes gestionar usuarios registrados desde el panel de administración.",
+    "dashboard.openAdminPanel": "Abrir Panel de Administración",
+    "dashboard.learningManagementTitle": "Gestión de Recursos de Aprendizaje",
+    "dashboard.learningManagementDesc": "Crea, edita y gestiona artículos y ejemplos de CV para usuarios.",
+    "dashboard.manageResources": "Gestionar Recursos",
+    "dashboard.resumeScore": "Puntuación del CV",
+    "dashboard.basedOnLatestUpload": "Basado en tu última subida",
+    "dashboard.viewFullReport": "Ver Informe Completo",
+    "dashboard.noScore": "Sin Puntuación",
+    "dashboard.uploadResumeHint": "Sube un CV para generar tu primera revisión.",
+    "dashboard.uploadResume": "Subir CV",
+    "dashboard.interviewQuestions": "Preguntas de Entrevista",
+    "dashboard.interviewQuestionsDesc": "Genera preguntas de entrevista basadas en tu rol objetivo.",
+    "dashboard.startPractice": "Comenzar Práctica",
+    "dashboard.coverLetterTemplates": "Plantillas de Carta de Presentación",
+    "dashboard.coverLetterDesc": "Explora plantillas y obtén orientación para escribir.",
+    "dashboard.openTemplates": "Abrir Plantillas",
+    "dashboard.accountStatus": "Estado de la Cuenta",
+    "dashboard.accountStatusDesc": "Tu estado de acceso actual desde el backend.",
+    "dashboard.role": "Rol",
+    "dashboard.status": "Estado",
+    "dashboard.createdAt": "Creado El",
+    "dashboard.active": "Activo",
+    "dashboard.deactivated": "Desactivado",
+    "dashboard.upcomingInterviews": "Próximas Entrevistas",
+    "dashboard.noUpcomingInterviews": "No hay entrevistas programadas.",
+    "dashboard.careerTools": "Herramientas de Carrera",
+    "dashboard.careerToolsDesc": "Acceso rápido a tus herramientas favoritas.",
+    "dashboard.mockInterview": "Preguntas de Entrevista",
+    "dashboard.coverLetter": "Carta de Presentación",
+    "dashboard.salaryInsights": "Información Salarial",
+    "dashboard.jobTracker": "Seguimiento de Empleo",
+    "dashboard.interviewDateOne": "Mañana, 10:00 AM",
+    "dashboard.interviewDateTwo": "12 Abr, 2:30 PM",
   },
 
   hi: {
@@ -778,15 +823,13 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.adminPanel": "एडमिन पैनल",
 
     "hero.title": "एआई-संचालित करियर हब",
-    "hero.subtitle":
-      "बुद्धिमान उपकरण, क्यूरेटेड संसाधन और एआई फीडबैक के साथ अपने करियर को बेहतर बनाएं।",
+    "hero.subtitle": "बुद्धिमान उपकरण, क्यूरेटेड संसाधन और एआई फीडबैक के साथ अपने करियर को बेहतर बनाएं।",
 
     "cta.upload": "रिज्यूमे अपलोड करें",
     "cta.askAI": "एआई सहायक से पूछें",
 
     "resources.title": "करियर रिसोर्स हब",
-    "resources.subtitle":
-      "अपने सपनों की नौकरी पाने में मदद के लिए हमारे गाइड, टेम्पलेट और सलाह का संग्रह देखें।",
+    "resources.subtitle": "अपने सपनों की नौकरी पाने में मदद के लिए हमारे गाइड, टेम्पलेट और सलाह का संग्रह देखें।",
     "resources.search": "रिसोर्स खोजें...",
     "resources.all": "सभी",
     "resources.articles": "लेख",
@@ -805,8 +848,7 @@ const translations: Record<Language, Record<string, string>> = {
     "resources.failedLoad": "रिसोर्स लोड नहीं हो सके। कृपया बाद में फिर कोशिश करें।",
 
     "footer.brand": "डिजिटल करियर हब",
-    "footer.description":
-      "एआई-संचालित रिज्यूमे समीक्षा और करियर रिसोर्स, जो आपको अपना सपना नौकरी जल्दी पाने में मदद करते हैं।",
+    "footer.description": "एआई-संचालित रिज्यूमे समीक्षा और करियर रिसोर्स, जो आपको अपना सपना नौकरी जल्दी पाने में मदद करते हैं।",
     "footer.resources": "रिसोर्स",
     "footer.resumeTemplates": "रिज्यूमे टेम्पलेट",
     "footer.coverLetterBuilder": "कवर लेटर बिल्डर",
@@ -868,6 +910,48 @@ const translations: Record<Language, Record<string, string>> = {
     "mgmt.viewImage": "छवि देखें",
     "mgmt.viewArticle": "लेख देखें",
     "mgmt.none": "कोई नहीं",
+
+    "dashboard.user": "उपयोगकर्ता",
+    "dashboard.welcome": "वापस स्वागत है,",
+    "dashboard.subtitle": "आज अपनी करियर गति जारी रखें।",
+    "dashboard.adminPanel": "एडमिन पैनल",
+    "dashboard.learningResources": "लर्निंग रिसोर्स",
+    "dashboard.myProfile": "मेरी प्रोफाइल",
+    "dashboard.adminAccessTitle": "एडमिन एक्सेस सक्षम है",
+    "dashboard.adminAccessDesc": "आप एडमिन पैनल से पंजीकृत उपयोगकर्ताओं का प्रबंधन कर सकते हैं।",
+    "dashboard.openAdminPanel": "एडमिन पैनल खोलें",
+    "dashboard.learningManagementTitle": "लर्निंग रिसोर्स प्रबंधन",
+    "dashboard.learningManagementDesc": "उपयोगकर्ताओं के लिए लेख और रिज्यूमे उदाहरण बनाएं, संपादित करें और प्रबंधित करें।",
+    "dashboard.manageResources": "रिसोर्स प्रबंधित करें",
+    "dashboard.resumeScore": "रिज्यूमे स्कोर",
+    "dashboard.basedOnLatestUpload": "आपके नवीनतम अपलोड के आधार पर",
+    "dashboard.viewFullReport": "पूरी रिपोर्ट देखें",
+    "dashboard.noScore": "कोई स्कोर नहीं",
+    "dashboard.uploadResumeHint": "पहली समीक्षा बनाने के लिए रिज्यूमे अपलोड करें।",
+    "dashboard.uploadResume": "रिज्यूमे अपलोड करें",
+    "dashboard.interviewQuestions": "इंटरव्यू प्रश्न",
+    "dashboard.interviewQuestionsDesc": "अपने लक्ष्य भूमिका के आधार पर इंटरव्यू प्रश्न बनाएं।",
+    "dashboard.startPractice": "अभ्यास शुरू करें",
+    "dashboard.coverLetterTemplates": "कवर लेटर टेम्पलेट",
+    "dashboard.coverLetterDesc": "टेम्पलेट देखें और लेखन मार्गदर्शन प्राप्त करें।",
+    "dashboard.openTemplates": "टेम्पलेट खोलें",
+    "dashboard.accountStatus": "खाता स्थिति",
+    "dashboard.accountStatusDesc": "बैकएंड से आपकी वर्तमान एक्सेस स्थिति।",
+    "dashboard.role": "भूमिका",
+    "dashboard.status": "स्थिति",
+    "dashboard.createdAt": "बनाया गया",
+    "dashboard.active": "सक्रिय",
+    "dashboard.deactivated": "निष्क्रिय",
+    "dashboard.upcomingInterviews": "आगामी इंटरव्यू",
+    "dashboard.noUpcomingInterviews": "कोई आगामी इंटरव्यू निर्धारित नहीं है।",
+    "dashboard.careerTools": "करियर उपकरण",
+    "dashboard.careerToolsDesc": "अपने पसंदीदा उपकरणों तक त्वरित पहुंच।",
+    "dashboard.mockInterview": "इंटरव्यू प्रश्न",
+    "dashboard.coverLetter": "कवर लेटर",
+    "dashboard.salaryInsights": "वेतन जानकारी",
+    "dashboard.jobTracker": "नौकरी ट्रैकर",
+    "dashboard.interviewDateOne": "कल, सुबह 10:00 बजे",
+    "dashboard.interviewDateTwo": "12 अप्रैल, दोपहर 2:30 बजे",
   },
 };
 
@@ -878,7 +962,6 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 
   useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage") as Language;
-
     if (["en", "bn", "es", "hi"].includes(savedLang)) {
       setLangState(savedLang);
     }
@@ -902,10 +985,8 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-
   if (!context) {
     throw new Error("useLanguage must be used within a LanguageProvider");
   }
-
   return context;
 };
