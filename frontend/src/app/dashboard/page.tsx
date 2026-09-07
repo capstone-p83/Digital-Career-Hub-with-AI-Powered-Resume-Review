@@ -31,8 +31,16 @@ import {
 
 export default function Dashboard() {
   const { t } = useLanguage();
-  const { user, token, isAuthenticated, isAdmin, isAdminStaff, isLoading } =
-    useAuth();
+
+  const {
+    user,
+    token,
+    isAuthenticated,
+    isAdmin,
+    isAdminStaff,
+    isLoading,
+  } = useAuth();
+
   const router = useRouter();
 
   const [latestFeedback, setLatestFeedback] =
@@ -56,7 +64,8 @@ export default function Dashboard() {
           return;
         }
 
-        const data = (await res.json()) as ResumeReviewSuccessBody;
+        const data =
+          (await res.json()) as ResumeReviewSuccessBody;
 
         if (data.status === "ok" && data.analysis) {
           setLatestFeedback(data.analysis);
@@ -73,10 +82,13 @@ export default function Dashboard() {
     return null;
   }
 
-  const isPrivileged = isAdmin || isAdminStaff;
+  const isPrivileged =
+    isAdmin || isAdminStaff;
 
   const displayName =
-    user?.profile?.first_name?.trim() || user?.email || t("dashboard.user");
+    user?.profile?.first_name?.trim() ||
+    user?.email ||
+    t("dashboard.user");
 
   return (
     <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
@@ -95,7 +107,10 @@ export default function Dashboard() {
         <div className="flex flex-wrap gap-3">
           {isAdmin && (
             <Link href="/admin">
-              <Button variant="outline" className="shrink-0">
+              <Button
+                variant="outline"
+                className="shrink-0"
+              >
                 <Shield className="w-4 h-4 mr-2" />
                 {t("dashboard.adminPanel")}
               </Button>
@@ -104,7 +119,10 @@ export default function Dashboard() {
 
           {isPrivileged && (
             <Link href="/learningresources">
-              <Button variant="outline" className="shrink-0">
+              <Button
+                variant="outline"
+                className="shrink-0"
+              >
                 <BookOpen className="w-4 h-4 mr-2" />
                 {t("dashboard.learningResources")}
               </Button>
@@ -112,7 +130,10 @@ export default function Dashboard() {
           )}
 
           <Link href="/profile">
-            <Button variant="outline" className="shrink-0">
+            <Button
+              variant="outline"
+              className="shrink-0"
+            >
               <Edit3 className="w-4 h-4 mr-2" />
               {t("dashboard.myProfile")}
             </Button>
@@ -123,24 +144,37 @@ export default function Dashboard() {
       {/* Admin Banner */}
       {isAdmin && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
         >
           <Card className="border-blue-200 dark:border-blue-900/40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-900">
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-                  {t("dashboard.adminAccessTitle")}
+                  {t(
+                    "dashboard.adminAccessTitle"
+                  )}
                 </h2>
 
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {t("dashboard.adminAccessDesc")}
+                  {t(
+                    "dashboard.adminAccessDesc"
+                  )}
                 </p>
               </div>
 
               <Link href="/admin">
                 <Button>
-                  {t("dashboard.openAdminPanel")}
+                  {t(
+                    "dashboard.openAdminPanel"
+                  )}
+
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
@@ -149,27 +183,40 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Learning Resource Management Banner */}
+      {/* Learning Management Banner */}
       {isPrivileged && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
         >
           <Card className="border-emerald-200 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-900 dark:to-slate-900">
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-                  {t("dashboard.learningManagementTitle")}
+                  {t(
+                    "dashboard.learningManagementTitle"
+                  )}
                 </h2>
 
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {t("dashboard.learningManagementDesc")}
+                  {t(
+                    "dashboard.learningManagementDesc"
+                  )}
                 </p>
               </div>
 
               <Link href="/learningresources">
                 <Button>
-                  {t("dashboard.manageResources")}
+                  {t(
+                    "dashboard.manageResources"
+                  )}
+
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
@@ -180,195 +227,209 @@ export default function Dashboard() {
 
       {/* Three Card Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-        {/* Card 1 — Resume Score */}
+        {/* Resume Score */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            delay: 0.1,
+          }}
           className="h-full"
         >
-          <Card
-            className="
-              h-full min-h-[305px]
-              flex flex-col
-              border-blue-200
-              bg-gradient-to-br from-blue-50 to-slate-50
-              shadow-sm
-              dark:border-blue-900/50
-              dark:from-slate-900
-              dark:to-blue-950/30
-            "
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex justify-between items-center text-slate-900 dark:text-white">
-                {t("dashboard.resumeScore")}
+          <Card className="h-full min-h-[315px] flex flex-col border-blue-200 bg-blue-50/60 dark:border-blue-900/50 dark:bg-blue-950/20">
+            <CardContent className="flex-1 flex flex-col items-center text-center px-6 py-8">
+              <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
 
-                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                </div>
+              <CardTitle className="text-xl mb-2">
+                {t("dashboard.resumeScore")}
               </CardTitle>
 
-              <CardDescription className="text-slate-500 dark:text-slate-400">
-                {t("dashboard.basedOnLatestUpload")}
+              <CardDescription>
+                {t(
+                  "dashboard.basedOnLatestUpload"
+                )}
               </CardDescription>
-            </CardHeader>
 
-            <CardContent className="flex-1 flex flex-col">
-              {latestFeedback ? (
-                <>
-                  <div>
-                    <div className="text-4xl font-extrabold text-blue-600 dark:text-blue-400 mb-2">
+              <div className="flex-1 flex flex-col items-center justify-center py-4">
+                {latestFeedback ? (
+                  <>
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                       {latestFeedback.score}
-                      <span className="text-2xl text-blue-400 dark:text-blue-500">
+                      <span className="text-lg text-blue-400 dark:text-blue-500">
                         /100
                       </span>
                     </div>
 
-                    <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-1">
-                      {latestFeedback.target_job_role}
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 line-clamp-1">
+                      {
+                        latestFeedback.target_job_role
+                      }
                     </p>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-semibold text-blue-600 dark:text-blue-400">
+                      {t(
+                        "dashboard.noScore"
+                      )}
+                    </p>
 
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                      {t(
+                        "dashboard.uploadResumeHint"
+                      )}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="w-full mt-auto">
+                {latestFeedback ? (
                   <Link
                     href={`/resume/feedback?id=${latestFeedback.feedback_id}`}
-                    className="w-full mt-auto pt-6"
+                    className="block w-full"
                   >
                     <Button
                       variant="outline"
-                      className="
-                        w-full
-                        border-blue-300
-                        text-blue-700
-                        bg-white/60
-                        hover:bg-blue-100
-                        hover:text-blue-800
-                        dark:bg-blue-950/20
-                        dark:border-blue-800
-                        dark:text-blue-300
-                        dark:hover:bg-blue-900/30
-                        dark:hover:text-blue-200
-                      "
+                      className="w-full border-blue-300 text-blue-600 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/40"
                     >
-                      {t("dashboard.viewFullReport")}
+                      {t(
+                        "dashboard.viewFullReport"
+                      )}
                     </Button>
                   </Link>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <div className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 mb-2">
-                      {t("dashboard.noScore")}
-                    </div>
-
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                      {t("dashboard.uploadResumeHint")}
-                    </p>
-                  </div>
-
-                  <Link href="/resume" className="w-full mt-auto pt-6">
+                ) : (
+                  <Link
+                    href="/resume"
+                    className="block w-full"
+                  >
                     <Button
                       variant="outline"
-                      className="
-                        w-full
-                        border-blue-300
-                        text-blue-700
-                        bg-white/60
-                        hover:bg-blue-100
-                        hover:text-blue-800
-                        dark:bg-blue-950/20
-                        dark:border-blue-800
-                        dark:text-blue-300
-                        dark:hover:bg-blue-900/30
-                        dark:hover:text-blue-200
-                      "
+                      className="w-full border-blue-300 text-blue-600 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/40"
                     >
-                      {t("dashboard.uploadResume")}
+                      {t(
+                        "dashboard.uploadResume"
+                      )}
                     </Button>
                   </Link>
-                </>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Card 2 — Interview Questions */}
+        {/* Interview Questions */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            delay: 0.2,
+          }}
           className="h-full"
         >
-          <Card className="h-full min-h-[305px] flex flex-col text-center">
-            <CardContent className="flex-1 flex flex-col items-center px-6 py-8">
+          <Card className="h-full min-h-[315px] flex flex-col">
+            <CardContent className="flex-1 flex flex-col items-center text-center px-6 py-8">
               <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
                 <PlayCircle className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
 
               <CardTitle className="text-xl mb-2">
-                {t("dashboard.interviewQuestions")}
+                {t(
+                  "dashboard.interviewQuestions"
+                )}
               </CardTitle>
 
-              <CardDescription className="max-w-sm">
-                {t("dashboard.interviewQuestionsDesc")}
+              <CardDescription>
+                {t(
+                  "dashboard.interviewQuestionsDesc"
+                )}
               </CardDescription>
 
-              <Link href="/learning" className="w-full mt-auto pt-6">
-                <Button
-                  variant="outline"
-                  className="
-                    w-full
-                    border-purple-300
-                    text-purple-600
-                    hover:bg-purple-50
-                    dark:border-purple-700
-                    dark:text-purple-400
-                    dark:hover:bg-purple-950/30
-                  "
+              <div className="flex-1" />
+
+              <div className="w-full mt-auto">
+                <Link
+                  href="/learning"
+                  className="block w-full"
                 >
-                  {t("dashboard.startPractice")}
-                </Button>
-              </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full border-purple-300 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-950/30"
+                  >
+                    {t(
+                      "dashboard.startPractice"
+                    )}
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Card 3 — Cover Letter Templates */}
+        {/* Cover Letter */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            delay: 0.3,
+          }}
           className="h-full"
         >
-          <Card className="h-full min-h-[305px] flex flex-col text-center">
-            <CardContent className="flex-1 flex flex-col items-center px-6 py-8">
+          <Card className="h-full min-h-[315px] flex flex-col">
+            <CardContent className="flex-1 flex flex-col items-center text-center px-6 py-8">
               <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
                 <FileEdit className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
               </div>
 
               <CardTitle className="text-xl mb-2">
-                {t("dashboard.coverLetterTemplates")}
+                {t(
+                  "dashboard.coverLetterTemplates"
+                )}
               </CardTitle>
 
-              <CardDescription className="max-w-sm">
-                {t("dashboard.coverLetterDesc")}
+              <CardDescription>
+                {t(
+                  "dashboard.coverLetterDesc"
+                )}
               </CardDescription>
 
-              <Link href="/resources" className="w-full mt-auto pt-6">
-                <Button
-                  variant="outline"
-                  className="
-                    w-full
-                    border-emerald-300
-                    text-emerald-600
-                    hover:bg-emerald-50
-                    dark:border-emerald-700
-                    dark:text-emerald-400
-                    dark:hover:bg-emerald-950/30
-                  "
+              <div className="flex-1" />
+
+              <div className="w-full mt-auto">
+                <Link
+                  href="/cover-letter"
+                  className="block w-full"
                 >
-                  {t("dashboard.openTemplates")}
-                </Button>
-              </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full border-emerald-300 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                  >
+                    {t(
+                      "dashboard.openTemplates"
+                    )}
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -377,33 +438,59 @@ export default function Dashboard() {
       {/* Account Status */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("dashboard.accountStatus")}</CardTitle>
+          <CardTitle>
+            {t(
+              "dashboard.accountStatus"
+            )}
+          </CardTitle>
 
           <CardDescription>
-            {t("dashboard.accountStatusDesc")}
+            {t(
+              "dashboard.accountStatusDesc"
+            )}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-3 text-sm">
           <div>
-            <span className="font-medium">{t("dashboard.role")}:</span>{" "}
-            <span className="capitalize">{user?.role}</span>
-          </div>
+            <span className="font-medium">
+              {t("dashboard.role")}:
+            </span>{" "}
 
-          <div>
-            <span className="font-medium">{t("dashboard.status")}:</span>{" "}
-            <span>
-              {user?.is_active
-                ? t("dashboard.active")
-                : t("dashboard.deactivated")}
+            <span className="capitalize">
+              {user?.role}
             </span>
           </div>
 
           <div>
-            <span className="font-medium">{t("dashboard.createdAt")}:</span>{" "}
+            <span className="font-medium">
+              {t("dashboard.status")}:
+            </span>{" "}
+
+            <span>
+              {user?.is_active
+                ? t(
+                    "dashboard.active"
+                  )
+                : t(
+                    "dashboard.deactivated"
+                  )}
+            </span>
+          </div>
+
+          <div>
+            <span className="font-medium">
+              {t(
+                "dashboard.createdAt"
+              )}
+              :
+            </span>{" "}
+
             <span>
               {user?.created_at
-                ? new Date(user.created_at).toLocaleString()
+                ? new Date(
+                    user.created_at
+                  ).toLocaleString()
                 : "N/A"}
             </span>
           </div>
