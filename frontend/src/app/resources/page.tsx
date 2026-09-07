@@ -61,6 +61,8 @@ export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const resourcesPerPage = 6;
 
   const CATEGORIES = [
     { key: "all", label: t("resources.all") },
@@ -158,7 +160,15 @@ export default function ResourcesPage() {
 
     return matchesSearch && matchesCategory && matchesSubcategory;
   });
+       useEffect(() => {
+       setCurrentPage(1);
+       }, [searchTerm, selectedCategory, selectedSubcategory]);
 
+    const totalPages = Math.ceil(filteredResources.length / resourcesPerPage);
+    const startIndex = (currentPage - 1) * resourcesPerPage;
+    const endIndex = startIndex + resourcesPerPage;
+
+const paginatedResources = filteredResources.slice(startIndex, endIndex);
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-10 text-center">
@@ -231,7 +241,7 @@ export default function ResourcesPage() {
 
       {!loading && !error && filteredResources.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map((resource, idx) => {
+          {paginatedResources.map((resource, idx) => {
             const content =
               language === "bn" ? resource.content_bn : resource.content_en;
 
@@ -249,7 +259,6 @@ export default function ResourcesPage() {
               language === "bn" && resource.job_title_bn
                 ? resource.job_title_bn
                 : resource.job_title;
-
             return (
               <motion.div
                 key={resource.id}
@@ -326,6 +335,37 @@ export default function ResourcesPage() {
         </div>
       )}
 
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+          >
+            Previous
+          </Button>
+
+          {Array.from({ length: totalPages }, (_, index) => (
+            <Button
+              key={index + 1}
+              variant={currentPage === index + 1 ? "default" : "outline"}
+              onClick={() => setCurrentPage(index + 1)}
+            >
+              {index + 1}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+
+      {/* Empty State */}
       {!loading && !error && filteredResources.length === 0 && (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
           <Bookmark className="w-10 h-10 text-slate-400 mx-auto mb-4" />
