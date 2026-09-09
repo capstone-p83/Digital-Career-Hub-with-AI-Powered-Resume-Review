@@ -9,125 +9,97 @@ export default function Footer() {
   const { t } = useLanguage();
 
   return (
-    <footer className="w-full bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800 py-12 mt-auto">
+    <footer className="mt-auto w-full border-t border-slate-200 bg-slate-100 py-12 text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
       <div className="container mx-auto px-4 md:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1 flex flex-col space-y-4">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          <div className="flex flex-col space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+              <div className="rounded-lg bg-blue-600 p-2 text-white shadow-sm">
                 <Briefcase className="h-6 w-6" />
               </div>
-              <span className="font-extrabold text-2xl tracking-tight text-slate-900 dark:text-white">
+
+              <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 {t("footer.brand")}
               </span>
             </Link>
 
-            <p className="text-sm mt-4 leading-relaxed">
+            <p className="text-sm leading-relaxed">
               {t("footer.description")}
             </p>
-
-            <div className="flex items-center space-x-4 mt-6">
-              <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-slate-800 px-3 py-1 rounded-full text-xs shadow-sm border border-slate-200 dark:border-slate-700">
-                Twitter
-              </Link>
-              <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-slate-800 px-3 py-1 rounded-full text-xs shadow-sm border border-slate-200 dark:border-slate-700">
-                LinkedIn
-              </Link>
-              <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-slate-800 px-3 py-1 rounded-full text-xs shadow-sm border border-slate-200 dark:border-slate-700">
-                GitHub
-              </Link>
-            </div>
           </div>
 
-          <div className="md:ml-auto">
-            <h3 className="font-bold text-slate-900 dark:text-white mb-6 text-lg">
+          <div className="md:mx-auto">
+            <h3 className="mb-6 text-lg font-bold text-slate-900 dark:text-white">
               {t("footer.resources")}
             </h3>
+
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="/resume" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  {t("footer.resumeTemplates")}
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  {t("footer.coverLetterBuilder")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/chatbot" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  {t("footer.interviewPrep")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/resources" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Link
+                  href="/resources"
+                  className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+                >
                   {t("footer.careerAdvice")}
                 </Link>
               </li>
+
+              <li>
+                <Link
+                  href="/resume"
+                  className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+                >
+                  {t("nav.resume")}
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/cover-letter"
+                  className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+                >
+                  {t("footer.coverLetterBuilder")}
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  href="/learning"
+                  className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+                >
+                  {t("footer.interviewPrep")}
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div className="md:ml-auto">
-            <h3 className="font-bold text-slate-900 dark:text-white mb-6 text-lg">
-              {t("footer.company")}
-            </h3>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  {t("footer.aboutUs")}
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  {t("footer.careers")}
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  {t("footer.privacyPolicy")}
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  {t("footer.termsOfService")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="md:ml-auto">
-            <h3 className="font-bold text-slate-900 dark:text-white mb-6 text-lg">
+            <h3 className="mb-6 text-lg font-bold text-slate-900 dark:text-white">
               {t("footer.contactUs")}
             </h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-center space-x-3">
+
+            <div className="space-y-4 text-sm">
+              <a
+                href="mailto:support@digitalcareerhub.com"
+                className="flex items-center space-x-3 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
+              >
                 <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <span>support@digitalcareerhub.com</span>
-              </li>
-              <li className="flex items-center space-x-3 mt-4">
-                <div className="px-4 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 w-full text-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-sm">
-                  {t("footer.sendMessage")}
-                </div>
-              </li>
-            </ul>
+              </a>
+
+              <a
+                href="mailto:support@digitalcareerhub.com"
+                className="block w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-center text-xs font-medium text-slate-900 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+              >
+                {t("footer.sendMessage")}
+              </a>
+            </div>
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div className="mt-16 border-t border-slate-200 pt-8 text-center dark:border-slate-800">
           <p className="text-sm">
             &copy; {currentYear} {t("footer.rights")}
           </p>
-          <div className="flex space-x-6 text-sm">
-            <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {t("footer.privacy")}
-            </Link>
-            <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {t("footer.terms")}
-            </Link>
-            <Link href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {t("footer.cookies")}
-            </Link>
-          </div>
         </div>
       </div>
     </footer>
