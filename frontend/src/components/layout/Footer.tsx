@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+
 import { Mail, Briefcase } from "lucide-react";
+
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+
   const { t } = useLanguage();
 
   return (
@@ -58,15 +61,6 @@ export default function Footer() {
                   className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
                 >
                   {t("footer.coverLetterBuilder")}
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  href="/learning"
-                  className="transition-colors hover:text-blue-600 dark:hover:text-blue-400"
-                >
-                  {t("footer.interviewPrep")}
                 </Link>
               </li>
             </ul>
