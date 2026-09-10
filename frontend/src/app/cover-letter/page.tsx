@@ -15,6 +15,13 @@ import {
   Sparkles,
   Download,
   RotateCcw,
+  GraduationCap,
+  Briefcase,
+  Compass,
+  CheckCircle2,
+  Copy,
+  Check,
+  Zap,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
@@ -514,55 +521,60 @@ export default function CoverLetterPage() {
 
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <div className="text-center">
-        <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-4">
-          <FileText className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+      {/* Hero Header */}
+      <div className="relative text-center">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-40 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-4 shadow-xs">
+          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          AI Cover Letter Studio
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           AI Cover Letter Generator
         </h1>
 
-        <p className="mt-3 text-slate-600 dark:text-slate-400">
-          Create a professional,
-          one-page cover letter and
-          download it as a Word file.
+        <p className="mt-3 text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          Create an ATS-friendly, tailored one-page cover letter matching standard recruitment expectations and download as an editable Word document.
         </p>
 
-        <div className="mt-3 text-sm">
+        <div className="mt-4 inline-flex items-center gap-2">
           {unlimited ? (
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-              Admin access: Unlimited
-              generations
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 shadow-xs">
+              <Zap className="w-3.5 h-3.5 text-emerald-600" />
+              Admin Access: Unlimited Generations
             </span>
           ) : (
-            <span className="text-slate-500 dark:text-slate-400">
-              Free generations remaining:{" "}
-              <strong>
-                {remaining ?? "..."}
-              </strong>
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              Free generations remaining: <strong className="text-slate-900 dark:text-white">{remaining ?? "..."}</strong>
             </span>
           )}
         </div>
       </div>
 
       {/* Template selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Choose a Template
-          </CardTitle>
-
-          <CardDescription>
-            Select the style that best
-            matches your application.
-          </CardDescription>
+      <Card className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-md">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold">
+                1. Choose a Template
+              </CardTitle>
+              <CardDescription className="mt-1 text-sm">
+                Select the tone and structure best tailored to your target application.
+              </CardDescription>
+            </div>
+            <span className="hidden sm:inline-flex items-center text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-900/40">
+              ATS Optimized
+            </span>
+          </div>
         </CardHeader>
 
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-0">
           <TemplateButton
             label="Graduate"
-            description="For graduates and internships"
+            description="Focused on academic achievements, internships, and growth potential"
             selected={
               templateStyle ===
               "graduate"
@@ -576,7 +588,7 @@ export default function CoverLetterPage() {
 
           <TemplateButton
             label="Professional"
-            description="For experienced applicants"
+            description="Emphasizes industry track record, quantifiable results, and technical mastery"
             selected={
               templateStyle ===
               "professional"
@@ -590,7 +602,7 @@ export default function CoverLetterPage() {
 
           <TemplateButton
             label="Career Change"
-            description="For moving into a new field"
+            description="Highlights transferable skills, adaptability, and fresh perspective"
             selected={
               templateStyle ===
               "career-change"
@@ -606,17 +618,14 @@ export default function CoverLetterPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Editor */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Application Details
+        <Card className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-md">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-bold">
+              2. Application Details
             </CardTitle>
 
-            <CardDescription>
-              Provide enough specific
-              information for the AI to
-              create a strong cover
-              letter.
+            <CardDescription className="text-sm">
+              Provide your details and target position for precision AI tailoring.
             </CardDescription>
           </CardHeader>
 
@@ -672,8 +681,9 @@ export default function CoverLetterPage() {
             </div>
 
             <Field
-              label="Address"
+              label="Address / Location"
               value={form.address}
+              placeholder="e.g. Sydney NSW 2000, Australia"
               onChange={(value) =>
                 updateField(
                   "address",
@@ -682,12 +692,13 @@ export default function CoverLetterPage() {
               }
             />
 
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-5" />
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-2" />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field
-                label="Job Title"
+                label="Target Job Title"
                 value={form.jobTitle}
+                placeholder="e.g. Junior Frontend Developer"
                 onChange={(value) =>
                   updateField(
                     "jobTitle",
@@ -698,8 +709,9 @@ export default function CoverLetterPage() {
               />
 
               <Field
-                label="Company"
+                label="Company Name"
                 value={form.company}
+                placeholder="e.g. Atlassian"
                 onChange={(value) =>
                   updateField(
                     "company",
@@ -711,11 +723,11 @@ export default function CoverLetterPage() {
             </div>
 
             <Field
-              label="Hiring Manager"
+              label="Hiring Manager Name"
               value={
                 form.hiringManager
               }
-              placeholder="Optional"
+              placeholder="Optional: e.g. Sarah Jenkins (or leave blank)"
               onChange={(value) =>
                 updateField(
                   "hiringManager",
@@ -727,8 +739,8 @@ export default function CoverLetterPage() {
             <TextareaField
               label="Relevant Skills"
               value={form.skills}
-              placeholder="e.g. React, Node.js, teamwork, AWS..."
-              guidance="Include the skills most relevant to this job."
+              placeholder="e.g. React, TypeScript, Tailwind CSS, teamwork, Git, API integration..."
+              guidance="Include the key technical & soft skills sought in the job posting."
               onChange={(value) =>
                 updateField(
                   "skills",
@@ -739,10 +751,10 @@ export default function CoverLetterPage() {
             />
 
             <TextareaField
-              label="Relevant Experience / Projects"
+              label="Relevant Experience & University Projects"
               value={form.experience}
-              placeholder="Describe relevant work, university projects, internships or achievements..."
-              guidance="Provide at least one specific example. The AI will not invent experience."
+              placeholder="Describe your relevant course projects, internships, part-time work, or club leadership..."
+              guidance="Provide at least one specific achievement. The AI never fabricates fake work history."
               onChange={(value) =>
                 updateField(
                   "experience",
@@ -755,7 +767,7 @@ export default function CoverLetterPage() {
             <TextareaField
               label="Why This Role?"
               value={form.whyRole}
-              placeholder="Why are you interested in this position?"
+              placeholder="What specifically excites you about the day-to-day responsibilities of this position?"
               onChange={(value) =>
                 updateField(
                   "whyRole",
@@ -767,7 +779,7 @@ export default function CoverLetterPage() {
             <TextareaField
               label="Why This Company?"
               value={form.whyCompany}
-              placeholder="What interests you about this company?"
+              placeholder="What attracts you to this organization's culture, mission, or industry footprint?"
               onChange={(value) =>
                 updateField(
                   "whyCompany",
@@ -777,13 +789,13 @@ export default function CoverLetterPage() {
             />
 
             <TextareaField
-              label="Job Description"
+              label="Job Description (Optional)"
               value={
                 form.jobDescription
               }
-              placeholder="Optional: paste the job description here..."
-              guidance="Providing the job description helps the AI prioritise the most relevant information."
-              rows={6}
+              placeholder="Paste the full job advertisement description here for closer keyword matching..."
+              guidance="Providing the job description helps the AI align keywords directly with ATS screening filters."
+              rows={5}
               onChange={(value) =>
                 updateField(
                   "jobDescription",
@@ -813,7 +825,7 @@ export default function CoverLetterPage() {
               />
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
                 onClick={
                   generateCoverLetter
@@ -823,18 +835,19 @@ export default function CoverLetterPage() {
                   (!unlimited &&
                     remaining === 0)
                 }
-                className="flex-1"
+                className="flex-1 rounded-full h-12 text-base font-semibold shadow-md shadow-emerald-600/20"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
 
                 {generating
-                  ? "Generating..."
+                  ? "Generating Cover Letter..."
                   : "Generate Cover Letter"}
               </Button>
 
               <Button
                 variant="outline"
                 onClick={reset}
+                className="rounded-full h-12 px-6"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset
@@ -844,15 +857,16 @@ export default function CoverLetterPage() {
         </Card>
 
         {/* Preview */}
-        <div className="lg:sticky lg:top-6">
-          <div className="flex items-center justify-between mb-3">
+        <div className="lg:sticky lg:top-8 space-y-3">
+          <div className="flex items-center justify-between px-1">
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Preview
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                Live Preview &amp; Editor
               </h2>
 
-              <p className="text-sm text-slate-500">
-                A4 Cover Letter Preview
+              <p className="text-xs text-slate-500">
+                Standard A4 Document • Editable in-place
               </p>
             </div>
 
@@ -862,38 +876,59 @@ export default function CoverLetterPage() {
                 onClick={
                   downloadWord
                 }
+                className="rounded-full px-4 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Download Word
+                <Download className="w-4 h-4 mr-1.5" />
+                Download Word (.docx)
               </Button>
             )}
           </div>
 
-          <div className="bg-slate-200 dark:bg-slate-800 p-3 sm:p-5 rounded-xl overflow-auto">
+          <div className="bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 p-3 sm:p-6 rounded-3xl overflow-auto shadow-inner">
             <div
               className="
                 bg-white
                 text-slate-900
                 mx-auto
-                shadow-lg
+                shadow-2xl
+                rounded-sm
                 w-full
                 max-w-[794px]
                 min-h-[1050px]
-                px-10
+                px-8
                 sm:px-14
                 py-12
+                border
+                border-slate-200/50
               "
             >
               {!coverLetter ? (
-                <div className="h-full min-h-[900px] flex items-center justify-center text-center">
-                  <div>
-                    <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <div className="h-full min-h-[900px] flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-20 h-20 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 flex items-center justify-center mb-6 shadow-sm">
+                    <FileText className="w-10 h-10 text-emerald-500" />
+                  </div>
 
-                    <p className="text-slate-400">
-                      Your cover letter
-                      preview will appear
-                      here.
-                    </p>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">
+                    Your Cover Letter Appears Here
+                  </h3>
+
+                  <p className="text-sm text-slate-500 max-w-sm mb-8 leading-relaxed">
+                    Complete the application form on the left and click &ldquo;Generate Cover Letter&rdquo; to create your document.
+                  </p>
+
+                  <div className="flex flex-col gap-2.5 text-left max-w-xs w-full">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[11px] shrink-0">1</span>
+                      Select a targeted template style
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[11px] shrink-0">2</span>
+                      Enter job &amp; key accomplishments
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[11px] shrink-0">3</span>
+                      Instant live preview &amp; Word download
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1050,25 +1085,17 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
         {label}
-
-        {required && (
-          <span className="text-red-500 ml-1">
-            *
-          </span>
-        )}
+        {required && <span className="text-rose-500 ml-1 font-bold">*</span>}
       </label>
 
       <Input
         type={type}
         value={value}
         placeholder={placeholder}
-        onChange={(event) =>
-          onChange(
-            event.target.value
-          )
-        }
+        onChange={(event) => onChange(event.target.value)}
+        className="rounded-xl h-11 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20"
       />
     </div>
   );
@@ -1093,14 +1120,9 @@ function TextareaField({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
         {label}
-
-        {required && (
-          <span className="text-red-500 ml-1">
-            *
-          </span>
-        )}
+        {required && <span className="text-rose-500 ml-1 font-bold">*</span>}
       </label>
 
       {guidance && (
@@ -1113,12 +1135,8 @@ function TextareaField({
         value={value}
         rows={rows}
         placeholder={placeholder}
-        onChange={(event) =>
-          onChange(
-            event.target.value
-          )
-        }
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
       />
     </div>
   );
@@ -1135,21 +1153,48 @@ function TemplateButton({
   selected: boolean;
   onClick: () => void;
 }) {
+  const icon =
+    label === "Graduate" ? (
+      <GraduationCap className="w-5 h-5" />
+    ) : label === "Professional" ? (
+      <Briefcase className="w-5 h-5" />
+    ) : (
+      <Compass className="w-5 h-5" />
+    );
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border p-4 text-left transition ${
+      className={`relative rounded-2xl border-2 p-5 text-left transition-all duration-200 group ${
         selected
-          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-          : "border-slate-200 hover:border-emerald-300 dark:border-slate-700"
+          ? "border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 dark:border-emerald-500 shadow-md shadow-emerald-600/10 scale-[1.01]"
+          : "border-slate-200 hover:border-emerald-300 dark:border-slate-800 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
       }`}
     >
-      <p className="font-semibold text-slate-900 dark:text-white">
+      <div className="flex items-start justify-between mb-3">
+        <div
+          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+            selected
+              ? "bg-emerald-600 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950/50 group-hover:text-emerald-600"
+          }`}
+        >
+          {icon}
+        </div>
+
+        {selected && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100/80 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full">
+            <Check className="w-3 h-3" /> Selected
+          </span>
+        )}
+      </div>
+
+      <p className="font-bold text-slate-900 dark:text-white text-base">
         {label}
       </p>
 
-      <p className="text-xs text-slate-500 mt-1">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
         {description}
       </p>
     </button>
@@ -1175,7 +1220,7 @@ function Message({
 
   return (
     <div
-      className={`rounded-lg border p-3 text-sm ${style}`}
+      className={`rounded-xl border p-3.5 text-sm font-medium ${style}`}
     >
       {text}
     </div>

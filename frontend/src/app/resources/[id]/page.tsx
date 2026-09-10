@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Trash2, Send, CornerDownRight } from "lucide-react";
 import { useLanguage } from "../../../context/LanguageContext";
 
 const API_BASE_URL =
@@ -339,55 +341,106 @@ export default function ResourceDetailsPage() {
   const hasLessComments = visibleComments > COMMENTS_PER_PAGE;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-10 text-slate-900 dark:text-white">
-      {resource.image_url && (
-        <img
-          src={resource.image_url}
-          alt={displayTitle}
-          className="w-full h-80 object-cover rounded-xl mb-6"
-        />
-      )}
+    <div className="w-full max-w-5xl mx-auto px-4 py-8 text-slate-900 dark:text-white">
+      {/* Back button */}
+      <Link
+        href="/resources"
+        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 mb-8 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700/80 px-4 py-2 rounded-full transition-all shadow-xs"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>{language === "bn" ? "সকল রিসোর্সে ফিরুন" : "Back to Career Library"}</span>
+      </Link>
 
-      <h1 className="text-4xl font-bold mb-4">{displayTitle}</h1>
+      {/* Main Reader Surface */}
+      <article className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-6 sm:p-12 shadow-xl mb-10 overflow-hidden">
+        {resource.image_url && (
+          <div className="w-full h-72 sm:h-96 overflow-hidden rounded-2xl mb-8 border border-slate-100 dark:border-slate-800 shadow-inner">
+            <img
+              src={resource.image_url}
+              alt={displayTitle}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
 
-      <p className="text-slate-400 mb-6">{authorText}</p>
-
-      <div className="text-lg leading-8 text-slate-700 dark:text-slate-300 whitespace-pre-line">
-        {displayContent}
-      </div>
-
-      <div className="mt-12 border-t border-slate-300 dark:border-slate-700 pt-8">
-        <h2 className="text-2xl font-bold mb-4">
-          {language === "bn" ? "মন্তব্য" : "Comments"}{" "}
-          <span className="text-base font-normal text-slate-400">
-            ({parentComments.length})
+        <div className="flex flex-wrap items-center gap-2.5 mb-4">
+          <span className="text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full text-blue-700 bg-blue-50/80 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50">
+            {isArticle
+              ? language === "bn" ? "প্রবন্ধ" : "Article"
+              : language === "bn" ? "রিজুমে নমুনা" : "Resume Example"}
           </span>
-        </h2>
 
-        <div className="mb-6">
+          {resource.subcategory && (
+            <span className="text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              {resource.subcategory}
+            </span>
+          )}
+        </div>
+
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-5 text-slate-900 dark:text-white tracking-tight leading-tight">
+          {displayTitle}
+        </h1>
+
+        {/* Author / Contributor Info */}
+        <div className="flex items-center gap-3 pb-8 mb-8 border-b border-slate-100 dark:border-slate-800">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+            {(resource.author || displayCandidateName || "U").slice(0, 1).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              {authorText}
+            </p>
+            <p className="text-xs text-slate-400">
+              {language === "bn" ? "ডিজিটাল ক্যারিয়ার হাব গাইড" : "Digital Career Hub Resource"}
+            </p>
+          </div>
+        </div>
+
+        <div className="text-base sm:text-lg leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line space-y-4">
+          {displayContent}
+        </div>
+      </article>
+
+      {/* Comments Section */}
+      <section className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-6 sm:p-10 shadow-md">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2.5 text-slate-900 dark:text-white">
+            <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <span>{language === "bn" ? "মন্তব্য" : "Comments"}</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40">
+              {parentComments.length}
+            </span>
+          </h2>
+        </div>
+
+        {/* New Comment Input Box */}
+        <div className="mb-8 p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/60">
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder={
-              language === "bn" ? "একটি মন্তব্য লিখুন..." : "Write a comment..."
+              language === "bn" ? "আপনার মতামত বা প্রশ্ন লিখুন..." : "Share your questions or thoughts on this resource..."
             }
-            className="w-full min-h-28 rounded-lg border border-slate-300 bg-white p-4 text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="w-full min-h-24 rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           />
 
-          <button
-            onClick={handleSubmitComment}
-            className="mt-3 rounded-lg bg-blue-600 px-5 py-2 font-medium text-white hover:bg-blue-700"
-          >
-            {language === "bn" ? "মন্তব্য পোস্ট করুন" : "Post Comment"}
-          </button>
+          <div className="flex justify-end mt-3">
+            <button
+              onClick={handleSubmitComment}
+              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all active:scale-95"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{language === "bn" ? "মন্তব্য পোস্ট করুন" : "Post Comment"}</span>
+            </button>
+          </div>
         </div>
 
         {parentComments.length === 0 ? (
-          <p className="text-slate-400">
+          <div className="text-center py-12 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 text-sm">
             {language === "bn"
-              ? "এখনও কোনো মন্তব্য নেই। প্রথম মন্তব্য করুন।"
-              : "No comments yet. Be the first to comment."}
-          </p>
+              ? "এখনও কোনো মন্তব্য নেই। প্রথম মন্তব্যটি আপনিই করুন!"
+              : "No comments yet. Be the first to share your thoughts!"}
+          </div>
         ) : (
           <>
             <div className="space-y-4">
@@ -404,33 +457,43 @@ export default function ResourceDetailsPage() {
                 return (
                   <div
                     key={comment.id}
-                    className="rounded-lg border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                    className="rounded-2xl border border-slate-200/70 bg-slate-50/40 p-5 dark:border-slate-800 dark:bg-slate-800/30 transition-all"
                   >
-                    <p className="font-semibold">
-                      {comment.first_name || comment.email || "User"}
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+                          {(comment.first_name || comment.email || "U").slice(0, 1).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {comment.first_name || comment.email || "User"}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            {formatTimestamp(comment.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                    <p className="text-xs text-slate-500">
-                      {formatTimestamp(comment.created_at)}
-                    </p>
-
-                    <p className="mt-2 text-slate-700 dark:text-slate-300">
+                    <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-10">
                       {comment.content}
                     </p>
 
-                    <div className="mt-3 flex items-center gap-4">
+                    <div className="mt-3 flex items-center gap-2 pl-10">
                       <button
                         onClick={() => handleReaction(comment.id, "like")}
-                        className="text-sm text-slate-700 hover:text-blue-500 dark:text-slate-300 dark:hover:text-blue-300"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-slate-600 hover:text-blue-600 bg-white dark:bg-slate-800 dark:text-slate-300 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition-colors shadow-xs"
                       >
-                        👍 {comment.likes || 0}
+                        <ThumbsUp className="w-3.5 h-3.5" />
+                        <span>{comment.likes || 0}</span>
                       </button>
 
                       <button
                         onClick={() => handleReaction(comment.id, "dislike")}
-                        className="text-sm text-slate-700 hover:text-red-500 dark:text-slate-300 dark:hover:text-red-300"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-slate-600 hover:text-rose-600 bg-white dark:bg-slate-800 dark:text-slate-300 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-700 transition-colors shadow-xs"
                       >
-                        👎 {comment.dislikes || 0}
+                        <ThumbsDown className="w-3.5 h-3.5" />
+                        <span>{comment.dislikes || 0}</span>
                       </button>
 
                       <button
@@ -439,23 +502,25 @@ export default function ResourceDetailsPage() {
                             replyingTo === comment.id ? null : comment.id
                           )
                         }
-                        className="text-sm text-blue-400 hover:text-blue-300"
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50/80 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 transition-colors"
                       >
-                        {language === "bn" ? "উত্তর" : "Reply"}
+                        <CornerDownRight className="w-3.5 h-3.5" />
+                        <span>{language === "bn" ? "উত্তর" : "Reply"}</span>
                       </button>
 
                       {isAdminUser() && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}
-                          className="text-sm text-red-400 hover:text-red-300"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-rose-500 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40 transition-colors ml-auto"
                         >
-                          {language === "bn" ? "মুছুন" : "Delete"}
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>{language === "bn" ? "মুছুন" : "Delete"}</span>
                         </button>
                       )}
                     </div>
 
                     {replyingTo === comment.id && (
-                      <div className="mt-3">
+                      <div className="mt-4 pl-10">
                         <textarea
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
@@ -464,77 +529,90 @@ export default function ResourceDetailsPage() {
                               ? "উত্তর লিখুন..."
                               : "Write a reply..."
                           }
-                          className="w-full min-h-20 rounded-lg border border-slate-300 bg-white p-3 text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          className="w-full min-h-20 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         />
 
-                        <button
-                          onClick={() => handleSubmitReply(comment.id)}
-                          className="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                        >
-                          {language === "bn" ? "উত্তর পোস্ট করুন" : "Post Reply"}
-                        </button>
+                        <div className="flex justify-end gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => setReplyingTo(null)}
+                            className="px-4 py-1.5 rounded-full text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleSubmitReply(comment.id)}
+                            className="rounded-full bg-blue-600 px-5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 shadow-sm"
+                          >
+                            {language === "bn" ? "উত্তর পোস্ট করুন" : "Post Reply"}
+                          </button>
+                        </div>
                       </div>
                     )}
 
                     {replies.length > 0 && (
-                      <div className="mt-4 border-l border-slate-300 pl-4 dark:border-slate-700">
-                        <div className="space-y-3">
-                          {visibleReplies.map((reply) => (
-                            <div
-                              key={reply.id}
-                              className="rounded-lg bg-slate-100 p-3 dark:bg-slate-950"
-                            >
-                              <p className="text-sm font-semibold">
+                      <div className="mt-4 border-l-2 border-blue-200 dark:border-blue-900/50 pl-4 ml-4 sm:ml-6 space-y-3">
+                        {visibleReplies.map((reply) => (
+                          <div
+                            key={reply.id}
+                            className="rounded-xl bg-white p-4 border border-slate-200/60 dark:bg-slate-900/90 dark:border-slate-800"
+                          >
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-[10px]">
+                                {(reply.first_name || reply.email || "U").slice(0, 1).toUpperCase()}
+                              </div>
+                              <p className="text-xs font-semibold text-slate-900 dark:text-white">
                                 {reply.first_name || reply.email || "User"}
                               </p>
-
-                              <p className="text-xs text-slate-500">
+                              <span className="text-[10px] text-slate-400 ml-auto">
                                 {formatTimestamp(reply.created_at)}
-                              </p>
-
-                              <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
-                                {reply.content}
-                              </p>
-
-                              <div className="mt-2 flex items-center gap-4">
-                                <button
-                                  onClick={() => handleReaction(reply.id, "like")}
-                                  className="text-xs text-slate-700 hover:text-blue-500 dark:text-slate-300 dark:hover:text-blue-300"
-                                >
-                                  👍 {reply.likes || 0}
-                                </button>
-
-                                <button
-                                  onClick={() => handleReaction(reply.id, "dislike")}
-                                  className="text-xs text-slate-700 hover:text-red-500 dark:text-slate-300 dark:hover:text-red-300"
-                                >
-                                  👎 {reply.dislikes || 0}
-                                </button>
-
-                                {isAdminUser() && (
-                                  <button
-                                    onClick={() => handleDeleteComment(reply.id)}
-                                    className="text-xs text-red-400 hover:text-red-300"
-                                  >
-                                    {language === "bn" ? "মুছুন" : "Delete"}
-                                  </button>
-                                )}
-                              </div>
+                              </span>
                             </div>
-                          ))}
-                        </div>
+
+                            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-8">
+                              {reply.content}
+                            </p>
+
+                            <div className="mt-2.5 flex items-center gap-2 pl-8">
+                              <button
+                                onClick={() => handleReaction(reply.id, "like")}
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] text-slate-600 hover:text-blue-600 bg-slate-50 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                              >
+                                <ThumbsUp className="w-3 h-3" />
+                                <span>{reply.likes || 0}</span>
+                              </button>
+
+                              <button
+                                onClick={() => handleReaction(reply.id, "dislike")}
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] text-slate-600 hover:text-rose-600 bg-slate-50 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                              >
+                                <ThumbsDown className="w-3 h-3" />
+                                <span>{reply.dislikes || 0}</span>
+                              </button>
+
+                              {isAdminUser() && (
+                                <button
+                                  onClick={() => handleDeleteComment(reply.id)}
+                                  className="text-[11px] text-rose-500 hover:text-rose-700 ml-auto"
+                                >
+                                  {language === "bn" ? "মুছুন" : "Delete"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
 
                         {hasMoreReplies && (
                           <button
                             onClick={() => toggleReplies(comment.id)}
-                            className="mt-2 text-sm text-blue-500 hover:text-blue-400"
+                            className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-500"
                           >
                             {repliesExpanded
                               ? language === "bn"
                                 ? "কম দেখান"
                                 : "Show less replies"
                               : language === "bn"
-                              ? `আরও ${replies.length - REPLIES_PER_COMMENT}টি উত্তর দেখান`
+                              ? `আরও ${replies.length - REPLIES_PER_COMMENT}টি উত্তর দেখুন`
                               : `Show ${replies.length - REPLIES_PER_COMMENT} more ${replies.length - REPLIES_PER_COMMENT === 1 ? "reply" : "replies"}`}
                           </button>
                         )}
@@ -546,14 +624,14 @@ export default function ResourceDetailsPage() {
             </div>
 
             {/* Show More / Show Less comments */}
-            <div className="mt-6 flex gap-4">
+            <div className="mt-8 flex gap-3">
               {hasMoreComments && (
                 <button
                   onClick={() => setVisibleComments((prev) => prev + COMMENTS_PER_PAGE)}
-                  className="rounded-lg border border-slate-300 px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 shadow-xs"
                 >
                   {language === "bn"
-                    ? `আরও ${Math.min(COMMENTS_PER_PAGE, parentComments.length - visibleComments)}টি মন্তব্য দেখান`
+                    ? `আরও ${Math.min(COMMENTS_PER_PAGE, parentComments.length - visibleComments)}টি মন্তব্য দেখুন`
                     : `Show ${Math.min(COMMENTS_PER_PAGE, parentComments.length - visibleComments)} more comment${Math.min(COMMENTS_PER_PAGE, parentComments.length - visibleComments) === 1 ? "" : "s"}`}
                 </button>
               )}
@@ -561,7 +639,7 @@ export default function ResourceDetailsPage() {
               {hasLessComments && (
                 <button
                   onClick={() => setVisibleComments(COMMENTS_PER_PAGE)}
-                  className="rounded-lg border border-slate-300 px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 shadow-xs"
                 >
                   {language === "bn" ? "কম দেখান" : "Show less"}
                 </button>
@@ -569,7 +647,7 @@ export default function ResourceDetailsPage() {
             </div>
           </>
         )}
-      </div>
+      </section>
     </div>
   );
 }
