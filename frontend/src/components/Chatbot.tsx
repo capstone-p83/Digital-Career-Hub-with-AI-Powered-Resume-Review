@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, MessageSquare, Send, X, Sparkles, User, HelpCircle } from "lucide-react";
+import { Bot, MessageSquare, Send, X, Sparkles, User } from "lucide-react";
 import { sendChatMessage } from "../services/chatService";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Message {
   id: string;
@@ -11,29 +12,52 @@ interface Message {
   text: string;
 }
 
-const QUICK_PROMPTS = [
+const QUICK_PROMPTS_EN = [
   "Review my resume tips",
-  "How to use the STAR method?",
+  "How to use the STAR method in interviews?",
   "Bangladesh IT job skills",
   "Cover letter structure guide",
 ];
 
-function getInitialMessages(): Message[] {
+const QUICK_PROMPTS_BN = [
+  "রিজিউম তৈরির সেরা টিপস",
+  "ইন্টারভিউতে STAR মেথড কীভাবে ব্যবহার করব?",
+  "বাংলাদেশের আইটি চাকরির প্রয়োজনীয় দক্ষতা",
+  "কভার লেটার লেখার সঠিক নিয়ম",
+];
+
+function getInitialMessages(lang: string = "en"): Message[] {
   return [
     {
-      id: "1",
+      id: "initial-bot",
       sender: "bot",
-      text: "Assalamu Alaikum! I'm your AI Career Assistant. How can I help boost your career journey today? Ask me about resumes, interview prep, cover letters, or skills in Bangladesh!",
+      text:
+        lang === "bn"
+          ? "আসসালামু আলাইকুম! আমি আপনার এআই ক্যারিয়ার সহকারী। আপনার ক্যারিয়ার যাত্রায় কীভাবে সাহায্য করতে পারি? রিজিউম, ইন্টারভিউ প্রস্তুতি, কভার লেটার বা চাকরির দক্ষতা সম্পর্কে আমাকে জিজ্ঞাসা করতে পারেন!"
+          : "Assalamu Alaikum! I'm your AI Career Assistant. How can I help boost your career journey today? Ask me about resumes, interview prep, cover letters, or skills in Bangladesh!",
     },
   ];
 }
 
 export default function Chatbot() {
+  const { language } = useLanguage();
+  const isBn = language === "bn";
+  const quickPrompts = isBn ? QUICK_PROMPTS_BN : QUICK_PROMPTS_EN;
+
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(getInitialMessages);
+  const [messages, setMessages] = useState<Message[]>(() => getInitialMessages(language));
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === "initial-bot") {
+        return getInitialMessages(language);
+      }
+      return prev;
+    });
+  }, [language]);
 
   useEffect(() => {
     const openChatbot = () => {
@@ -41,7 +65,7 @@ export default function Chatbot() {
     };
 
     const resetChatbot = () => {
-      setMessages(getInitialMessages());
+      setMessages(getInitialMessages(language));
       setInputValue("");
       setIsTyping(false);
       setIsOpen(false);
@@ -54,7 +78,7 @@ export default function Chatbot() {
       window.removeEventListener("open-chatbot", openChatbot);
       window.removeEventListener("reset-chatbot", resetChatbot);
     };
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -91,7 +115,9 @@ export default function Chatbot() {
       const errorMessage: Message = {
         id: `${Date.now()}-error`,
         sender: "bot",
-        text: "Sorry, something went wrong with the AI assistant. Please try again in a moment.",
+        text: isBn
+          ? "দুঃখিত, এআই অ্যাসিস্ট্যান্টে সমস্যা হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।"
+          : "Sorry, something went wrong with the AI assistant. Please try again in a moment.",
       };
 
       setMessages((prev) => [...prev, errorMessage]);
@@ -130,12 +156,16 @@ export default function Chatbot() {
 
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-bold tracking-tight">AI Career Coach</p>
+                      <p className="text-sm font-bold tracking-tight">
+                        {isBn ? "এআই ক্যারিয়ার কোচ" : "AI Career Coach"}
+                      </p>
                       <span className="rounded-full bg-blue-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-blue-100 uppercase tracking-wider">
-                        Live
+                        {isBn ? "সক্রিয়" : "Live"}
                       </span>
                     </div>
-                    <p className="text-xs text-blue-100/90 font-medium">Digital Career Hub • 24/7</p>
+                    <p className="text-xs text-blue-100/90 font-medium">
+                      {isBn ? "ডিজিটাল ক্যারিয়ার হাব • ২৪/৭" : "Digital Career Hub • 24/7"}
+                    </p>
                   </div>
                 </div>
 
@@ -143,7 +173,7 @@ export default function Chatbot() {
                   type="button"
                   onClick={() => setIsOpen(false)}
                   className="rounded-full p-2 text-blue-100 transition-all hover:bg-white/15 hover:text-white active:scale-95"
-                  aria-label="Close chatbot"
+                  aria-label={isBn ? "চ্যাটবট বন্ধ করুন" : "Close chatbot"}
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -203,10 +233,10 @@ export default function Chatbot() {
                 <div className="pt-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                    Quick Questions
+                    {isBn ? "দ্রুত প্রশ্ন" : "Quick Questions"}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {QUICK_PROMPTS.map((prompt) => (
+                    {quickPrompts.map((prompt) => (
                       <button
                         key={prompt}
                         type="button"
@@ -235,7 +265,11 @@ export default function Chatbot() {
                       handleSendMessage();
                     }
                   }}
-                  placeholder="Ask advice on resumes, jobs..."
+                  placeholder={
+                    isBn
+                      ? "রিজিউম বা চাকরি সম্পর্কিত পরামর্শ জিজ্ঞাসা করুন..."
+                      : "Ask advice on resumes, jobs..."
+                  }
                   className="flex-1 rounded-full border border-slate-300/80 bg-slate-50/80 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400 dark:focus:border-blue-500"
                 />
 
@@ -244,7 +278,7 @@ export default function Chatbot() {
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isTyping}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25 transition-all hover:opacity-95 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Send message"
+                  aria-label={isBn ? "বার্তা পাঠান" : "Send message"}
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -263,7 +297,7 @@ export default function Chatbot() {
             type="button"
             onClick={() => setIsOpen(true)}
             className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 text-white shadow-xl shadow-blue-500/35 ring-4 ring-white/80 transition-all duration-300 hover:scale-105 active:scale-95 dark:ring-slate-900/80"
-            aria-label="Open chatbot"
+            aria-label={isBn ? "চ্যাটবট খুলুন" : "Open chatbot"}
           >
             <MessageSquare className="h-6 w-6" />
 

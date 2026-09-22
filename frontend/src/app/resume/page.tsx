@@ -345,7 +345,7 @@ export default function ResumeUploadPage() {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/60 shadow-xs">
           <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-            {language === "bn" ? "আন্তর্জাতিক মানসম্মত এআই রেজিউমে মূল্যায়ন" : "International ATS & ESCO Standard Assessment"}
+            {language === "bn" ? "আন্তর্জাতিক মানসম্মত এআই রেজিউমে মূল্যায়ন" : "AI-Powered ATS Resume Assessment"}
           </span>
         </div>
 

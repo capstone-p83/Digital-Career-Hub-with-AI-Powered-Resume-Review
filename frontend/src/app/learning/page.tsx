@@ -2,8 +2,10 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   Card,
@@ -611,11 +613,26 @@ function QuestionBank({
 }
 
 export default function InterviewQuestionsPage() {
+  const router = useRouter();
+
   const { language } =
     useLanguage();
 
-  const { token } =
-    useAuth();
+  const {
+    token,
+    isAuthenticated,
+    isLoading,
+  } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [
+    isLoading,
+    isAuthenticated,
+    router,
+  ]);
 
   const currentLanguage: SupportedLanguage =
     language === "bn"
@@ -639,6 +656,11 @@ export default function InterviewQuestionsPage() {
     suggestions,
     setSuggestions,
   ] = useState<JobSuggestion[]>([]);
+
+  const [
+    showSuggestions,
+    setShowSuggestions,
+  ] = useState(false);
 
   const [
     searchingJobs,
@@ -673,6 +695,42 @@ export default function InterviewQuestionsPage() {
       "flashcards"
     );
 
+  const searchContainerRef =
+    useRef<HTMLDivElement>(null);
+
+  const isJobSelected = Boolean(
+    selectedJobTitle &&
+      jobTitle.trim().toLowerCase() ===
+        selectedJobTitle.trim().toLowerCase()
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (
+      event: MouseEvent
+    ) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(
+          event.target as Node
+        )
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+  }, []);
+
   useEffect(() => {
     if (!generatedJobTitle) {
       setQuestions(defaultQuestions);
@@ -680,6 +738,7 @@ export default function InterviewQuestionsPage() {
   }, [
     currentLanguage,
     generatedJobTitle,
+    defaultQuestions,
   ]);
 
   useEffect(() => {
@@ -688,10 +747,12 @@ export default function InterviewQuestionsPage() {
 
     if (
       query.length < 2 ||
-      query === selectedJobTitle
+      query.toLowerCase() ===
+        selectedJobTitle.trim().toLowerCase()
     ) {
       setSuggestions([]);
       setSearchingJobs(false);
+      setShowSuggestions(false);
       return;
     }
 
@@ -699,6 +760,7 @@ export default function InterviewQuestionsPage() {
       setTimeout(async () => {
         try {
           setSearchingJobs(true);
+          setShowSuggestions(true);
 
           const results =
             await searchJobTitles(
@@ -732,19 +794,44 @@ export default function InterviewQuestionsPage() {
       job.title
     );
     setSuggestions([]);
+    setShowSuggestions(false);
     setError("");
   };
+
+  const handlePopularRoleClick =
+    async (role: string) => {
+      setJobTitle(role);
+      setSelectedJobTitle("");
+      setError("");
+      setShowSuggestions(true);
+
+      try {
+        setSearchingJobs(true);
+        const results =
+          await searchJobTitles(
+            role,
+            token
+          );
+        setSuggestions(
+          results.slice(0, 6)
+        );
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearchingJobs(false);
+      }
+    };
 
   const generateQuestions =
     async () => {
       const title =
         jobTitle.trim();
 
-      if (!title) {
+      if (!isJobSelected || !title) {
         setError(
           currentLanguage === "bn"
-            ? "অনুগ্রহ করে একটি চাকরির পদ নির্বাচন করুন।"
-            : "Please select a job title."
+            ? "প্রশ্ন তৈরি করতে ড্রপডাউন পরামর্শ থেকে একটি চাকরির পদ নির্বাচন করুন।"
+            : "Please select a matching job title from the suggestions dropdown."
         );
 
         return;
@@ -825,6 +912,10 @@ export default function InterviewQuestionsPage() {
       }
     };
 
+  if (isLoading || !isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
       {/* Background Ambient Glows */}
@@ -852,7 +943,7 @@ export default function InterviewQuestionsPage() {
       </div>
 
       {/* Search & AI Generation Bar */}
-      <div className="max-w-2xl mx-auto mb-10">
+      <div className="max-w-2xl mx-auto mb-10" ref={searchContainerRef}>
         <div className="relative rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 p-2 shadow-xl shadow-blue-950/5 transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
           <div className="relative flex items-center">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -865,10 +956,26 @@ export default function InterviewQuestionsPage() {
                 if (value !== selectedJobTitle) {
                   setSelectedJobTitle("");
                 }
+                setError("");
+                setShowSuggestions(true);
+              }}
+              onFocus={() => {
+                if (suggestions.length > 0 && !isJobSelected) {
+                  setShowSuggestions(true);
+                }
               }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  generateQuestions();
+                  event.preventDefault();
+                  if (isJobSelected && !generating) {
+                    generateQuestions();
+                  } else {
+                    setError(
+                      currentLanguage === "bn"
+                        ? "প্রশ্ন তৈরি করতে ড্রপডাউন পরামর্শ থেকে একটি চাকরির পদ নির্বাচন করুন।"
+                        : "Please select a matching job title from the suggestions dropdown."
+                    );
+                  }
                 }
               }}
               placeholder={
@@ -881,8 +988,8 @@ export default function InterviewQuestionsPage() {
 
             <Button
               onClick={generateQuestions}
-              disabled={generating || !jobTitle.trim()}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 px-5 rounded-xl font-medium shadow-md shadow-blue-600/20"
+              disabled={generating || !isJobSelected}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 px-5 rounded-xl font-medium shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               {generating
@@ -896,7 +1003,7 @@ export default function InterviewQuestionsPage() {
           </div>
 
           {/* Autocomplete Dropdown */}
-          {(searchingJobs || suggestions.length > 0) && (
+          {showSuggestions && (searchingJobs || suggestions.length > 0) && (
             <div className="absolute z-30 left-0 right-0 top-full mt-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl overflow-hidden">
               {searchingJobs ? (
                 <div className="flex items-center gap-2 px-5 py-4 text-sm text-slate-500">
@@ -910,6 +1017,7 @@ export default function InterviewQuestionsPage() {
                   <button
                     key={job.uri || job.title}
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => chooseJob(job)}
                     className="w-full text-left px-5 py-3.5 hover:bg-blue-50/60 dark:hover:bg-slate-800/80 border-b last:border-b-0 border-slate-100 dark:border-slate-800 flex items-center justify-between group transition-colors"
                   >
@@ -926,6 +1034,18 @@ export default function InterviewQuestionsPage() {
           )}
         </div>
 
+        {/* Selected role confirmation badge */}
+        {isJobSelected && (
+          <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>
+              {currentLanguage === "bn"
+                ? `নির্বাচিত পদ: ${selectedJobTitle}`
+                : `Selected Role: ${selectedJobTitle}`}
+            </span>
+          </div>
+        )}
+
         {/* Quick Suggestion Pills */}
         <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
           <span className="text-xs text-slate-400 font-medium">
@@ -940,10 +1060,7 @@ export default function InterviewQuestionsPage() {
             <button
               key={role}
               type="button"
-              onClick={() => {
-                setJobTitle(role);
-                setSelectedJobTitle(role);
-              }}
+              onClick={() => handlePopularRoleClick(role)}
               className="text-xs px-3 py-1 rounded-full bg-slate-100/80 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-800/80 dark:hover:bg-blue-950/40 dark:hover:text-blue-300 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 transition-colors"
             >
               {role}

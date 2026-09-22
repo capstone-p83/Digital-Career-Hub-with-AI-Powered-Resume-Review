@@ -17,10 +17,7 @@ import {
   Sparkles,
   CheckCircle2,
   TrendingUp,
-  Award,
-  Zap,
   GraduationCap,
-  Layers,
 } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "../context/LanguageContext";
@@ -76,7 +73,7 @@ export default function Home() {
       title: language === "bn" ? "এআই বিশ্লেষণ ও স্কিল গ্যাপ" : "AI Deep ATS Analysis",
       description:
         language === "bn"
-          ? "ESCO স্ট্যান্ডার্ডে আপনার দক্ষতা, মিসিং কিওয়ার্ড এবং স্কোর নিখুঁতভাবে যাচাই করুন।"
+          ? "আপনার দক্ষতা, মিসিং কিওয়ার্ড এবং এআই স্কোর নিখুঁতভাবে যাচাই করুন।"
           : "Instantly check keyword matches, missing skills, and overall ATS readiness score.",
       icon: <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
     },

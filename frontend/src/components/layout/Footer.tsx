@@ -82,16 +82,6 @@ export default function Footer() {
                   <ArrowUpRight className="w-3.5 h-3.5 ml-1 opacity-0 -translate-y-0.5 translate-x-0.5 group-hover:opacity-100 transition-all" />
                 </Link>
               </li>
-
-              <li>
-                <Link
-                  href="/learning"
-                  className="group flex items-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  <span>{language === "bn" ? "ইন্টারভিউ ফ্ল্যাশকার্ড" : "Interview Flashcards"}</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 ml-1 opacity-0 -translate-y-0.5 translate-x-0.5 group-hover:opacity-100 transition-all" />
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -128,12 +118,6 @@ export default function Footer() {
           <p>
             &copy; {currentYear} {t("footer.rights")}
           </p>
-          <div className="flex items-center space-x-4">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{language === "bn" ? "সার্ভিস সক্রিয়" : "All Systems Operational"}</span>
-            </span>
-          </div>
         </div>
       </div>
     </footer>
