@@ -21,6 +21,7 @@ import {
   CreditCard,
   Sparkles,
   Zap,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
@@ -49,6 +50,10 @@ export default function ResumeUploadPage() {
   const [scansRemaining, setScansRemaining] = useState<number>(2);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
+
+  // AI consent state
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -257,7 +262,8 @@ export default function ResumeUploadPage() {
     setIsSearchingJobs(false);
   };
 
-  const handleUpload = async () => {
+  // Runs when "Generate AI Review" is clicked — validates, then opens the consent modal
+  const handleGenerateClick = () => {
     setShowSuggestions(false);
     setJobSuggestions([]);
 
@@ -272,6 +278,30 @@ export default function ResumeUploadPage() {
       setError("You've used all your free scans! Upgrade to Pro for unlimited access.");
       return;
     }
+
+    setError("");
+    setConsentChecked(false);
+    setShowConsentModal(true);
+  };
+
+  const handleDeclineConsent = () => {
+    setShowConsentModal(false);
+    setConsentChecked(false);
+  };
+
+  // Runs only after the user agrees in the consent modal
+  const handleAcceptConsent = async () => {
+    setShowConsentModal(false);
+
+    // TODO (backend): send the user's consent decision to the API here
+    // so it can be stored against their account, e.g.
+    // await fetch(`${API_BASE_URL}/users/me/ai-consent`, { ... })
+
+    await handleUpload();
+  };
+
+  const handleUpload = async () => {
+    if (!file || !targetJob.trim()) return;
 
     const resumeReviewFormData = buildResumeReviewFormData({
       resume: file,
@@ -646,7 +676,7 @@ export default function ResumeUploadPage() {
             type="button"
             variant="gradient"
             className="w-full h-13 text-base font-bold rounded-full shadow-lg shadow-blue-500/20 cursor-pointer"
-            onClick={handleUpload}
+            onClick={handleGenerateClick}
             disabled={!file || !targetJob.trim() || isUploading || hasNoScansLeft}
           >
             <Sparkles className="w-5 h-5 mr-2" />
@@ -666,6 +696,143 @@ export default function ResumeUploadPage() {
           {t("resume.loginNotice")}
         </p>
       )}
+
+      {/* AI Consent Agreement Modal */}
+      <AnimatePresence>
+        {showConsentModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            onClick={handleDeclineConsent}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.18 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden"
+            >
+              {/* Modal header */}
+              <div className="px-6 pt-6 pb-4 flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                    {language === "bn"
+                      ? "এআই প্রসেসিং সম্মতি"
+                      : "AI Processing Consent"}
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {language === "bn"
+                      ? "চালিয়ে যাওয়ার আগে অনুগ্রহ করে পড়ুন"
+                      : "Please read before continuing"}
+                  </p>
+                </div>
+                <button
+                  onClick={handleDeclineConsent}
+                  className="ml-auto p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal body */}
+              <div className="px-6 pb-2 space-y-4 max-h-[50vh] overflow-y-auto">
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  {language === "bn"
+                    ? "আপনার রিজুমে বিশ্লেষণ করতে, ফাইলটি একটি তৃতীয় পক্ষের এআই পরিষেবায় পাঠানো হবে। চালিয়ে যাওয়ার আগে অনুগ্রহ করে নিচের বিষয়গুলো পর্যালোচনা করুন।"
+                    : "To generate your review, your resume will be sent to a third-party AI service for processing. Please review the following before continuing."}
+                </p>
+
+                <ul className="space-y-3">
+                  <li className="flex gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <span>
+                      {language === "bn"
+                        ? "আপনার আপলোড করা ফাইলের বিষয়বস্তু (নাম, যোগাযোগের তথ্য ও কাজের ইতিহাস সহ) বিশ্লেষণের জন্য এআই পরিষেবায় পাঠানো হবে।"
+                        : "The contents of your uploaded file — including your name, contact details and work history — will be sent to the AI service for analysis."}
+                    </span>
+                  </li>
+                  <li className="flex gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <span>
+                      {language === "bn"
+                        ? "আপনার দেওয়া লক্ষ্য পদ ও চাকরির বিবরণও একসাথে পাঠানো হবে।"
+                        : "The target job role and job description you provided will be sent along with it."}
+                    </span>
+                  </li>
+                  <li className="flex gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <span>
+                      {language === "bn"
+                        ? "এআই দ্বারা তৈরি ফিডব্যাক স্বয়ংক্রিয় এবং ভুল হতে পারে। এটি পেশাদার ক্যারিয়ার পরামর্শের বিকল্প নয়।"
+                        : "AI-generated feedback is automated and may contain mistakes. It is not a substitute for professional career advice."}
+                    </span>
+                  </li>
+                  <li className="flex gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <span>
+                      {language === "bn"
+                        ? "আপনার রিজুমে ও ফিডব্যাক আপনার অ্যাকাউন্টের সাথে সংরক্ষণ করা হবে যাতে আপনি পরে দেখতে পারেন।"
+                        : "Your resume and its feedback will be stored against your account so you can view them later."}
+                    </span>
+                  </li>
+                </ul>
+
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {language === "bn"
+                      ? "সংবেদনশীল ব্যক্তিগত তথ্য (যেমন আইডি নম্বর বা আর্থিক তথ্য) আপলোড করার আগে আপনার রিজুমে থেকে সরিয়ে ফেলার পরামর্শ দেওয়া হচ্ছে।"
+                      : "We recommend removing any sensitive personal information — such as ID numbers or financial details — from your resume before uploading."}
+                  </p>
+                </div>
+
+                {/* Consent checkbox */}
+                <label className="flex items-start gap-3 cursor-pointer select-none rounded-2xl border border-slate-200 dark:border-slate-800 p-3.5 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={consentChecked}
+                    onChange={(e) => setConsentChecked(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500/30 dark:border-slate-600 dark:bg-slate-800"
+                  />
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
+                    {language === "bn"
+                      ? "আমি বুঝেছি এবং সম্মত আছি যে আমার রিজুমে এআই পরিষেবায় পাঠানো ও প্রক্রিয়া করা হবে।"
+                      : "I understand and agree that my resume will be sent to and processed by an AI service."}
+                  </span>
+                </label>
+              </div>
+
+              {/* Modal footer */}
+              <div className="px-6 py-5 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end border-t border-slate-100 dark:border-slate-800 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full font-semibold"
+                  onClick={handleDeclineConsent}
+                >
+                  {language === "bn" ? "বাতিল করুন" : "Cancel"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="gradient"
+                  className="rounded-full font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!consentChecked}
+                  onClick={handleAcceptConsent}
+                >
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  {language === "bn" ? "সম্মত হয়ে চালিয়ে যান" : "Agree & Continue"}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
