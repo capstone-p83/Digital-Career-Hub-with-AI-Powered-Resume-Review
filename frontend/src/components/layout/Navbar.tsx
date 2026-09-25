@@ -195,7 +195,7 @@ export default function Navbar() {
                   href="/register"
                   className="text-xs font-semibold px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xs hover:shadow transition"
                 >
-                  {t("nav.register")}
+                  {t("Register")}
                 </Link>
               </div>
             )}
