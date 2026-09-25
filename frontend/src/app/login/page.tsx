@@ -262,58 +262,65 @@ export default function LoginPage() {
         onLoad={() => setGoogleReady(true)}
       />
 
-      <div className="flex-1 flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-900">
-        <Card className="w-full max-w-md shadow-xl border-t-4 border-t-blue-600">
-          <CardHeader className="space-y-1 items-center pb-6">
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-2">
-              <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+      <div className="flex-1 flex items-center justify-center p-4 min-h-[calc(100vh-140px)] relative overflow-hidden">
+        {/* Ambient Glows */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-500/15 via-indigo-500/10 to-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <Card className="w-full max-w-md rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-2xl backdrop-blur-xl relative z-10 overflow-hidden">
+          <CardHeader className="space-y-1 items-center pb-6 text-center">
+            <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-blue-600/20 text-white">
+              <Briefcase className="w-7 h-7" />
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
+            <CardTitle className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Welcome back
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">
+              Log in to your Digital Career Hub account to access your AI tools
             </CardDescription>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="px-6 sm:px-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md">
+                <div className="p-3.5 text-sm text-rose-600 bg-rose-50 dark:bg-rose-950/40 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900/50">
                   {error}
                 </div>
               )}
 
               {microsoftProcessing && (
-                <div className="p-3 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 rounded-md">
+                <div className="p-3.5 text-sm text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-blue-900/50">
                   Completing Microsoft sign-in...
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Email
                 </label>
                 <Input
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="name@example.com"
                   autoComplete="email"
                   {...register("email", { required: "Email is required" })}
-                  className={errors.email ? "border-red-500" : ""}
+                  className={`rounded-xl h-11 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 ${
+                    errors.email ? "border-rose-500 focus-visible:ring-rose-500" : ""
+                  }`}
                 />
                 {errors.email && (
-                  <p className="text-xs text-red-500">
+                  <p className="text-xs text-rose-500 mt-1">
                     {errors.email.message as string}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium leading-none text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Password
                   </label>
                   <Link
                     href="#"
-                    className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
                   >
                     Forgot password?
                   </Link>
@@ -322,27 +329,30 @@ export default function LoginPage() {
                 <Input
                   type="password"
                   autoComplete="current-password"
+                  placeholder="••••••••"
                   {...register("password", { required: "Password is required" })}
-                  className={errors.password ? "border-red-500" : ""}
+                  className={`rounded-xl h-11 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 ${
+                    errors.password ? "border-rose-500 focus-visible:ring-rose-500" : ""
+                  }`}
                 />
                 {errors.password && (
-                  <p className="text-xs text-red-500">
+                  <p className="text-xs text-rose-500 mt-1">
                     {errors.password.message as string}
                   </p>
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full rounded-full h-11 text-sm font-semibold shadow-md shadow-blue-600/20" disabled={isSubmitting}>
                 {isSubmitting ? "Logging in..." : "Log In"}
               </Button>
             </form>
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-200 dark:border-slate-700" />
+                <span className="w-full border-t border-slate-200 dark:border-slate-800" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-50 px-2 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                <span className="bg-white dark:bg-slate-900 px-3 text-slate-400 font-medium tracking-wider">
                   Or continue with
                 </span>
               </div>
@@ -355,7 +365,7 @@ export default function LoginPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full mt-3"
+              className="w-full mt-3 rounded-full h-11 text-xs font-semibold shadow-xs"
               onClick={handleMicrosoftLogin}
               disabled={microsoftProcessing}
             >
@@ -363,12 +373,12 @@ export default function LoginPage() {
             </Button>
           </CardContent>
 
-          <CardFooter className="flex flex-col items-center justify-center space-y-2">
+          <CardFooter className="flex flex-col items-center justify-center pt-2 pb-6">
             <div className="text-sm text-slate-500 dark:text-slate-400">
               Don&apos;t have an account?{" "}
               <Link
                 href="/register"
-                className="text-blue-600 hover:underline dark:text-blue-400 font-medium"
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-semibold underline-offset-4 hover:underline"
               >
                 Register here
               </Link>

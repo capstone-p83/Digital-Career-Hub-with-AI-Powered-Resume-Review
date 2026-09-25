@@ -18,6 +18,12 @@ import {
   X,
   Save,
   FileText,
+  Sparkles,
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  BookOpen,
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -469,58 +475,77 @@ export default function LearningResourcesPage() {
 
   return (
     <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-8">
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100/80 text-indigo-700 border border-indigo-200/60 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 mb-2">
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Staff & Admin Content Studio</span>
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {t("mgmt.title")}
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
             {t("mgmt.subtitle")}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" onClick={() => router.push("/dashboard")}>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            className="rounded-full shadow-xs"
+            onClick={() => router.push("/dashboard")}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
             {t("mgmt.backToDashboard")}
           </Button>
-          <Button variant="outline" onClick={fetchResources} disabled={loading}>
+          <Button
+            variant="outline"
+            className="rounded-full shadow-xs"
+            onClick={fetchResources}
+            disabled={loading}
+          >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             {t("mgmt.refresh")}
           </Button>
-          <Button onClick={openTypeSelector}>
+          <Button
+            className="rounded-full shadow-md shadow-blue-500/20"
+            onClick={openTypeSelector}
+          >
             <Plus className="w-4 h-4 mr-2" />
             {t("mgmt.newResource")}
           </Button>
         </div>
       </div>
 
+      {/* Metric Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-full text-blue-600 dark:text-blue-400">
-              <FileText className="w-6 h-6" />
+        <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800/80 shadow-xs hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 ring-4 ring-blue-50/50 dark:ring-blue-950/20">
+              <FileText className="w-7 h-7" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {t("mgmt.totalArticles")}
               </p>
-              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+              <h4 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
                 {articles.length}
               </h4>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-full text-emerald-600 dark:text-emerald-400">
-              <FileText className="w-6 h-6" />
+        <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800/80 shadow-xs hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 ring-4 ring-emerald-50/50 dark:ring-emerald-950/20">
+              <FileText className="w-7 h-7" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {t("mgmt.totalResumes")}
               </p>
-              <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+              <h4 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
                 {resumes.length}
               </h4>
             </div>
@@ -528,34 +553,53 @@ export default function LearningResourcesPage() {
         </Card>
       </div>
 
+      {/* Global Alerts */}
+      {pageSuccess && !showForm && (
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{pageSuccess}</span>
+        </div>
+      )}
+      {pageError && !showForm && (
+        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{pageError}</span>
+        </div>
+      )}
+
+      {/* Type Selector Modal */}
       {showTypeSelector && (
-        <Card>
-          <CardHeader>
+        <Card className="rounded-3xl border-2 border-blue-500/30 bg-white/95 shadow-xl shadow-blue-500/10 backdrop-blur-xl dark:border-blue-500/30 dark:bg-slate-900/95 overflow-hidden">
+          <CardHeader className="p-6 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between">
-              <CardTitle>{t("mgmt.createTitle")}</CardTitle>
+              <div>
+                <CardTitle className="text-xl font-bold">{t("mgmt.createTitle")}</CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {t("mgmt.createPrompt")}
+                </p>
+              </div>
               <button
                 onClick={closeForm}
-                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-              {t("mgmt.createPrompt")}
-            </p>
+          <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
                 onClick={() => handleTypeSelect("article")}
-                className="flex flex-col items-center justify-center gap-3 p-8 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all group"
+                className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 transition-all group active:scale-98"
               >
-                <FileText className="w-10 h-10 text-blue-600 group-hover:scale-110 transition-transform" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 group-hover:scale-110 transition-transform dark:bg-blue-900/40 dark:text-blue-400">
+                  <BookOpen className="w-8 h-8" />
+                </div>
                 <div className="text-center">
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                  <p className="font-bold text-slate-900 dark:text-white">
                     {t("mgmt.articles")}
                   </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {t("mgmt.articleDesc")}
                   </p>
                 </div>
@@ -563,14 +607,16 @@ export default function LearningResourcesPage() {
 
               <button
                 onClick={() => handleTypeSelect("resume")}
-                className="flex flex-col items-center justify-center gap-3 p-8 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all group"
+                className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/30 transition-all group active:scale-98"
               >
-                <FileText className="w-10 h-10 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 group-hover:scale-110 transition-transform dark:bg-emerald-900/40 dark:text-emerald-400">
+                  <FileText className="w-8 h-8" />
+                </div>
                 <div className="text-center">
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                  <p className="font-bold text-slate-900 dark:text-white">
                     {t("mgmt.resumes")}
                   </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {t("mgmt.resumeDesc")}
                   </p>
                 </div>
@@ -581,24 +627,25 @@ export default function LearningResourcesPage() {
       )}
 
       {showForm && selectedType === "article" && (
-        <Card>
-          <CardHeader>
+        <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800/80 shadow-lg overflow-hidden">
+          <CardHeader className="p-6 border-b border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
-              <CardTitle>
+              <CardTitle className="text-xl font-bold">
                 {editingArticle ? t("mgmt.editArticle") : t("mgmt.createArticle")}
               </CardTitle>
               <button
                 onClick={closeForm}
-                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 space-y-5">
             {pageError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
-                {pageError}
+              <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/80 p-3.5 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{pageError}</span>
               </div>
             )}
 
@@ -688,24 +735,25 @@ export default function LearningResourcesPage() {
       )}
 
       {showForm && selectedType === "resume" && (
-        <Card>
-          <CardHeader>
+        <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800/80 shadow-lg overflow-hidden">
+          <CardHeader className="p-6 border-b border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
-              <CardTitle>
+              <CardTitle className="text-xl font-bold">
                 {editingResume ? t("mgmt.editResume") : t("mgmt.uploadResume")}
               </CardTitle>
               <button
                 onClick={closeForm}
-                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 space-y-5">
             {pageError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
-                {pageError}
+              <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50/80 p-3.5 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{pageError}</span>
               </div>
             )}
 
@@ -955,15 +1003,15 @@ function TextInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+        {label} {required && <span className="text-rose-500">*</span>}
       </label>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || label}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
       />
     </div>
   );
@@ -986,15 +1034,15 @@ function TextareaInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+        {label} {required && <span className="text-rose-500">*</span>}
       </label>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || label}
         rows={rows}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+        className="w-full rounded-2xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
       />
     </div>
   );
@@ -1013,13 +1061,13 @@ function SubcategoryInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
         Subcategory
       </label>
       <select
         value={value}
         onChange={(e) => onSubcategoryChange(e.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
       >
         <option value="">Select a subcategory...</option>
         {SUBCATEGORY_OPTIONS.map((opt) => (
@@ -1035,7 +1083,7 @@ function SubcategoryInput({
           value={customValue}
           onChange={(e) => onCustomChange(e.target.value)}
           placeholder="Enter custom subcategory"
-          className="w-full mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-slate-300"
+          className="w-full mt-2.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-blue-500"
         />
       )}
     </div>
@@ -1058,11 +1106,20 @@ function FormActions({
   cancelLabel: string;
 }) {
   return (
-    <div className="flex justify-end gap-3 pt-2">
-      <Button variant="outline" onClick={onCancel} disabled={submitting}>
+    <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+      <Button
+        variant="outline"
+        className="rounded-full shadow-xs"
+        onClick={onCancel}
+        disabled={submitting}
+      >
         {cancelLabel}
       </Button>
-      <Button onClick={onSubmit} disabled={submitting}>
+      <Button
+        className="rounded-full shadow-md shadow-blue-500/20"
+        onClick={onSubmit}
+        disabled={submitting}
+      >
         <Save className="w-4 h-4 mr-2" />
         {submitting ? loadingLabel : submitLabel}
       </Button>
@@ -1088,28 +1145,29 @@ function ResourceTableSection({
   const hasRows = Array.isArray(children) ? children.length > 0 : !!children;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800/80 shadow-sm overflow-hidden">
+      <CardHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50">
+        <CardTitle className="text-xl font-bold">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {loading ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            {loadingText}
+          <div className="flex items-center justify-center p-12 text-sm text-slate-500 dark:text-slate-400">
+            <RefreshCw className="w-5 h-5 animate-spin mr-2 text-blue-600" />
+            <span>{loadingText}</span>
           </div>
         ) : !hasRows ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          <div className="text-center p-12 text-sm text-slate-500 dark:text-slate-400">
             {emptyText}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1100px] text-sm text-left">
-              <thead className="border-b border-slate-200 dark:border-slate-800">
-                <tr className="text-slate-500 dark:text-slate-400">
+              <thead className="border-b border-slate-200/80 bg-slate-50/70 dark:border-slate-800/80 dark:bg-slate-900/70">
+                <tr className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {headers.map((header, index) => (
                     <th
                       key={`${header}-${index}`}
-                      className={`px-4 py-3 font-medium ${
+                      className={`px-6 py-3.5 ${
                         index === headers.length - 1 ? "text-right" : ""
                       }`}
                     >
@@ -1118,7 +1176,7 @@ function ResourceTableSection({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {children}
               </tbody>
             </table>
@@ -1137,11 +1195,11 @@ function SubcategoryBadge({
   noneText: string;
 }) {
   if (!subcategory) {
-    return <span className="text-slate-400 text-xs">{noneText}</span>;
+    return <span className="text-slate-400 text-xs italic">{noneText}</span>;
   }
 
   return (
-    <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+    <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50">
       {subcategory}
     </span>
   );
@@ -1157,7 +1215,7 @@ function ImageLink({
   noneText: string;
 }) {
   if (!url) {
-    return <span className="text-slate-400 text-xs">{noneText}</span>;
+    return <span className="text-slate-400 text-xs italic">{noneText}</span>;
   }
 
   return (
@@ -1165,9 +1223,10 @@ function ImageLink({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 dark:text-blue-400 hover:underline text-xs truncate block max-w-[120px]"
+      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-slate-100 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-blue-950/40 transition-colors"
     >
-      {viewText}
+      <span>{viewText}</span>
+      <ExternalLink className="w-3 h-3" />
     </a>
   );
 }
@@ -1182,11 +1241,11 @@ function ActionButtons({
   deleting: boolean;
 }) {
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex items-center justify-end gap-1.5">
       <button
         type="button"
         onClick={onEdit}
-        className="inline-flex items-center justify-center rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
+        className="inline-flex items-center justify-center rounded-full p-2 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
       >
         <Pencil className="w-4 h-4" />
       </button>
@@ -1194,7 +1253,7 @@ function ActionButtons({
         type="button"
         onClick={onDelete}
         disabled={deleting}
-        className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+        className="inline-flex items-center justify-center rounded-full p-2 text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
       >
         <Trash2 className="w-4 h-4" />
       </button>
