@@ -2,8 +2,10 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   Card,
@@ -29,6 +31,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Shuffle,
+  Lightbulb,
+  CheckCircle2,
+  RotateCw,
+  Target,
+  GraduationCap,
 } from "lucide-react";
 
 const API_BASE_URL =
@@ -256,7 +263,7 @@ function CategoryPill({
     category;
 
   return (
-    <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-1 rounded bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
+    <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border border-blue-200 dark:border-blue-800/60 bg-blue-50/80 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 shadow-xs">
       {label}
     </span>
   );
@@ -276,14 +283,14 @@ function DifficultyPill({
 
   const style =
     difficulty === "Easy"
-      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+      ? "border-emerald-200 text-emerald-700 bg-emerald-50/80 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300"
       : difficulty === "Hard"
-      ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
-      : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400";
+      ? "border-rose-200 text-rose-700 bg-rose-50/80 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300"
+      : "border-amber-200 text-amber-700 bg-amber-50/80 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300";
 
   return (
     <span
-      className={`text-[11px] font-semibold uppercase tracking-wider px-2 py-1 rounded ${style}`}
+      className={`inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border shadow-xs ${style}`}
     >
       {label}
     </span>
@@ -346,87 +353,136 @@ function Flashcards({
     );
   };
 
+  const progressPercent = Math.round(((index + 1) / questions.length) * 100);
+
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-          {language === "bn"
-            ? "ফ্ল্যাশকার্ড"
-            : "Flashcards"}
-        </h2>
+      {/* Header & Progress Pill */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            {language === "bn"
+              ? "ইন্টারেক্টিভ ফ্ল্যাশকার্ড"
+              : "Interactive Flashcard"}
+          </h2>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40">
+            {index + 1} / {questions.length}
+          </span>
+        </div>
 
-        <span className="text-sm text-slate-500">
-          {index + 1} /{" "}
-          {questions.length}
-        </span>
+        {/* Mini progress bar bubble */}
+        <div className="w-full sm:w-36 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-slate-700/50">
+          <div
+            className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() =>
-          setFlipped(
-            (value) => !value
-          )
-        }
-        className="w-full min-h-[300px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm text-left"
-      >
-        {!flipped ? (
-          <div className="min-h-[240px] flex flex-col justify-between">
-            <div className="flex justify-between gap-2">
-              <CategoryPill
-                category={
-                  question.category
-                }
-                language={language}
-              />
+      {/* Interactive Card */}
+      <div className="relative group">
+        <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-teal-500/20 blur-xl opacity-70 group-hover:opacity-100 transition duration-500 pointer-events-none" />
 
-              <DifficultyPill
-                difficulty={
-                  question.difficulty
-                }
-                language={language}
-              />
+        <button
+          type="button"
+          onClick={() =>
+            setFlipped(
+              (value) => !value
+            )
+          }
+          className="relative w-full min-h-[340px] rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-8 sm:p-10 shadow-xl text-left transition-all duration-300 hover:scale-[1.008] hover:border-blue-300 dark:hover:border-blue-700 active:scale-[0.995]"
+        >
+          {!flipped ? (
+            <div className="min-h-[260px] flex flex-col justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <CategoryPill
+                    category={
+                      question.category
+                    }
+                    language={language}
+                  />
+
+                  <DifficultyPill
+                    difficulty={
+                      question.difficulty
+                    }
+                    language={language}
+                  />
+                </div>
+
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                  {language === "bn"
+                    ? "ফ্লিপ করতে ক্লিক করুন"
+                    : "Click to flip"}
+                </span>
+              </div>
+
+              <div className="py-6">
+                <p className="text-xl sm:text-2xl font-bold text-center text-slate-900 dark:text-white leading-relaxed">
+                  &ldquo;{question.question}&rdquo;
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center pt-2">
+                <p className="text-xs font-medium text-center text-blue-600 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-950/40 px-3.5 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/40">
+                  {language === "bn"
+                    ? "নমুনা উত্তর ও কাঠামোগত কৌশল দেখতে ক্লিক করুন"
+                    : "Click anywhere to reveal model answer & tips"}
+                </p>
+              </div>
             </div>
+          ) : (
+            <div className="min-h-[260px] flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/50">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                  {language === "bn"
+                    ? "নমুনা উত্তর (STAR স্ট্রাকচার)"
+                    : "Sample Answer (STAR Method)"}
+                </span>
 
-            <p className="text-xl sm:text-2xl font-semibold text-center text-slate-900 dark:text-white">
-              {question.question}
-            </p>
+                <span className="text-xs text-slate-400">
+                  {language === "bn" ? "প্রশ্নে ফিরতে ক্লিক করুন" : "Click to view question"}
+                </span>
+              </div>
 
-            <p className="text-xs text-center text-slate-400">
-              {language === "bn"
-                ? "উত্তর দেখতে কার্ডে ক্লিক করুন"
-                : "Click the card to view the answer"}
-            </p>
-          </div>
-        ) : (
-          <div className="min-h-[240px] flex flex-col justify-center">
-            <p className="text-xs uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400 text-center mb-4">
-              {language === "bn"
-                ? "নমুনা উত্তর"
-                : "Sample Answer"}
-            </p>
+              <div className="my-auto py-4">
+                <p className="text-base sm:text-lg text-slate-700 dark:text-slate-200 text-left sm:text-center leading-relaxed font-normal">
+                  {question.answer}
+                </p>
+              </div>
 
-            <p className="text-lg text-slate-700 dark:text-slate-200 text-center leading-relaxed">
-              {question.answer}
-            </p>
-          </div>
-        )}
-      </button>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-center">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  💡 {language === "bn"
+                    ? "পরামর্শ: স্পষ্ট উদাহরণ এবং পরিমাপযোগ্য ফলাফল উল্লেখ করুন।"
+                    : "Tip: Highlight specific results, actions, and quantifiable achievements."}
+                </p>
+              </div>
+            </div>
+          )}
+        </button>
+      </div>
 
-      <div className="flex justify-center gap-3 mt-5">
+      {/* Action Controls */}
+      <div className="flex items-center justify-center gap-3 mt-6">
         <Button
           variant="outline"
           onClick={previous}
+          className="rounded-full px-5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4 mr-1.5" />
+          {language === "bn" ? "আগেরটি" : "Previous"}
         </Button>
 
         <Button
           variant="outline"
           onClick={shuffle}
+          className="rounded-full px-5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs"
         >
-          <Shuffle className="w-4 h-4 mr-2" />
-
+          <Shuffle className="w-4 h-4 mr-1.5 text-blue-600 dark:text-blue-400" />
           {language === "bn"
             ? "এলোমেলো"
             : "Shuffle"}
@@ -435,8 +491,10 @@ function Flashcards({
         <Button
           variant="outline"
           onClick={next}
+          className="rounded-full px-5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs"
         >
-          <ChevronRight className="w-4 h-4" />
+          {language === "bn" ? "পরেরটি" : "Next"}
+          <ChevronRight className="w-4 h-4 ml-1.5" />
         </Button>
       </div>
     </div>
@@ -476,8 +534,8 @@ function QuestionBank({
 
   return (
     <div>
-      <div className="relative mb-5">
-        <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+      <div className="relative mb-6 max-w-xl mx-auto">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
 
         <Input
           value={search}
@@ -488,21 +546,28 @@ function QuestionBank({
           }
           placeholder={
             language === "bn"
-              ? "প্রশ্ন খুঁজুন..."
-              : "Search questions..."
+              ? "প্রশ্ন বা উত্তর খুঁজুন..."
+              : "Search questions or answers..."
           }
-          className="pl-10"
+          className="pl-11 h-12 rounded-full border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 shadow-sm focus:ring-2 focus:ring-blue-500/20"
         />
+
+        {search && (
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+            {filtered.length}
+          </span>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {filtered.map(
           (question, index) => (
             <Card
               key={`${question.question}-${index}`}
+              className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-800 transition-all duration-200 flex flex-col justify-between"
             >
-              <CardContent className="p-5">
-                <div className="flex gap-2 mb-4">
+              <CardContent className="p-6">
+                <div className="flex flex-wrap gap-2 mb-4">
                   <CategoryPill
                     category={
                       question.category
@@ -522,12 +587,13 @@ function QuestionBank({
                   />
                 </div>
 
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 leading-snug">
                   {question.question}
                 </h3>
 
-                <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                <div className="rounded-xl bg-slate-50/80 dark:bg-slate-800/60 p-4 border border-slate-100 dark:border-slate-800/80 mt-auto">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
                     {language === "bn"
                       ? "নমুনা উত্তর"
                       : "Sample Answer"}
@@ -547,11 +613,26 @@ function QuestionBank({
 }
 
 export default function InterviewQuestionsPage() {
+  const router = useRouter();
+
   const { language } =
     useLanguage();
 
-  const { token } =
-    useAuth();
+  const {
+    token,
+    isAuthenticated,
+    isLoading,
+  } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [
+    isLoading,
+    isAuthenticated,
+    router,
+  ]);
 
   const currentLanguage: SupportedLanguage =
     language === "bn"
@@ -575,6 +656,11 @@ export default function InterviewQuestionsPage() {
     suggestions,
     setSuggestions,
   ] = useState<JobSuggestion[]>([]);
+
+  const [
+    showSuggestions,
+    setShowSuggestions,
+  ] = useState(false);
 
   const [
     searchingJobs,
@@ -609,6 +695,42 @@ export default function InterviewQuestionsPage() {
       "flashcards"
     );
 
+  const searchContainerRef =
+    useRef<HTMLDivElement>(null);
+
+  const isJobSelected = Boolean(
+    selectedJobTitle &&
+      jobTitle.trim().toLowerCase() ===
+        selectedJobTitle.trim().toLowerCase()
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (
+      event: MouseEvent
+    ) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(
+          event.target as Node
+        )
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+  }, []);
+
   useEffect(() => {
     if (!generatedJobTitle) {
       setQuestions(defaultQuestions);
@@ -616,6 +738,7 @@ export default function InterviewQuestionsPage() {
   }, [
     currentLanguage,
     generatedJobTitle,
+    defaultQuestions,
   ]);
 
   useEffect(() => {
@@ -624,10 +747,12 @@ export default function InterviewQuestionsPage() {
 
     if (
       query.length < 2 ||
-      query === selectedJobTitle
+      query.toLowerCase() ===
+        selectedJobTitle.trim().toLowerCase()
     ) {
       setSuggestions([]);
       setSearchingJobs(false);
+      setShowSuggestions(false);
       return;
     }
 
@@ -635,6 +760,7 @@ export default function InterviewQuestionsPage() {
       setTimeout(async () => {
         try {
           setSearchingJobs(true);
+          setShowSuggestions(true);
 
           const results =
             await searchJobTitles(
@@ -668,19 +794,44 @@ export default function InterviewQuestionsPage() {
       job.title
     );
     setSuggestions([]);
+    setShowSuggestions(false);
     setError("");
   };
+
+  const handlePopularRoleClick =
+    async (role: string) => {
+      setJobTitle(role);
+      setSelectedJobTitle("");
+      setError("");
+      setShowSuggestions(true);
+
+      try {
+        setSearchingJobs(true);
+        const results =
+          await searchJobTitles(
+            role,
+            token
+          );
+        setSuggestions(
+          results.slice(0, 6)
+        );
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearchingJobs(false);
+      }
+    };
 
   const generateQuestions =
     async () => {
       const title =
         jobTitle.trim();
 
-      if (!title) {
+      if (!isJobSelected || !title) {
         setError(
           currentLanguage === "bn"
-            ? "অনুগ্রহ করে একটি চাকরির পদ নির্বাচন করুন।"
-            : "Please select a job title."
+            ? "প্রশ্ন তৈরি করতে ড্রপডাউন পরামর্শ থেকে একটি চাকরির পদ নির্বাচন করুন।"
+            : "Please select a matching job title from the suggestions dropdown."
         );
 
         return;
@@ -761,216 +912,293 @@ export default function InterviewQuestionsPage() {
       }
     };
 
+  if (isLoading || !isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-          {currentLanguage ===
-          "bn"
-            ? "ইন্টারভিউ প্রশ্ন"
-            : "Interview Questions"}
+    <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+      {/* Background Ambient Glows */}
+      <div className="relative mb-10 text-center">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-800/40 text-blue-700 dark:text-blue-300 text-xs font-semibold uppercase tracking-wider mb-4 shadow-xs">
+          <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          {currentLanguage === "bn"
+            ? "শিক্ষার্থীদের ইন্টারভিউ প্রস্তুতি স্টুডিও"
+            : "Student Interview Prep Studio"}
+        </div>
+
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          {currentLanguage === "bn"
+            ? "ইন্টারভিউ প্রশ্ন ও মডেল উত্তর"
+            : "AI Interview Practice & Flashcards"}
         </h1>
 
-        <p className="mt-3 text-slate-600 dark:text-slate-400">
-          {currentLanguage ===
-          "bn"
-            ? "আপনার পেশা নির্বাচন করুন এবং AI দিয়ে ইন্টারভিউ প্রশ্ন তৈরি করুন।"
-            : "Search for a career and generate interview questions with AI."}
+        <p className="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          {currentLanguage === "bn"
+            ? "আপনার লক্ষ্য পেশা নির্বাচন করুন এবং শীর্ষস্থানীয় নিয়োগকারী প্রতিষ্ঠানের বাস্তব প্রশ্ন ও STAR কাঠামোর নমুনা উত্তর অনুশীলন করুন।"
+            : "Search your target role to generate tailored interview questions and master the STAR response technique."}
         </p>
       </div>
 
-      <div className="max-w-2xl mx-auto mb-10">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+      {/* Search & AI Generation Bar */}
+      <div className="max-w-2xl mx-auto mb-10" ref={searchContainerRef}>
+        <div className="relative rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 p-2 shadow-xl shadow-blue-950/5 transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
+          <div className="relative flex items-center">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
 
-          <Input
-            value={jobTitle}
-            onChange={(event) => {
-              const value =
-                event.target.value;
-
-              setJobTitle(value);
-
-              if (
-                value !==
-                selectedJobTitle
-              ) {
-                setSelectedJobTitle(
-                  ""
-                );
+            <Input
+              value={jobTitle}
+              onChange={(event) => {
+                const value = event.target.value;
+                setJobTitle(value);
+                if (value !== selectedJobTitle) {
+                  setSelectedJobTitle("");
+                }
+                setError("");
+                setShowSuggestions(true);
+              }}
+              onFocus={() => {
+                if (suggestions.length > 0 && !isJobSelected) {
+                  setShowSuggestions(true);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  if (isJobSelected && !generating) {
+                    generateQuestions();
+                  } else {
+                    setError(
+                      currentLanguage === "bn"
+                        ? "প্রশ্ন তৈরি করতে ড্রপডাউন পরামর্শ থেকে একটি চাকরির পদ নির্বাচন করুন।"
+                        : "Please select a matching job title from the suggestions dropdown."
+                    );
+                  }
+                }
+              }}
+              placeholder={
+                currentLanguage === "bn"
+                  ? "পেশা খুঁজুন (যেমন: Software Engineer, Marketing)..."
+                  : "Search job title (e.g. Software Engineer, Marketing)..."
               }
-            }}
-            onKeyDown={(event) => {
-              if (
-                event.key ===
-                "Enter"
-              ) {
-                generateQuestions();
-              }
-            }}
-            placeholder={
-              currentLanguage ===
-              "bn"
-                ? "পেশা খুঁজুন..."
-                : "Search job title..."
-            }
-            className="h-14 pl-12 pr-36 text-base rounded-xl"
-          />
+              className="h-13 pl-12 pr-36 text-base rounded-xl border-0 shadow-none focus-visible:ring-0 bg-transparent"
+            />
 
-          <Button
-            onClick={
-              generateQuestions
-            }
-            disabled={
-              generating ||
-              !jobTitle.trim()
-            }
-            className="absolute right-2 top-2 h-10"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Button
+              onClick={generateQuestions}
+              disabled={generating || !isJobSelected}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 px-5 rounded-xl font-medium shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {generating
+                ? currentLanguage === "bn"
+                  ? "তৈরি হচ্ছে..."
+                  : "Generating..."
+                : currentLanguage === "bn"
+                ? "প্রশ্ন তৈরি করুন"
+                : "Generate"}
+            </Button>
+          </div>
 
-            {generating
-              ? currentLanguage ===
-                "bn"
-                ? "তৈরি হচ্ছে..."
-                : "Generating..."
-              : currentLanguage ===
-                "bn"
-              ? "প্রশ্ন তৈরি করুন"
-              : "Generate"}
-          </Button>
-
-          {(searchingJobs ||
-            suggestions.length >
-              0) && (
-            <div className="absolute z-30 left-0 right-0 mt-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden">
+          {/* Autocomplete Dropdown */}
+          {showSuggestions && (searchingJobs || suggestions.length > 0) && (
+            <div className="absolute z-30 left-0 right-0 top-full mt-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl overflow-hidden">
               {searchingJobs ? (
-                <div className="px-4 py-3 text-sm text-slate-500">
-                  {currentLanguage ===
-                  "bn"
+                <div className="flex items-center gap-2 px-5 py-4 text-sm text-slate-500">
+                  <RotateCw className="w-4 h-4 animate-spin text-blue-500" />
+                  {currentLanguage === "bn"
                     ? "পেশা খোঁজা হচ্ছে..."
-                    : "Searching jobs..."}
+                    : "Searching matching occupations..."}
                 </div>
               ) : (
-                suggestions.map(
-                  (job) => (
-                    <button
-                      key={
-                        job.uri ||
-                        job.title
-                      }
-                      type="button"
-                      onClick={() =>
-                        chooseJob(
-                          job
-                        )
-                      }
-                      className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 border-b last:border-b-0 border-slate-100 dark:border-slate-800"
-                    >
-                      <span className="font-medium text-slate-900 dark:text-white">
-                        {job.title}
-                      </span>
-                    </button>
-                  )
-                )
+                suggestions.map((job) => (
+                  <button
+                    key={job.uri || job.title}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => chooseJob(job)}
+                    className="w-full text-left px-5 py-3.5 hover:bg-blue-50/60 dark:hover:bg-slate-800/80 border-b last:border-b-0 border-slate-100 dark:border-slate-800 flex items-center justify-between group transition-colors"
+                  >
+                    <span className="font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      {job.title}
+                    </span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                      Select
+                    </span>
+                  </button>
+                ))
               )}
             </div>
           )}
         </div>
 
+        {/* Selected role confirmation badge */}
+        {isJobSelected && (
+          <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>
+              {currentLanguage === "bn"
+                ? `নির্বাচিত পদ: ${selectedJobTitle}`
+                : `Selected Role: ${selectedJobTitle}`}
+            </span>
+          </div>
+        )}
+
+        {/* Quick Suggestion Pills */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+          <span className="text-xs text-slate-400 font-medium">
+            {currentLanguage === "bn" ? "জনপ্রিয় পেশা:" : "Popular:"}
+          </span>
+          {[
+            "Software Engineer",
+            "Data Analyst",
+            "Business Analyst",
+            "Marketing Specialist",
+          ].map((role) => (
+            <button
+              key={role}
+              type="button"
+              onClick={() => handlePopularRoleClick(role)}
+              className="text-xs px-3 py-1 rounded-full bg-slate-100/80 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-800/80 dark:hover:bg-blue-950/40 dark:hover:text-blue-300 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 transition-colors"
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+
         {error && (
-          <p className="mt-3 text-sm text-red-600 text-center">
+          <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-sm text-red-600 dark:text-red-400 text-center">
             {error}
-          </p>
+          </div>
         )}
       </div>
 
-      {questions.length >
-        0 && (
+      {/* STAR Framework Student Helper Banner */}
+      <div className="mb-10 rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20 p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+            {currentLanguage === "bn"
+              ? "STAR মেথড - বিশ্বমানের ইন্টারভিউ উত্তর কাঠামো"
+              : "Mastering the STAR Method for Behavioral Interviews"}
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+              S
+            </span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+              {currentLanguage === "bn" ? "Situation" : "Situation"}
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              {currentLanguage === "bn" ? "প্রেক্ষাপট সংক্ষেপে ব্যাখ্যা করুন" : "Set the scene and context"}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+              T
+            </span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+              {currentLanguage === "bn" ? "Task" : "Task"}
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              {currentLanguage === "bn" ? "আপনার দায়িত্ব ও লক্ষ্য চিহ্নিত করুন" : "Describe the required goal"}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+              A
+            </span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+              {currentLanguage === "bn" ? "Action" : "Action"}
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              {currentLanguage === "bn" ? "আপনি নিজে কী পদক্ষেপ নিয়েছিলেন" : "Explain steps you personally took"}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+              R
+            </span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+              {currentLanguage === "bn" ? "Result" : "Result"}
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              {currentLanguage === "bn" ? "পরিমাপযোগ্য ফলাফল ও কী শিখলেন" : "Share the positive outcome"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Questions Section */}
+      {questions.length > 0 && (
         <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400">
                 {generatedJobTitle
                   ? currentLanguage === "bn"
-                    ? "প্রশ্ন তৈরি হয়েছে:"
-                    : "Questions for:"
+                    ? "প্রশ্ন তৈরি হয়েছে"
+                    : "Questions for"
                   : currentLanguage === "bn"
-                  ? "সাধারণ ইন্টারভিউ প্রস্তুতি"
-                  : "General Interview Practice"}
+                  ? "সাধারণ প্রস্তুতি"
+                  : "General Practice"}
               </p>
 
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
                 {generatedJobTitle ||
                   (currentLanguage === "bn"
-                    ? "আচরণগত প্রশ্ন"
+                    ? "আচরণগত প্রশ্ন ব্যাংক"
                     : "Behavioral Question Bank")}
               </h2>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                variant={
-                  activeMode ===
-                  "flashcards"
-                    ? "default"
-                    : "outline"
-                }
-                onClick={() =>
-                  setActiveMode(
-                    "flashcards"
-                  )
-                }
+            {/* Mode Switcher Pills */}
+            <div className="flex items-center p-1 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => setActiveMode("flashcards")}
+                className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                  activeMode === "flashcards"
+                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
               >
-                <Layers className="w-4 h-4 mr-2" />
+                <Layers className="w-3.5 h-3.5 mr-1.5" />
+                {currentLanguage === "bn" ? "ফ্ল্যাশকার্ড" : "Flashcards"}
+              </button>
 
-                {currentLanguage ===
-                "bn"
-                  ? "ফ্ল্যাশকার্ড"
-                  : "Flashcards"}
-              </Button>
-
-              <Button
-                variant={
-                  activeMode ===
-                  "bank"
-                    ? "default"
-                    : "outline"
-                }
-                onClick={() =>
-                  setActiveMode(
-                    "bank"
-                  )
-                }
+              <button
+                type="button"
+                onClick={() => setActiveMode("bank")}
+                className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                  activeMode === "bank"
+                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
               >
-                <BookOpen className="w-4 h-4 mr-2" />
-
-                {currentLanguage ===
-                "bn"
-                  ? "প্রশ্ন ব্যাংক"
-                  : "Question Bank"}
-              </Button>
+                <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+                {currentLanguage === "bn" ? "প্রশ্ন ব্যাংক" : "Question Bank"}
+              </button>
             </div>
           </div>
 
-          {activeMode ===
-          "flashcards" ? (
+          {activeMode === "flashcards" ? (
             <Flashcards
-              questions={
-                questions
-              }
-              language={
-                currentLanguage
-              }
+              questions={questions}
+              language={currentLanguage}
             />
           ) : (
             <QuestionBank
-              questions={
-                questions
-              }
-              language={
-                currentLanguage
-              }
+              questions={questions}
+              language={currentLanguage}
             />
           )}
         </>
