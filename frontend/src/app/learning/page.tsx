@@ -746,7 +746,7 @@ export default function InterviewQuestionsPage() {
       jobTitle.trim();
 
     if (
-      query.length < 2 ||
+      query.length < 1 ||
       query.toLowerCase() ===
         selectedJobTitle.trim().toLowerCase()
     ) {
