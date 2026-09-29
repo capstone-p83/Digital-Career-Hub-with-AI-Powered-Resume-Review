@@ -1,1208 +1,3128 @@
 "use client";
 
+
+
 import {
+
+  useCallback,
+
   useEffect,
+
   useRef,
+
   useState,
+
 } from "react";
+
 import { useRouter } from "next/navigation";
 
+
+
 import {
+
   Card,
+
   CardContent,
+
 } from "../../components/ui/Card";
 
+
+
 import { Button } from "../../components/ui/Button";
+
 import { Input } from "../../components/ui/Input";
 
+
+
 import { useLanguage } from "../../context/LanguageContext";
+
 import { useAuth } from "../../context/AuthContext";
 
+
+
 import {
+
   searchJobTitles,
+
   type JobSuggestion,
+
 } from "../../lib/jobSearch";
 
+
+
 import {
+
   Search,
+
   Sparkles,
+
   Layers,
+
   BookOpen,
+
   ChevronLeft,
+
   ChevronRight,
+
   Shuffle,
+
   Lightbulb,
+
   CheckCircle2,
+
   RotateCw,
+
   Target,
+
   GraduationCap,
+
+  Mic,
+
+  Square,
+
+  Send,
+
+  Timer,
+
+  AlertCircle,
+
+  Loader2,
+
 } from "lucide-react";
 
+
+
 const API_BASE_URL =
+
   process.env.NEXT_PUBLIC_API_URL ||
+
   "http://localhost:5001/api";
+
+
 
 type SupportedLanguage = "en" | "bn";
 
+
+
 type PracticeMode =
+
   | "flashcards"
-  | "bank";
 
-type InterviewQuestion = {
-  category: string;
-  difficulty: string;
-  question: string;
-  answer: string;
+  | "bank"
+
+  | "live";
+
+
+
+type SpeechRecognitionResultLike = {
+
+  isFinal: boolean;
+
+  0: {
+
+    transcript: string;
+
+  };
+
 };
 
-const DEFAULT_QUESTIONS_EN: InterviewQuestion[] = [
-  {
-    category: "Behavioral",
-    difficulty: "Easy",
-    question: "Tell me about yourself.",
-    answer:
-      "Give a short summary of your background, relevant experience, key strengths, and why you are interested in the role. Keep your answer focused on your professional journey rather than personal details.",
-  },
-  {
-    category: "Behavioral",
-    difficulty: "Medium",
-    question: "Tell me about a time you faced a difficult challenge.",
-    answer:
-      "Use the STAR method. Explain the situation, the challenge you needed to solve, the actions you personally took, and the positive result or lesson you gained.",
-  },
-  {
-    category: "Behavioral",
-    difficulty: "Medium",
-    question: "Tell me about a time you worked successfully in a team.",
-    answer:
-      "Describe the team goal, your specific responsibility, how you communicated or collaborated with others, and how your contribution helped the team achieve the outcome.",
-  },
-  {
-    category: "Situational",
-    difficulty: "Medium",
-    question: "How would you handle a disagreement with a colleague?",
-    answer:
-      "Explain that you would stay professional, listen to their point of view, discuss the issue based on facts, look for common ground, and focus on reaching a solution that supports the team.",
-  },
-  {
-    category: "Leadership",
-    difficulty: "Medium",
-    question: "Tell me about a time you took initiative.",
-    answer:
-      "Choose an example where you noticed a problem or opportunity without being asked. Explain what you did, why you acted, and what improvement or result came from your initiative.",
-  },
-  {
-    category: "Behavioral",
-    difficulty: "Medium",
-    question: "Tell me about a mistake you made and what you learned from it.",
-    answer:
-      "Choose a genuine but manageable mistake. Take responsibility, explain how you corrected it, and focus on what you changed afterward to avoid repeating the same issue.",
-  },
-  {
-    category: "HR / General",
-    difficulty: "Easy",
-    question: "What are your greatest strengths?",
-    answer:
-      "Choose two or three strengths that are relevant to the role and support each one with a short example showing how you have demonstrated it in work, study, or projects.",
-  },
-  {
-    category: "HR / General",
-    difficulty: "Medium",
-    question: "What is one weakness you are currently working on?",
-    answer:
-      "Choose a real weakness that is not essential to the role. Explain what you are doing to improve it and show that you are actively making progress.",
-  },
-  {
-    category: "Situational",
-    difficulty: "Medium",
-    question: "How do you manage multiple deadlines?",
-    answer:
-      "Explain how you prioritise tasks by urgency and importance, break larger work into smaller steps, track progress, communicate early if risks arise, and adjust priorities when necessary.",
-  },
-  {
-    category: "HR / General",
-    difficulty: "Easy",
-    question: "Why do you want to work for this company?",
-    answer:
-      "Mention something specific about the company, role, products, values, or industry. Then connect it to your skills, interests, and career goals.",
-  },
-];
 
-const DEFAULT_QUESTIONS_BN: InterviewQuestion[] = [
-  {
-    category: "Behavioral",
-    difficulty: "Easy",
-    question: "নিজের সম্পর্কে সংক্ষেপে বলুন।",
-    answer:
-      "আপনার শিক্ষা বা পেশাগত পটভূমি, প্রাসঙ্গিক অভিজ্ঞতা, প্রধান দক্ষতা এবং এই পদের প্রতি আগ্রহ সংক্ষেপে তুলে ধরুন। ব্যক্তিগত তথ্যের বদলে পেশাগত যাত্রায় গুরুত্ব দিন।",
-  },
-  {
-    category: "Behavioral",
-    difficulty: "Medium",
-    question: "কঠিন কোনো চ্যালেঞ্জ মোকাবিলা করার একটি উদাহরণ বলুন।",
-    answer:
-      "STAR পদ্ধতি ব্যবহার করুন। পরিস্থিতি, আপনার কাজ, আপনি কী পদক্ষেপ নিয়েছিলেন এবং ফলাফল বা শেখার বিষয়টি ব্যাখ্যা করুন।",
-  },
-  {
-    category: "Behavioral",
-    difficulty: "Medium",
-    question: "দলে সফলভাবে কাজ করার একটি অভিজ্ঞতা বলুন।",
-    answer:
-      "দলের লক্ষ্য, আপনার দায়িত্ব, কীভাবে অন্যদের সঙ্গে যোগাযোগ ও সহযোগিতা করেছেন এবং আপনার অবদান কীভাবে ফলাফলে সাহায্য করেছে তা ব্যাখ্যা করুন।",
-  },
-  {
-    category: "Situational",
-    difficulty: "Medium",
-    question: "সহকর্মীর সঙ্গে মতবিরোধ হলে আপনি কীভাবে সামলাবেন?",
-    answer:
-      "পেশাদার আচরণ বজায় রাখুন, অন্য ব্যক্তির মতামত শুনুন, তথ্যভিত্তিক আলোচনা করুন, মিল খুঁজুন এবং দলের জন্য কার্যকর সমাধানের দিকে মনোযোগ দিন।",
-  },
-  {
-    category: "Leadership",
-    difficulty: "Medium",
-    question: "আপনি উদ্যোগ নিয়েছিলেন এমন একটি অভিজ্ঞতা বলুন।",
-    answer:
-      "এমন একটি উদাহরণ দিন যেখানে আপনাকে বলা না হলেও আপনি একটি সমস্যা বা উন্নতির সুযোগ শনাক্ত করেছিলেন। আপনি কী করেছিলেন এবং কী ফলাফল এসেছিল তা ব্যাখ্যা করুন।",
-  },
-  {
-    category: "Behavioral",
-    difficulty: "Medium",
-    question: "আপনি করা কোনো ভুল এবং সেখান থেকে কী শিখেছেন তা বলুন।",
-    answer:
-      "একটি বাস্তব কিন্তু নিয়ন্ত্রণযোগ্য ভুল বেছে নিন। দায়িত্ব স্বীকার করুন, কীভাবে ঠিক করেছিলেন এবং ভবিষ্যতে একই ভুল এড়াতে কী পরিবর্তন করেছেন তা বলুন।",
-  },
-  {
-    category: "HR / General",
-    difficulty: "Easy",
-    question: "আপনার প্রধান শক্তিগুলো কী?",
-    answer:
-      "পদের সঙ্গে সম্পর্কিত দুই বা তিনটি শক্তি বেছে নিন এবং কাজ, পড়াশোনা বা প্রকল্পের ছোট উদাহরণ দিয়ে তা সমর্থন করুন।",
-  },
-  {
-    category: "HR / General",
-    difficulty: "Medium",
-    question: "আপনার এমন একটি দুর্বলতা কী যা আপনি উন্নত করছেন?",
-    answer:
-      "এমন একটি বাস্তব দুর্বলতা বেছে নিন যা পদের জন্য অত্যন্ত গুরুত্বপূর্ণ নয়। কীভাবে উন্নতি করছেন এবং কী অগ্রগতি হয়েছে তা ব্যাখ্যা করুন।",
-  },
-  {
-    category: "Situational",
-    difficulty: "Medium",
-    question: "একাধিক ডেডলাইন কীভাবে সামলান?",
-    answer:
-      "গুরুত্ব ও জরুরিতার ভিত্তিতে অগ্রাধিকার ঠিক করুন, বড় কাজ ছোট ধাপে ভাগ করুন, অগ্রগতি পর্যবেক্ষণ করুন এবং ঝুঁকি দেখা দিলে আগেই যোগাযোগ করুন।",
-  },
-  {
-    category: "HR / General",
-    difficulty: "Easy",
-    question: "আপনি এই প্রতিষ্ঠানে কাজ করতে চান কেন?",
-    answer:
-      "প্রতিষ্ঠান, ভূমিকা, পণ্য, মূল্যবোধ বা শিল্প সম্পর্কে নির্দিষ্ট কিছু উল্লেখ করুন এবং তা আপনার দক্ষতা, আগ্রহ ও ক্যারিয়ার লক্ষ্যগুলোর সঙ্গে যুক্ত করুন।",
-  },
-];
 
-const CATEGORY_LABELS: Record<
-  string,
-  { en: string; bn: string }
-> = {
-  Behavioral: {
-    en: "Behavioral",
-    bn: "আচরণগত",
-  },
+type SpeechRecognitionEventLike = Event & {
 
-  Technical: {
-    en: "Technical",
-    bn: "প্রযুক্তিগত",
-  },
+  resultIndex: number;
 
-  Situational: {
-    en: "Situational",
-    bn: "পরিস্থিতিভিত্তিক",
-  },
+  results: {
 
-  Leadership: {
-    en: "Leadership",
-    bn: "নেতৃত্ব",
-  },
+    length: number;
 
-  "HR / General": {
-    en: "HR / General",
-    bn: "এইচআর / সাধারণ",
-  },
+    [index: number]: SpeechRecognitionResultLike;
+
+  };
+
 };
 
-const DIFFICULTY_LABELS: Record<
-  string,
-  { en: string; bn: string }
-> = {
-  Easy: {
-    en: "Easy",
-    bn: "সহজ",
-  },
 
-  Medium: {
-    en: "Medium",
-    bn: "মাঝারি",
-  },
 
-  Hard: {
-    en: "Hard",
-    bn: "কঠিন",
-  },
+type SpeechRecognitionErrorEventLike = Event & {
+
+  error: string;
+
 };
 
-function CategoryPill({
-  category,
-  language,
-}: {
-  category: string;
-  language: SupportedLanguage;
-}) {
-  const label =
-    CATEGORY_LABELS[category]?.[language] ||
-    category;
 
-  return (
-    <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border border-blue-200 dark:border-blue-800/60 bg-blue-50/80 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 shadow-xs">
-      {label}
-    </span>
-  );
-}
 
-function DifficultyPill({
-  difficulty,
-  language,
-}: {
-  difficulty: string;
-  language: SupportedLanguage;
-}) {
-  const label =
-    DIFFICULTY_LABELS[difficulty]?.[
-      language
-    ] || difficulty;
+type SpeechRecognitionLike = {
 
-  const style =
-    difficulty === "Easy"
-      ? "border-emerald-200 text-emerald-700 bg-emerald-50/80 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300"
-      : difficulty === "Hard"
-      ? "border-rose-200 text-rose-700 bg-rose-50/80 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300"
-      : "border-amber-200 text-amber-700 bg-amber-50/80 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300";
+  continuous: boolean;
 
-  return (
-    <span
-      className={`inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border shadow-xs ${style}`}
-    >
-      {label}
-    </span>
-  );
-}
+  interimResults: boolean;
 
-function Flashcards({
-  questions,
-  language,
-}: {
-  questions: InterviewQuestion[];
-  language: SupportedLanguage;
-}) {
-  const [index, setIndex] =
-    useState(0);
+  lang: string;
 
-  const [flipped, setFlipped] =
-    useState(false);
+  maxAlternatives: number;
 
-  useEffect(() => {
-    setIndex(0);
-    setFlipped(false);
-  }, [questions]);
+  start: () => void;
 
-  const question =
-    questions[index];
+  stop: () => void;
 
-  if (!question) {
-    return null;
+  abort: () => void;
+
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+
+  onend: (() => void) | null;
+
+};
+
+
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+
+
+declare global {
+
+  interface Window {
+
+    SpeechRecognition?: SpeechRecognitionConstructor;
+
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+
   }
 
-  const previous = () => {
-    setFlipped(false);
+}
 
-    setIndex(
+
+
+type InterviewQuestion = {
+
+  category: string;
+
+  difficulty: string;
+
+  question: string;
+
+  answer: string;
+
+};
+
+
+
+const DEFAULT_QUESTIONS_EN: InterviewQuestion[] = [
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Easy",
+
+    question: "Tell me about yourself.",
+
+    answer:
+
+      "Give a short summary of your background, relevant experience, key strengths, and why you are interested in the role. Keep your answer focused on your professional journey rather than personal details.",
+
+  },
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Medium",
+
+    question: "Tell me about a time you faced a difficult challenge.",
+
+    answer:
+
+      "Use the STAR method. Explain the situation, the challenge you needed to solve, the actions you personally took, and the positive result or lesson you gained.",
+
+  },
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Medium",
+
+    question: "Tell me about a time you worked successfully in a team.",
+
+    answer:
+
+      "Describe the team goal, your specific responsibility, how you communicated or collaborated with others, and how your contribution helped the team achieve the outcome.",
+
+  },
+
+  {
+
+    category: "Situational",
+
+    difficulty: "Medium",
+
+    question: "How would you handle a disagreement with a colleague?",
+
+    answer:
+
+      "Explain that you would stay professional, listen to their point of view, discuss the issue based on facts, look for common ground, and focus on reaching a solution that supports the team.",
+
+  },
+
+  {
+
+    category: "Leadership",
+
+    difficulty: "Medium",
+
+    question: "Tell me about a time you took initiative.",
+
+    answer:
+
+      "Choose an example where you noticed a problem or opportunity without being asked. Explain what you did, why you acted, and what improvement or result came from your initiative.",
+
+  },
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Medium",
+
+    question: "Tell me about a mistake you made and what you learned from it.",
+
+    answer:
+
+      "Choose a genuine but manageable mistake. Take responsibility, explain how you corrected it, and focus on what you changed afterward to avoid repeating the same issue.",
+
+  },
+
+  {
+
+    category: "HR / General",
+
+    difficulty: "Easy",
+
+    question: "What are your greatest strengths?",
+
+    answer:
+
+      "Choose two or three strengths that are relevant to the role and support each one with a short example showing how you have demonstrated it in work, study, or projects.",
+
+  },
+
+  {
+
+    category: "HR / General",
+
+    difficulty: "Medium",
+
+    question: "What is one weakness you are currently working on?",
+
+    answer:
+
+      "Choose a real weakness that is not essential to the role. Explain what you are doing to improve it and show that you are actively making progress.",
+
+  },
+
+  {
+
+    category: "Situational",
+
+    difficulty: "Medium",
+
+    question: "How do you manage multiple deadlines?",
+
+    answer:
+
+      "Explain how you prioritise tasks by urgency and importance, break larger work into smaller steps, track progress, communicate early if risks arise, and adjust priorities when necessary.",
+
+  },
+
+  {
+
+    category: "HR / General",
+
+    difficulty: "Easy",
+
+    question: "Why do you want to work for this company?",
+
+    answer:
+
+      "Mention something specific about the company, role, products, values, or industry. Then connect it to your skills, interests, and career goals.",
+
+  },
+
+];
+
+
+
+const DEFAULT_QUESTIONS_BN: InterviewQuestion[] = [
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Easy",
+
+    question: "নিজের সম্পর্কে সংক্ষেপে বলুন।",
+
+    answer:
+
+      "আপনার শিক্ষা বা পেশাগত পটভূমি, প্রাসঙ্গিক অভিজ্ঞতা, প্রধান দক্ষতা এবং এই পদের প্রতি আগ্রহ সংক্ষেপে তুলে ধরুন। ব্যক্তিগত তথ্যের বদলে পেশাগত যাত্রায় গুরুত্ব দিন।",
+
+  },
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Medium",
+
+    question: "কঠিন কোনো চ্যালেঞ্জ মোকাবিলা করার একটি উদাহরণ বলুন।",
+
+    answer:
+
+      "STAR পদ্ধতি ব্যবহার করুন। পরিস্থিতি, আপনার কাজ, আপনি কী পদক্ষেপ নিয়েছিলেন এবং ফলাফল বা শেখার বিষয়টি ব্যাখ্যা করুন।",
+
+  },
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Medium",
+
+    question: "দলে সফলভাবে কাজ করার একটি অভিজ্ঞতা বলুন।",
+
+    answer:
+
+      "দলের লক্ষ্য, আপনার দায়িত্ব, কীভাবে অন্যদের সঙ্গে যোগাযোগ ও সহযোগিতা করেছেন এবং আপনার অবদান কীভাবে ফলাফলে সাহায্য করেছে তা ব্যাখ্যা করুন।",
+
+  },
+
+  {
+
+    category: "Situational",
+
+    difficulty: "Medium",
+
+    question: "সহকর্মীর সঙ্গে মতবিরোধ হলে আপনি কীভাবে সামলাবেন?",
+
+    answer:
+
+      "পেশাদার আচরণ বজায় রাখুন, অন্য ব্যক্তির মতামত শুনুন, তথ্যভিত্তিক আলোচনা করুন, মিল খুঁজুন এবং দলের জন্য কার্যকর সমাধানের দিকে মনোযোগ দিন।",
+
+  },
+
+  {
+
+    category: "Leadership",
+
+    difficulty: "Medium",
+
+    question: "আপনি উদ্যোগ নিয়েছিলেন এমন একটি অভিজ্ঞতা বলুন।",
+
+    answer:
+
+      "এমন একটি উদাহরণ দিন যেখানে আপনাকে বলা না হলেও আপনি একটি সমস্যা বা উন্নতির সুযোগ শনাক্ত করেছিলেন। আপনি কী করেছিলেন এবং কী ফলাফল এসেছিল তা ব্যাখ্যা করুন।",
+
+  },
+
+  {
+
+    category: "Behavioral",
+
+    difficulty: "Medium",
+
+    question: "আপনি করা কোনো ভুল এবং সেখান থেকে কী শিখেছেন তা বলুন।",
+
+    answer:
+
+      "একটি বাস্তব কিন্তু নিয়ন্ত্রণযোগ্য ভুল বেছে নিন। দায়িত্ব স্বীকার করুন, কীভাবে ঠিক করেছিলেন এবং ভবিষ্যতে একই ভুল এড়াতে কী পরিবর্তন করেছেন তা বলুন।",
+
+  },
+
+  {
+
+    category: "HR / General",
+
+    difficulty: "Easy",
+
+    question: "আপনার প্রধান শক্তিগুলো কী?",
+
+    answer:
+
+      "পদের সঙ্গে সম্পর্কিত দুই বা তিনটি শক্তি বেছে নিন এবং কাজ, পড়াশোনা বা প্রকল্পের ছোট উদাহরণ দিয়ে তা সমর্থন করুন।",
+
+  },
+
+  {
+
+    category: "HR / General",
+
+    difficulty: "Medium",
+
+    question: "আপনার এমন একটি দুর্বলতা কী যা আপনি উন্নত করছেন?",
+
+    answer:
+
+      "এমন একটি বাস্তব দুর্বলতা বেছে নিন যা পদের জন্য অত্যন্ত গুরুত্বপূর্ণ নয়। কীভাবে উন্নতি করছেন এবং কী অগ্রগতি হয়েছে তা ব্যাখ্যা করুন।",
+
+  },
+
+  {
+
+    category: "Situational",
+
+    difficulty: "Medium",
+
+    question: "একাধিক ডেডলাইন কীভাবে সামলান?",
+
+    answer:
+
+      "গুরুত্ব ও জরুরিতার ভিত্তিতে অগ্রাধিকার ঠিক করুন, বড় কাজ ছোট ধাপে ভাগ করুন, অগ্রগতি পর্যবেক্ষণ করুন এবং ঝুঁকি দেখা দিলে আগেই যোগাযোগ করুন।",
+
+  },
+
+  {
+
+    category: "HR / General",
+
+    difficulty: "Easy",
+
+    question: "আপনি এই প্রতিষ্ঠানে কাজ করতে চান কেন?",
+
+    answer:
+
+      "প্রতিষ্ঠান, ভূমিকা, পণ্য, মূল্যবোধ বা শিল্প সম্পর্কে নির্দিষ্ট কিছু উল্লেখ করুন এবং তা আপনার দক্ষতা, আগ্রহ ও ক্যারিয়ার লক্ষ্যগুলোর সঙ্গে যুক্ত করুন।",
+
+  },
+
+];
+
+
+
+const CATEGORY_LABELS: Record<
+
+  string,
+
+  { en: string; bn: string }
+
+> = {
+
+  Behavioral: {
+
+    en: "Behavioral",
+
+    bn: "আচরণগত",
+
+  },
+
+
+
+  Technical: {
+
+    en: "Technical",
+
+    bn: "প্রযুক্তিগত",
+
+  },
+
+
+
+  Situational: {
+
+    en: "Situational",
+
+    bn: "পরিস্থিতিভিত্তিক",
+
+  },
+
+
+
+  Leadership: {
+
+    en: "Leadership",
+
+    bn: "নেতৃত্ব",
+
+  },
+
+
+
+  "HR / General": {
+
+    en: "HR / General",
+
+    bn: "এইচআর / সাধারণ",
+
+  },
+
+};
+
+
+
+const DIFFICULTY_LABELS: Record<
+
+  string,
+
+  { en: string; bn: string }
+
+> = {
+
+  Easy: {
+
+    en: "Easy",
+
+    bn: "সহজ",
+
+  },
+
+
+
+  Medium: {
+
+    en: "Medium",
+
+    bn: "মাঝারি",
+
+  },
+
+
+
+  Hard: {
+
+    en: "Hard",
+
+    bn: "কঠিন",
+
+  },
+
+};
+
+
+
+function CategoryPill({
+
+  category,
+
+  language,
+
+}: {
+
+  category: string;
+
+  language: SupportedLanguage;
+
+}) {
+
+  const label =
+
+    CATEGORY_LABELS[category]?.[language] ||
+
+    category;
+
+
+
+  return (
+
+    <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border border-blue-200 dark:border-blue-800/60 bg-blue-50/80 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 shadow-xs">
+
+      {label}
+
+    </span>
+
+  );
+
+}
+
+
+
+function DifficultyPill({
+
+  difficulty,
+
+  language,
+
+}: {
+
+  difficulty: string;
+
+  language: SupportedLanguage;
+
+}) {
+
+  const label =
+
+    DIFFICULTY_LABELS[difficulty]?.[
+
+      language
+
+    ] || difficulty;
+
+
+
+  const style =
+
+    difficulty === "Easy"
+
+      ? "border-emerald-200 text-emerald-700 bg-emerald-50/80 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+
+      : difficulty === "Hard"
+
+      ? "border-rose-200 text-rose-700 bg-rose-50/80 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-300"
+
+      : "border-amber-200 text-amber-700 bg-amber-50/80 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-300";
+
+
+
+  return (
+
+    <span
+
+      className={`inline-flex items-center text-[11px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border shadow-xs ${style}`}
+
+    >
+
+      {label}
+
+    </span>
+
+  );
+
+}
+
+
+
+function Flashcards({
+
+  questions,
+
+  language,
+
+}: {
+
+  questions: InterviewQuestion[];
+
+  language: SupportedLanguage;
+
+}) {
+
+  const [index, setIndex] =
+
+useState(0);
+
+
+
+  const [flipped, setFlipped] =
+
+useState(false);
+
+
+
+useEffect(() => {
+
+setIndex(0);
+
+setFlipped(false);
+
+  }, [questions]);
+
+
+
+  const question =
+
+    questions[index];
+
+
+
+  if (!question) {
+
+    return null;
+
+  }
+
+
+
+  const previous = () => {
+
+setFlipped(false);
+
+
+
+setIndex(
+
       (current) =>
+
         (current - 1 + questions.length) %
+
         questions.length
+
     );
+
   };
+
+
 
   const next = () => {
-    setFlipped(false);
 
-    setIndex(
+setFlipped(false);
+
+
+
+setIndex(
+
       (current) =>
+
         (current + 1) %
+
         questions.length
+
     );
+
   };
+
+
 
   const shuffle = () => {
-    setFlipped(false);
 
-    setIndex(
+setFlipped(false);
+
+
+
+setIndex(
+
       Math.floor(
+
         Math.random() *
+
           questions.length
+
       )
+
     );
+
   };
+
+
 
   const progressPercent = Math.round(((index + 1) / questions.length) * 100);
 
+
+
   return (
+
     <div className="max-w-2xl mx-auto">
+
       {/* Header & Progress Pill */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+
         <div className="flex items-center gap-2">
+
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+
             {language === "bn"
+
               ? "ইন্টারেক্টিভ ফ্ল্যাশকার্ড"
+
               : "Interactive Flashcard"}
+
           </h2>
+
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40">
+
             {index + 1} / {questions.length}
+
           </span>
+
         </div>
+
+
 
         {/* Mini progress bar bubble */}
+
         <div className="w-full sm:w-36 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-slate-700/50">
+
           <div
+
             className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-300"
+
             style={{ width: `${progressPercent}%` }}
+
           />
+
         </div>
+
       </div>
+
+
 
       {/* Interactive Card */}
+
       <div className="relative group">
+
         <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-teal-500/20 blur-xl opacity-70 group-hover:opacity-100 transition duration-500 pointer-events-none" />
 
+
+
         <button
+
           type="button"
+
           onClick={() =>
-            setFlipped(
+
+setFlipped(
+
               (value) => !value
+
             )
+
           }
+
           className="relative w-full min-h-[340px] rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-8 sm:p-10 shadow-xl text-left transition-all duration-300 hover:scale-[1.008] hover:border-blue-300 dark:hover:border-blue-700 active:scale-[0.995]"
+
         >
+
           {!flipped ? (
+
             <div className="min-h-[260px] flex flex-col justify-between">
+
               <div className="flex flex-wrap items-center justify-between gap-2">
+
                 <div className="flex flex-wrap gap-2">
+
                   <CategoryPill
+
                     category={
+
                       question.category
+
                     }
+
                     language={language}
+
                   />
 
+
+
                   <DifficultyPill
+
                     difficulty={
+
                       question.difficulty
+
                     }
+
                     language={language}
+
                   />
+
                 </div>
+
+
 
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+
                   <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+
                   {language === "bn"
+
                     ? "ফ্লিপ করতে ক্লিক করুন"
+
                     : "Click to flip"}
+
                 </span>
+
               </div>
+
+
 
               <div className="py-6">
+
                 <p className="text-xl sm:text-2xl font-bold text-center text-slate-900 dark:text-white leading-relaxed">
+
                   &ldquo;{question.question}&rdquo;
+
                 </p>
+
               </div>
+
+
 
               <div className="flex items-center justify-center pt-2">
+
                 <p className="text-xs font-medium text-center text-blue-600 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-950/40 px-3.5 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/40">
+
                   {language === "bn"
+
                     ? "নমুনা উত্তর ও কাঠামোগত কৌশল দেখতে ক্লিক করুন"
+
                     : "Click anywhere to reveal model answer & tips"}
+
                 </p>
+
               </div>
+
             </div>
+
           ) : (
+
             <div className="min-h-[260px] flex flex-col justify-between">
+
               <div className="flex items-center justify-between">
+
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/50">
+
                   <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+
                   {language === "bn"
+
                     ? "নমুনা উত্তর (STAR স্ট্রাকচার)"
+
                     : "Sample Answer (STAR Method)"}
+
                 </span>
+
+
 
                 <span className="text-xs text-slate-400">
+
                   {language === "bn" ? "প্রশ্নে ফিরতে ক্লিক করুন" : "Click to view question"}
+
                 </span>
+
               </div>
+
+
 
               <div className="my-auto py-4">
+
                 <p className="text-base sm:text-lg text-slate-700 dark:text-slate-200 text-left sm:text-center leading-relaxed font-normal">
+
                   {question.answer}
+
                 </p>
+
               </div>
+
+
 
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-center">
+
                 <p className="text-xs text-slate-500 dark:text-slate-400">
+
                   💡 {language === "bn"
+
                     ? "পরামর্শ: স্পষ্ট উদাহরণ এবং পরিমাপযোগ্য ফলাফল উল্লেখ করুন।"
+
                     : "Tip: Highlight specific results, actions, and quantifiable achievements."}
+
                 </p>
+
               </div>
+
             </div>
+
           )}
+
         </button>
+
       </div>
+
+
 
       {/* Action Controls */}
+
       <div className="flex items-center justify-center gap-3 mt-6">
+
         <Button
+
           variant="outline"
+
           onClick={previous}
+
           className="rounded-full px-5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs"
+
         >
+
           <ChevronLeft className="w-4 h-4 mr-1.5" />
+
           {language === "bn" ? "আগেরটি" : "Previous"}
+
         </Button>
 
+
+
         <Button
+
           variant="outline"
+
           onClick={shuffle}
+
           className="rounded-full px-5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs"
+
         >
+
           <Shuffle className="w-4 h-4 mr-1.5 text-blue-600 dark:text-blue-400" />
+
           {language === "bn"
+
             ? "এলোমেলো"
+
             : "Shuffle"}
+
         </Button>
 
+
+
         <Button
+
           variant="outline"
+
           onClick={next}
+
           className="rounded-full px-5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-xs"
+
         >
+
           {language === "bn" ? "পরেরটি" : "Next"}
+
           <ChevronRight className="w-4 h-4 ml-1.5" />
+
         </Button>
+
       </div>
+
     </div>
+
   );
+
 }
 
+
+
 function QuestionBank({
+
   questions,
+
   language,
+
 }: {
+
   questions: InterviewQuestion[];
+
   language: SupportedLanguage;
+
 }) {
+
   const [search, setSearch] =
-    useState("");
+
+useState("");
+
+
 
   const filtered =
+
     questions.filter((item) => {
+
       const value =
+
         search
+
           .trim()
+
           .toLowerCase();
 
+
+
       if (!value) {
+
         return true;
+
       }
 
+
+
       return (
+
         item.question
+
           .toLowerCase()
+
           .includes(value) ||
+
         item.answer
+
           .toLowerCase()
+
           .includes(value)
+
       );
+
     });
 
+
+
   return (
+
     <div>
+
       <div className="relative mb-6 max-w-xl mx-auto">
+
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
 
+
+
         <Input
+
           value={search}
+
           onChange={(event) =>
-            setSearch(
+
+setSearch(
+
               event.target.value
+
             )
+
           }
+
           placeholder={
+
             language === "bn"
+
               ? "প্রশ্ন বা উত্তর খুঁজুন..."
+
               : "Search questions or answers..."
+
           }
+
           className="pl-11 h-12 rounded-full border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 shadow-sm focus:ring-2 focus:ring-blue-500/20"
+
         />
 
+
+
         {search && (
+
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+
             {filtered.length}
+
           </span>
+
         )}
+
       </div>
 
+
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
         {filtered.map(
+
           (question, index) => (
+
             <Card
+
               key={`${question.question}-${index}`}
+
               className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-800 transition-all duration-200 flex flex-col justify-between"
+
             >
+
               <CardContent className="p-6">
+
                 <div className="flex flex-wrap gap-2 mb-4">
+
                   <CategoryPill
+
                     category={
+
                       question.category
+
                     }
+
                     language={
+
                       language
+
                     }
+
                   />
+
+
 
                   <DifficultyPill
+
                     difficulty={
+
                       question.difficulty
+
                     }
+
                     language={
+
                       language
+
                     }
+
                   />
+
                 </div>
+
+
 
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 leading-snug">
+
                   {question.question}
+
                 </h3>
 
+
+
                 <div className="rounded-xl bg-slate-50/80 dark:bg-slate-800/60 p-4 border border-slate-100 dark:border-slate-800/80 mt-auto">
+
                   <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5">
+
                     <Sparkles className="w-3.5 h-3.5" />
+
                     {language === "bn"
+
                       ? "নমুনা উত্তর"
+
                       : "Sample Answer"}
+
                   </p>
 
+
+
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+
                     {question.answer}
+
                   </p>
+
                 </div>
+
               </CardContent>
+
             </Card>
+
           )
+
         )}
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+
+const LIVE_ANSWER_SECONDS = 60;
+const MIN_ANSWER_WORDS = 12;
+
+type LivePhase = "idle" | "countdown" | "recording" | "review" | "submitting";
+
+type InterviewFeedback = {
+  score: number;
+  verdict: "Strong" | "Adequate" | "Needs improvement";
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  suggestedAnswer: string;
+};
+
+function countAnswerWords(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function LiveInterview({
+  questions,
+  jobTitle,
+  language,
+  token,
+}: {
+  questions: InterviewQuestion[];
+  jobTitle: string;
+  language: SupportedLanguage;
+  token: string | null;
+}) {
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [phase, setPhase] = useState<LivePhase>("idle");
+  const [countdown, setCountdown] = useState(3);
+  const [secondsLeft, setSecondsLeft] = useState(LIVE_ANSWER_SECONDS);
+  const [transcript, setTranscript] = useState("");
+  const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
+  const [message, setMessage] = useState("");
+  const [speechSupported, setSpeechSupported] = useState<boolean | null>(null);
+
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const shouldListenRef = useRef(false);
+  const finalTranscriptRef = useRef("");
+
+  const question = questions[questionIndex];
+  const wordCount = countAnswerWords(transcript);
+  const isBusy = phase === "countdown" || phase === "recording" || phase === "submitting";
+
+  useEffect(() => {
+    setQuestionIndex(0);
+    setPhase("idle");
+    setTranscript("");
+    setFeedback(null);
+    setMessage("");
+    finalTranscriptRef.current = "";
+  }, [questions]);
+
+  useEffect(() => {
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    setSpeechSupported(true);
+
+    const recognition = new Recognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = language === "bn" ? "bn-BD" : "en-AU";
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const recognisedText = result[0]?.transcript?.trim() || "";
+
+        if (!recognisedText) continue;
+
+        if (result.isFinal) {
+          finalTranscriptRef.current = `${finalTranscriptRef.current} ${recognisedText}`.trim();
+        } else {
+          interimTranscript = `${interimTranscript} ${recognisedText}`.trim();
+        }
+      }
+
+      setTranscript(`${finalTranscriptRef.current} ${interimTranscript}`.trim());
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error === "aborted" || event.error === "no-speech") return;
+
+      shouldListenRef.current = false;
+      setPhase("review");
+
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        setMessage(
+          language === "bn"
+            ? "মাইক্রোফোন অনুমতি দেওয়া হয়নি। ব্রাউজার সেটিংসে অনুমতি দিন।"
+            : "Microphone permission was denied. Allow microphone access in your browser settings."
+        );
+      } else if (event.error === "audio-capture") {
+        setMessage(
+          language === "bn"
+            ? "কোনো কার্যকর মাইক্রোফোন পাওয়া যায়নি।"
+            : "No working microphone was found."
+        );
+      } else {
+        setMessage(
+          language === "bn"
+            ? "ভয়েস শনাক্তকরণ বন্ধ হয়েছে। আবার চেষ্টা করুন।"
+            : "Speech recognition stopped unexpectedly. Please try again."
+        );
+      }
+    };
+
+    recognition.onend = () => {
+      if (!shouldListenRef.current) return;
+
+      window.setTimeout(() => {
+        if (!shouldListenRef.current) return;
+
+        try {
+          recognition.start();
+        } catch {
+          // The browser may still be closing the previous recognition session.
+        }
+      }, 200);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      shouldListenRef.current = false;
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+
+      try {
+        recognition.abort();
+      } catch {
+        // The recognition session may already be closed.
+      }
+
+      recognitionRef.current = null;
+    };
+  }, [language]);
+
+  const finishRecording = useCallback(() => {
+    shouldListenRef.current = false;
+
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      // The browser may already have stopped listening.
+    }
+
+    setPhase("review");
+    setSecondsLeft(0);
+  }, []);
+
+  const beginRecording = useCallback(() => {
+    const recognition = recognitionRef.current;
+
+    if (!recognition) {
+      setPhase("idle");
+      setMessage(
+        language === "bn"
+          ? "এই ব্রাউজার ভয়েস শনাক্তকরণ সমর্থন করে না। Chrome বা Edge ব্যবহার করুন।"
+          : "This browser does not support speech recognition. Please use Chrome or Edge."
+      );
+      return;
+    }
+
+    shouldListenRef.current = true;
+    setSecondsLeft(LIVE_ANSWER_SECONDS);
+    setPhase("recording");
+
+    try {
+      recognition.start();
+    } catch {
+      shouldListenRef.current = false;
+      setPhase("review");
+      setMessage(
+        language === "bn"
+          ? "রেকর্ডিং শুরু করা যায়নি। আবার চেষ্টা করুন।"
+          : "Recording could not start. Please try again."
+      );
+    }
+  }, [language]);
+
+  useEffect(() => {
+    if (phase !== "countdown") return;
+
+    if (countdown === 0) {
+      beginRecording();
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setCountdown((current) => current - 1);
+    }, 1000);
+
+    return () => window.clearTimeout(timeout);
+  }, [phase, countdown, beginRecording]);
+
+  useEffect(() => {
+    if (phase !== "recording") return;
+
+    if (secondsLeft <= 0) {
+      finishRecording();
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setSecondsLeft((current) => current - 1);
+    }, 1000);
+
+    return () => window.clearTimeout(timeout);
+  }, [phase, secondsLeft, finishRecording]);
+
+  const startAttempt = async () => {
+    setMessage("");
+    setFeedback(null);
+
+    if (!speechSupported) {
+      setMessage(
+        language === "bn"
+          ? "এই ব্রাউজার ভয়েস শনাক্তকরণ সমর্থন করে না। Chrome বা Edge ব্যবহার করুন।"
+          : "This browser does not support speech recognition. Please use Chrome or Edge."
+      );
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMessage(
+        language === "bn"
+          ? "মাইক্রোফোন ব্যবহার করা যাচ্ছে না। HTTPS অথবা localhost ব্যবহার করুন।"
+          : "Microphone access is unavailable. Use HTTPS or localhost."
+      );
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+    } catch {
+      setMessage(
+        language === "bn"
+          ? "মাইক্রোফোন অনুমতি প্রয়োজন। অনুমতি দিয়ে আবার চেষ্টা করুন।"
+          : "Microphone permission is required. Allow access and try again."
+      );
+      return;
+    }
+
+    shouldListenRef.current = false;
+
+    try {
+      recognitionRef.current?.abort();
+    } catch {
+      // There may be no active recognition session.
+    }
+
+    finalTranscriptRef.current = "";
+    setTranscript("");
+    setCountdown(3);
+    setSecondsLeft(LIVE_ANSWER_SECONDS);
+    setPhase("countdown");
+  };
+
+  const submitAnswer = async () => {
+    setMessage("");
+
+    if (wordCount < MIN_ANSWER_WORDS) {
+      setFeedback(null);
+      setMessage(
+        language === "bn"
+          ? `উত্তরটি নির্ভরযোগ্যভাবে মূল্যায়নের জন্য খুব ছোট। অন্তত ${MIN_ANSWER_WORDS}টি শব্দ বলুন।`
+          : `Your answer is too short to evaluate reliably. Please provide at least ${MIN_ANSWER_WORDS} words.`
+      );
+      return;
+    }
+
+    if (!token) {
+      setMessage(
+        language === "bn" ? "উত্তর জমা দিতে লগ ইন করুন।" : "Please log in to submit your answer."
+      );
+      return;
+    }
+
+    try {
+      setPhase("submitting");
+      setFeedback(null);
+
+      const response = await fetch(`${API_BASE_URL}/interview/evaluate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          jobTitle: jobTitle || "General interview",
+          question: question.question,
+          answer: transcript,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to evaluate the answer.");
+      }
+
+      setFeedback(data.feedback as InterviewFeedback);
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : language === "bn"
+          ? "উত্তর মূল্যায়ন করা যায়নি।"
+          : "The answer could not be evaluated."
+      );
+    } finally {
+      setPhase("review");
+    }
+  };
+
+  const changeQuestion = (direction: -1 | 1) => {
+    shouldListenRef.current = false;
+
+    try {
+      recognitionRef.current?.abort();
+    } catch {
+      // There may be no active recognition session.
+    }
+
+    setQuestionIndex((current) =>
+      (current + direction + questions.length) % questions.length
+    );
+    finalTranscriptRef.current = "";
+    setTranscript("");
+    setFeedback(null);
+    setMessage("");
+    setSecondsLeft(LIVE_ANSWER_SECONDS);
+    setPhase("idle");
+  };
+
+  if (!question) return null;
+
+  const timerPercent = Math.max(0, (secondsLeft / LIVE_ANSWER_SECONDS) * 100);
+  const scoreColour =
+    feedback && feedback.score >= 80
+      ? "text-emerald-600 dark:text-emerald-400"
+      : feedback && feedback.score >= 60
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-rose-600 dark:text-rose-400";
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-5">
+      <Card className="overflow-hidden border-slate-200 dark:border-slate-800 shadow-lg">
+        <CardContent className="p-0">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6 text-white">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">
+                  {language === "bn" ? "লাইভ ইন্টারভিউ" : "Live Interview"} · {questionIndex + 1}/{questions.length}
+                </p>
+                <h3 className="mt-2 text-xl font-bold leading-snug">{question.question}</h3>
+              </div>
+
+              <div className="shrink-0 rounded-xl bg-white/15 px-3 py-2 text-center backdrop-blur-sm">
+                <Timer className="mx-auto h-5 w-5" />
+                <span className="mt-1 block text-lg font-bold tabular-nums">
+                  {secondsLeft}s
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5 sm:p-6">
+            <div className="mb-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  secondsLeft <= 10 ? "bg-rose-500" : "bg-blue-600"
+                }`}
+                style={{ width: `${timerPercent}%` }}
+              />
+            </div>
+
+            {phase === "countdown" && (
+              <div className="mb-5 rounded-2xl border border-blue-200 bg-blue-50 p-8 text-center dark:border-blue-900/60 dark:bg-blue-950/30">
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  {language === "bn" ? "প্রস্তুত হন" : "Get ready"}
+                </p>
+                <p className="mt-1 text-6xl font-black text-blue-600 dark:text-blue-400" aria-live="assertive">
+                  {countdown}
+                </p>
+              </div>
+            )}
+
+            <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+              {language === "bn" ? "আপনার উত্তর (লাইভ ট্রান্সক্রিপ্ট)" : "Your answer (live transcript)"}
+            </label>
+
+            <div className="relative">
+              <textarea
+                value={transcript}
+                onChange={(event) => {
+                  setTranscript(event.target.value);
+                  finalTranscriptRef.current = event.target.value;
+                }}
+                readOnly={phase === "recording" || phase === "countdown" || phase === "submitting"}
+                placeholder={
+                  phase === "recording"
+                    ? language === "bn"
+                      ? "কথা বলা শুরু করুন..."
+                      : "Start speaking..."
+                    : language === "bn"
+                    ? "Start চাপুন। আপনার কথা এখানে দেখা যাবে।"
+                    : "Press Start. Your speech will appear here in real time."
+                }
+                className="min-h-52 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                aria-live="polite"
+              />
+
+              {phase === "recording" && (
+                <div className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
+                  {language === "bn" ? "শোনা হচ্ছে" : "Listening"}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span>{wordCount} {language === "bn" ? "শব্দ" : "words"}</span>
+              <span>{language === "bn" ? `সর্বনিম্ন ${MIN_ANSWER_WORDS} শব্দ` : `Minimum ${MIN_ANSWER_WORDS} words`}</span>
+            </div>
+
+            {message && (
+              <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{message}</span>
+              </div>
+            )}
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              {phase === "idle" && (
+                <Button onClick={startAttempt} disabled={speechSupported === null} className="min-w-36 rounded-xl">
+                  <Mic className="mr-2 h-4 w-4" />
+                  {language === "bn" ? "উত্তর শুরু করুন" : "Start Answer"}
+                </Button>
+              )}
+
+              {phase === "recording" && (
+                <Button onClick={finishRecording} className="min-w-36 rounded-xl bg-rose-600 hover:bg-rose-700">
+                  <Square className="mr-2 h-4 w-4" />
+                  {language === "bn" ? "উত্তর শেষ করুন" : "End Answer"}
+                </Button>
+              )}
+
+              {(phase === "review" || phase === "submitting") && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={startAttempt}
+                    disabled={phase === "submitting"}
+                    className="min-w-36 rounded-xl"
+                  >
+                    <RotateCw className="mr-2 h-4 w-4" />
+                    {language === "bn" ? "আবার উত্তর দিন" : "Answer Again"}
+                  </Button>
+
+                  <Button
+                    onClick={submitAnswer}
+                    disabled={phase === "submitting"}
+                    className="min-w-36 rounded-xl"
+                  >
+                    {phase === "submitting" ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-2 h-4 w-4" />
+                    )}
+                    {phase === "submitting"
+                      ? language === "bn"
+                        ? "মূল্যায়ন হচ্ছে..."
+                        : "Evaluating..."
+                      : language === "bn"
+                      ? "AI-তে জমা দিন"
+                      : "Submit to AI"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {feedback && (
+        <Card className="border-slate-200 dark:border-slate-800 shadow-lg">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  {language === "bn" ? "AI মতামত" : "AI Feedback"}
+                </p>
+                <h3 className={`mt-1 text-2xl font-extrabold ${scoreColour}`}>{feedback.verdict}</h3>
+              </div>
+              <div className={`text-4xl font-black ${scoreColour}`}>
+                {feedback.score}<span className="text-base font-semibold text-slate-400">/100</span>
+              </div>
+            </div>
+
+            <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">{feedback.summary}</p>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                <h4 className="font-bold text-emerald-800 dark:text-emerald-300">
+                  {language === "bn" ? "যা ভালো হয়েছে" : "What worked well"}
+                </h4>
+                {feedback.strengths.length > 0 ? (
+                  <ul className="mt-2 space-y-2 text-sm text-emerald-900/80 dark:text-emerald-200/80">
+                    {feedback.strengths.map((item) => <li key={item}>• {item}</li>)}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-emerald-900/70 dark:text-emerald-200/70">
+                    {language === "bn" ? "স্পষ্ট শক্তি শনাক্ত করা যায়নি।" : "No clear strength was identified yet."}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
+                <h4 className="font-bold text-amber-800 dark:text-amber-300">
+                  {language === "bn" ? "যা উন্নত করা যায়" : "What to improve"}
+                </h4>
+                {feedback.improvements.length > 0 ? (
+                  <ul className="mt-2 space-y-2 text-sm text-amber-900/80 dark:text-amber-200/80">
+                    {feedback.improvements.map((item) => <li key={item}>• {item}</li>)}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-amber-900/70 dark:text-amber-200/70">
+                    {language === "bn" ? "কোনো বড় সমস্যা শনাক্ত করা যায়নি।" : "No major issue was identified."}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {feedback.suggestedAnswer && (
+              <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
+                <h4 className="font-bold text-blue-800 dark:text-blue-300">
+                  {language === "bn" ? "উন্নত উদাহরণ" : "Improved example"}
+                </h4>
+                <p className="mt-2 text-sm leading-7 text-blue-950/80 dark:text-blue-100/80">
+                  {feedback.suggestedAnswer}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex items-center justify-between">
+        <Button variant="outline" onClick={() => changeQuestion(-1)} disabled={isBusy} className="rounded-xl">
+          <ChevronLeft className="mr-1 h-4 w-4" />
+          {language === "bn" ? "আগের প্রশ্ন" : "Previous"}
+        </Button>
+        <Button variant="outline" onClick={() => changeQuestion(1)} disabled={isBusy} className="rounded-xl">
+          {language === "bn" ? "পরের প্রশ্ন" : "Next"}
+          <ChevronRight className="ml-1 h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
 }
 
 export default function InterviewQuestionsPage() {
+
   const router = useRouter();
 
+
+
   const { language } =
-    useLanguage();
+
+useLanguage();
+
+
 
   const {
+
     token,
+
     isAuthenticated,
+
     isLoading,
+
   } = useAuth();
 
-  useEffect(() => {
+
+
+useEffect(() => {
+
     if (!isLoading && !isAuthenticated) {
+
       router.replace("/login");
+
     }
+
   }, [
+
     isLoading,
+
     isAuthenticated,
+
     router,
+
   ]);
+
+
 
   const currentLanguage: SupportedLanguage =
+
     language === "bn"
+
       ? "bn"
+
       : "en";
 
+
+
   const defaultQuestions =
+
     currentLanguage === "bn"
+
       ? DEFAULT_QUESTIONS_BN
+
       : DEFAULT_QUESTIONS_EN;
 
+
+
   const [jobTitle, setJobTitle] =
-    useState("");
+
+useState("");
+
+
 
   const [
+
     selectedJobTitle,
+
     setSelectedJobTitle,
+
   ] = useState("");
 
+
+
   const [
+
     suggestions,
+
     setSuggestions,
+
   ] = useState<JobSuggestion[]>([]);
 
+
+
   const [
+
     showSuggestions,
+
     setShowSuggestions,
+
   ] = useState(false);
 
+
+
   const [
+
     searchingJobs,
+
     setSearchingJobs,
+
   ] = useState(false);
 
+
+
   const [
+
     generating,
+
     setGenerating,
+
   ] = useState(false);
 
+
+
   const [
+
     questions,
+
     setQuestions,
+
   ] = useState<
+
     InterviewQuestion[]
+
   >(DEFAULT_QUESTIONS_EN);
 
+
+
   const [
+
     generatedJobTitle,
+
     setGeneratedJobTitle,
+
   ] = useState("");
 
+
+
   const [error, setError] =
-    useState("");
+
+useState("");
+
+
 
   const [
+
     activeMode,
+
     setActiveMode,
+
   ] =
-    useState<PracticeMode>(
+
+useState<PracticeMode>(
+
       "flashcards"
+
     );
+
+
 
   const searchContainerRef =
-    useRef<HTMLDivElement>(null);
+
+useRef<HTMLDivElement>(null);
+
+
 
   const isJobSelected = Boolean(
+
     selectedJobTitle &&
+
       jobTitle.trim().toLowerCase() ===
+
         selectedJobTitle.trim().toLowerCase()
+
   );
 
-  useEffect(() => {
+
+
+useEffect(() => {
+
     const handleClickOutside = (
+
       event: MouseEvent
+
     ) => {
+
       if (
+
         searchContainerRef.current &&
+
         !searchContainerRef.current.contains(
+
           event.target as Node
+
         )
+
       ) {
-        setShowSuggestions(false);
+
+setShowSuggestions(false);
+
       }
+
     };
+
+
 
     document.addEventListener(
+
       "mousedown",
-      handleClickOutside
+
+handleClickOutside
+
     );
+
+
 
     return () => {
+
       document.removeEventListener(
+
         "mousedown",
-        handleClickOutside
+
+handleClickOutside
+
       );
+
     };
+
   }, []);
 
-  useEffect(() => {
+
+
+useEffect(() => {
+
     if (!generatedJobTitle) {
-      setQuestions(defaultQuestions);
+
+setQuestions(defaultQuestions);
+
     }
+
   }, [
+
     currentLanguage,
+
     generatedJobTitle,
+
     defaultQuestions,
+
   ]);
 
-  useEffect(() => {
+
+
+useEffect(() => {
+
     const query =
+
       jobTitle.trim();
 
+
+
     if (
+
       query.length < 1 ||
+
       query.toLowerCase() ===
+
         selectedJobTitle.trim().toLowerCase()
+
     ) {
-      setSuggestions([]);
-      setSearchingJobs(false);
-      setShowSuggestions(false);
+
+setSuggestions([]);
+
+setSearchingJobs(false);
+
+setShowSuggestions(false);
+
       return;
+
     }
 
+
+
     const timer =
-      setTimeout(async () => {
+
+setTimeout(async () => {
+
         try {
-          setSearchingJobs(true);
-          setShowSuggestions(true);
+
+setSearchingJobs(true);
+
+setShowSuggestions(true);
+
+
 
           const results =
+
             await searchJobTitles(
+
               query,
+
               token
+
             );
 
-          setSuggestions(
+
+
+setSuggestions(
+
             results.slice(0, 6)
+
           );
+
         } catch {
-          setSuggestions([]);
+
+setSuggestions([]);
+
         } finally {
-          setSearchingJobs(false);
+
+setSearchingJobs(false);
+
         }
+
       }, 300);
 
+
+
     return () =>
-      clearTimeout(timer);
+
+clearTimeout(timer);
+
   }, [
+
     jobTitle,
+
     token,
+
     selectedJobTitle,
+
   ]);
 
+
+
   const chooseJob = (
+
     job: JobSuggestion
+
   ) => {
-    setJobTitle(job.title);
-    setSelectedJobTitle(
+
+setJobTitle(job.title);
+
+setSelectedJobTitle(
+
       job.title
+
     );
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setError("");
+
+setSuggestions([]);
+
+setShowSuggestions(false);
+
+setError("");
+
   };
 
+
+
   const handlePopularRoleClick =
+
     async (role: string) => {
-      setJobTitle(role);
-      setSelectedJobTitle("");
-      setError("");
-      setShowSuggestions(true);
+
+setJobTitle(role);
+
+setSelectedJobTitle("");
+
+setError("");
+
+setShowSuggestions(true);
+
+
 
       try {
-        setSearchingJobs(true);
+
+setSearchingJobs(true);
+
         const results =
+
           await searchJobTitles(
+
             role,
+
             token
+
           );
-        setSuggestions(
+
+setSuggestions(
+
           results.slice(0, 6)
+
         );
+
       } catch {
-        setSuggestions([]);
+
+setSuggestions([]);
+
       } finally {
-        setSearchingJobs(false);
+
+setSearchingJobs(false);
+
       }
+
     };
+
+
 
   const generateQuestions =
+
     async () => {
+
       const title =
+
         jobTitle.trim();
 
+
+
       if (!isJobSelected || !title) {
-        setError(
+
+setError(
+
           currentLanguage === "bn"
+
             ? "প্রশ্ন তৈরি করতে ড্রপডাউন পরামর্শ থেকে একটি চাকরির পদ নির্বাচন করুন।"
+
             : "Please select a matching job title from the suggestions dropdown."
+
         );
 
+
+
         return;
+
       }
+
+
 
       if (!token) {
-        setError(
+
+setError(
+
           currentLanguage === "bn"
+
             ? "প্রশ্ন তৈরি করতে লগ ইন করুন।"
+
             : "Please log in to generate questions."
+
         );
+
+
 
         return;
+
       }
+
+
 
       try {
-        setGenerating(true);
-        setError("");
+
+setGenerating(true);
+
+setError("");
+
+
 
         const response =
+
           await fetch(
+
             `${API_BASE_URL}/interview/questions`,
+
             {
+
               method: "POST",
 
+
+
               headers: {
+
                 "Content-Type":
+
                   "application/json",
 
+
+
                 Authorization:
+
                   `Bearer ${token}`,
+
               },
 
+
+
               body:
+
                 JSON.stringify({
+
                   jobTitle:
+
                     title,
 
+
+
                   language:
+
                     currentLanguage,
+
                 }),
+
             }
+
           );
+
+
 
         const data =
+
           await response.json();
 
+
+
         if (!response.ok) {
+
           throw new Error(
+
             data.message ||
+
               "Failed to generate questions."
+
           );
+
         }
 
-        setQuestions(
+
+
+setQuestions(
+
           Array.isArray(
+
             data.questions
+
           )
+
             ? data.questions
+
             : []
+
         );
 
-        setGeneratedJobTitle(
+
+
+setGeneratedJobTitle(
+
           title
+
         );
 
-        setActiveMode(
+
+
+setActiveMode(
+
           "flashcards"
+
         );
+
       } catch (err) {
-        setError(
+
+setError(
+
           err instanceof Error
+
             ? err.message
+
             : "Failed to generate questions."
+
         );
+
       } finally {
-        setGenerating(false);
+
+setGenerating(false);
+
       }
+
     };
 
+
+
   if (isLoading || !isAuthenticated) {
+
     return null;
+
   }
 
+
+
   return (
+
     <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+
       {/* Background Ambient Glows */}
+
       <div className="relative mb-10 text-center">
+
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
 
+
+
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-800/40 text-blue-700 dark:text-blue-300 text-xs font-semibold uppercase tracking-wider mb-4 shadow-xs">
+
           <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+
           {currentLanguage === "bn"
+
             ? "শিক্ষার্থীদের ইন্টারভিউ প্রস্তুতি স্টুডিও"
+
             : "Student Interview Prep Studio"}
+
         </div>
+
+
 
         <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+
           {currentLanguage === "bn"
+
             ? "ইন্টারভিউ প্রশ্ন ও মডেল উত্তর"
+
             : "AI Interview Practice & Flashcards"}
+
         </h1>
 
+
+
         <p className="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+
           {currentLanguage === "bn"
+
             ? "আপনার লক্ষ্য পেশা নির্বাচন করুন এবং শীর্ষস্থানীয় নিয়োগকারী প্রতিষ্ঠানের বাস্তব প্রশ্ন ও STAR কাঠামোর নমুনা উত্তর অনুশীলন করুন।"
+
             : "Search your target role to generate tailored interview questions and master the STAR response technique."}
+
         </p>
+
       </div>
+
+
 
       {/* Search & AI Generation Bar */}
+
       <div className="max-w-2xl mx-auto mb-10" ref={searchContainerRef}>
+
         <div className="relative rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 p-2 shadow-xl shadow-blue-950/5 transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
+
           <div className="relative flex items-center">
+
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
 
+
+
             <Input
+
               value={jobTitle}
+
               onChange={(event) => {
+
                 const value = event.target.value;
-                setJobTitle(value);
+
+setJobTitle(value);
+
                 if (value !== selectedJobTitle) {
-                  setSelectedJobTitle("");
+
+setSelectedJobTitle("");
+
                 }
-                setError("");
-                setShowSuggestions(true);
+
+setError("");
+
+setShowSuggestions(true);
+
               }}
+
               onFocus={() => {
+
                 if (suggestions.length > 0 && !isJobSelected) {
-                  setShowSuggestions(true);
+
+setShowSuggestions(true);
+
                 }
+
               }}
+
               onKeyDown={(event) => {
+
                 if (event.key === "Enter") {
+
                   event.preventDefault();
+
                   if (isJobSelected && !generating) {
-                    generateQuestions();
+
+generateQuestions();
+
                   } else {
-                    setError(
+
+setError(
+
                       currentLanguage === "bn"
+
                         ? "প্রশ্ন তৈরি করতে ড্রপডাউন পরামর্শ থেকে একটি চাকরির পদ নির্বাচন করুন।"
+
                         : "Please select a matching job title from the suggestions dropdown."
+
                     );
+
                   }
+
                 }
+
               }}
+
               placeholder={
+
                 currentLanguage === "bn"
+
                   ? "পেশা খুঁজুন (যেমন: Software Engineer, Marketing)..."
+
                   : "Search job title (e.g. Software Engineer, Marketing)..."
+
               }
+
               className="h-13 pl-12 pr-36 text-base rounded-xl border-0 shadow-none focus-visible:ring-0 bg-transparent"
+
             />
+
+
 
             <Button
+
               onClick={generateQuestions}
+
               disabled={generating || !isJobSelected}
+
               className="absolute right-1.5 top-1/2 -translate-y-1/2 h-10 px-5 rounded-xl font-medium shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+
             >
+
               <Sparkles className="w-4 h-4 mr-2" />
+
               {generating
+
                 ? currentLanguage === "bn"
+
                   ? "তৈরি হচ্ছে..."
+
                   : "Generating..."
+
                 : currentLanguage === "bn"
+
                 ? "প্রশ্ন তৈরি করুন"
+
                 : "Generate"}
+
             </Button>
+
           </div>
+
+
 
           {/* Autocomplete Dropdown */}
+
           {showSuggestions && (searchingJobs || suggestions.length > 0) && (
+
             <div className="absolute z-30 left-0 right-0 top-full mt-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl overflow-hidden">
+
               {searchingJobs ? (
+
                 <div className="flex items-center gap-2 px-5 py-4 text-sm text-slate-500">
+
                   <RotateCw className="w-4 h-4 animate-spin text-blue-500" />
+
                   {currentLanguage === "bn"
+
                     ? "পেশা খোঁজা হচ্ছে..."
+
                     : "Searching matching occupations..."}
+
                 </div>
+
               ) : (
+
                 suggestions.map((job) => (
+
                   <button
+
                     key={job.uri || job.title}
+
                     type="button"
+
                     onMouseDown={(e) => e.preventDefault()}
+
                     onClick={() => chooseJob(job)}
+
                     className="w-full text-left px-5 py-3.5 hover:bg-blue-50/60 dark:hover:bg-slate-800/80 border-b last:border-b-0 border-slate-100 dark:border-slate-800 flex items-center justify-between group transition-colors"
+
                   >
+
                     <span className="font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+
                       {job.title}
+
                     </span>
+
                     <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+
                       Select
+
                     </span>
+
                   </button>
+
                 ))
+
               )}
+
             </div>
+
           )}
+
         </div>
+
+
 
         {/* Selected role confirmation badge */}
+
         {isJobSelected && (
+
           <div className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+
             <CheckCircle2 className="w-3.5 h-3.5" />
+
             <span>
+
               {currentLanguage === "bn"
+
                 ? `নির্বাচিত পদ: ${selectedJobTitle}`
+
                 : `Selected Role: ${selectedJobTitle}`}
+
             </span>
+
           </div>
+
         )}
+
+
 
         {/* Quick Suggestion Pills */}
+
         <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+
           <span className="text-xs text-slate-400 font-medium">
+
             {currentLanguage === "bn" ? "জনপ্রিয় পেশা:" : "Popular:"}
+
           </span>
+
           {[
+
             "Software Engineer",
+
             "Data Analyst",
+
             "Business Analyst",
+
             "Marketing Specialist",
+
           ].map((role) => (
+
             <button
+
               key={role}
+
               type="button"
+
               onClick={() => handlePopularRoleClick(role)}
+
               className="text-xs px-3 py-1 rounded-full bg-slate-100/80 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-800/80 dark:hover:bg-blue-950/40 dark:hover:text-blue-300 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 transition-colors"
+
             >
+
               {role}
+
             </button>
+
           ))}
+
         </div>
+
+
 
         {error && (
+
           <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-sm text-red-600 dark:text-red-400 text-center">
+
             {error}
+
           </div>
+
         )}
+
       </div>
+
+
 
       {/* STAR Framework Student Helper Banner */}
+
       <div className="mb-10 rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20 p-5 sm:p-6 shadow-sm">
+
         <div className="flex items-center gap-2 mb-3">
+
           <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+
           <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+
             {currentLanguage === "bn"
+
               ? "STAR মেথড - বিশ্বমানের ইন্টারভিউ উত্তর কাঠামো"
+
               : "Mastering the STAR Method for Behavioral Interviews"}
+
           </h3>
+
         </div>
+
+
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
           <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+
               S
+
             </span>
+
             <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+
               {currentLanguage === "bn" ? "Situation" : "Situation"}
+
             </h4>
+
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+
               {currentLanguage === "bn" ? "প্রেক্ষাপট সংক্ষেপে ব্যাখ্যা করুন" : "Set the scene and context"}
+
             </p>
+
           </div>
 
+
+
           <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+
               T
+
             </span>
+
             <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+
               {currentLanguage === "bn" ? "Task" : "Task"}
+
             </h4>
+
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+
               {currentLanguage === "bn" ? "আপনার দায়িত্ব ও লক্ষ্য চিহ্নিত করুন" : "Describe the required goal"}
+
             </p>
+
           </div>
 
+
+
           <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+
               A
+
             </span>
+
             <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+
               {currentLanguage === "bn" ? "Action" : "Action"}
+
             </h4>
+
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+
               {currentLanguage === "bn" ? "আপনি নিজে কী পদক্ষেপ নিয়েছিলেন" : "Explain steps you personally took"}
+
             </p>
+
           </div>
 
+
+
           <div className="p-3 rounded-xl bg-white dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+
               R
+
             </span>
+
             <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+
               {currentLanguage === "bn" ? "Result" : "Result"}
+
             </h4>
+
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+
               {currentLanguage === "bn" ? "পরিমাপযোগ্য ফলাফল ও কী শিখলেন" : "Share the positive outcome"}
+
             </p>
+
           </div>
+
         </div>
+
       </div>
 
+
+
       {/* Questions Section */}
+
       {questions.length > 0 && (
+
         <>
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+
             <div>
+
               <p className="text-xs uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400">
+
                 {generatedJobTitle
+
                   ? currentLanguage === "bn"
+
                     ? "প্রশ্ন তৈরি হয়েছে"
+
                     : "Questions for"
+
                   : currentLanguage === "bn"
+
                   ? "সাধারণ প্রস্তুতি"
+
                   : "General Practice"}
+
               </p>
 
+
+
               <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+
                 {generatedJobTitle ||
+
                   (currentLanguage === "bn"
+
                     ? "আচরণগত প্রশ্ন ব্যাংক"
+
                     : "Behavioral Question Bank")}
+
               </h2>
+
             </div>
+
+
 
             {/* Mode Switcher Pills */}
+
             <div className="flex items-center p-1 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
-              <button
-                type="button"
-                onClick={() => setActiveMode("flashcards")}
-                className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold transition-all ${
-                  activeMode === "flashcards"
-                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5 mr-1.5" />
-                {currentLanguage === "bn" ? "ফ্ল্যাশকার্ড" : "Flashcards"}
-              </button>
 
               <button
+
                 type="button"
-                onClick={() => setActiveMode("bank")}
+
+                onClick={() => setActiveMode("flashcards")}
+
                 className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold transition-all ${
-                  activeMode === "bank"
+
+                  activeMode === "flashcards"
+
                     ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+
                 }`}
+
               >
-                <BookOpen className="w-3.5 h-3.5 mr-1.5" />
-                {currentLanguage === "bn" ? "প্রশ্ন ব্যাংক" : "Question Bank"}
+
+                <Layers className="w-3.5 h-3.5 mr-1.5" />
+
+                {currentLanguage === "bn" ? "ফ্ল্যাশকার্ড" : "Flashcards"}
+
               </button>
+
+
+
+              <button
+
+                type="button"
+
+                onClick={() => setActiveMode("bank")}
+
+                className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+
+                  activeMode === "bank"
+
+                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+
+                }`}
+
+              >
+
+                <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+
+                {currentLanguage === "bn" ? "প্রশ্ন ব্যাংক" : "Question Bank"}
+
+              </button>
+
+
+
+              <button
+
+                type="button"
+
+                onClick={() => setActiveMode("live")}
+
+                className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+
+                  activeMode === "live"
+
+                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
+
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+
+                }`}
+
+              >
+
+                <Mic className="w-3.5 h-3.5 mr-1.5" />
+
+                {currentLanguage === "bn" ? "লাইভ ইন্টারভিউ" : "Live Interview"}
+
+              </button>
+
             </div>
+
           </div>
 
+
+
           {activeMode === "flashcards" ? (
+
             <Flashcards
+
               questions={questions}
+
               language={currentLanguage}
+
             />
-          ) : (
+
+          ) : activeMode === "bank" ? (
+
             <QuestionBank
+
               questions={questions}
+
               language={currentLanguage}
+
             />
+
+          ) : (
+
+            <LiveInterview
+
+              questions={questions}
+
+              jobTitle={generatedJobTitle || selectedJobTitle || "General interview"}
+
+              language={currentLanguage}
+
+              token={token}
+
+            />
+
           )}
+
         </>
+
       )}
+
     </div>
+
   );
+
 }
