@@ -476,19 +476,45 @@ setConsentChecked(false);
 
   // Runs only after the user agrees in the consent modal
 
-  const handleAcceptConsent = async () => {
+const handleAcceptConsent = async () => {
+  setShowConsentModal(false);
 
-setShowConsentModal(false);
+  try {
+    const storedToken =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      token;
 
-    // TODO (backend): send the user's consent decision to the API here
+    if (!storedToken) {
+      setError("Authentication token not found.");
+      return;
+    }
 
-    // so it can be stored against their account, e.g.
+    const response = await fetch(`${API_BASE_URL}/users/me/ai-consent`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${storedToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        aiConsent: true,
+      }),
+    });
 
-    // await fetch(`${API_BASE_URL}/users/me/ai-consent`, { ... })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setError(data.message || "Failed to save AI consent.");
+      return;
+    }
 
     await handleUpload();
+  } catch (err) {
+    console.error("Failed to save AI consent:", err);
+    setError("Failed to save AI consent.");
+  }
+};
 
-  };
+   
 
   const handleUpload = async () => {
 
