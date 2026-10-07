@@ -25,6 +25,8 @@ async function getCurrentUser(req) {
       u.role,
       u.subscription_tier,
       u.scans_remaining,
+      u.ai_consent,
+      u.ai_consent_at,
       up.first_name,
       up.last_name
     FROM users u
@@ -172,6 +174,15 @@ async function reviewResume(req, res) {
       });
     }
 
+    if (currentUser.ai_consent !== true) {
+      return res.status(403).json({
+        status: "error",
+        code: "AI_CONSENT_REQUIRED",
+        message:
+          "You must agree to AI processing before submitting your resume.",
+      });
+    }
+
     const isFreeTier =
       currentUser.subscription_tier === "free";
 
@@ -226,13 +237,16 @@ async function reviewResume(req, res) {
 
     // Remove personal information before sending the resume to AI.
     // The original extracted text remains unchanged.
-    const sanitizedResumeText = sanitizePersonalInfo(
-      extractedText,
-      currentUser
-    );
+    const hidePersonalInfo =
+      String(req.body.hide_personal_info ?? "true").toLowerCase() !==
+      "false";
+
+    const resumeTextForAI = hidePersonalInfo
+      ? sanitizePersonalInfo(extractedText, currentUser)
+      : extractedText;
 
     const aiResult = await analyzeResumeWithAI({
-      resumeText: sanitizedResumeText,
+      resumeText: resumeTextForAI,
       targetJobRole,
       targetJobDescription,
     });

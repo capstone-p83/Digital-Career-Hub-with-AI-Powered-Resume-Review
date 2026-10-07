@@ -100,6 +100,8 @@ export default function ResumeUploadPage() {
 
   const [consentChecked, setConsentChecked] = useState(false);
 
+  const [hidePersonalInfo, setHidePersonalInfo] = useState(true);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
@@ -476,19 +478,45 @@ setConsentChecked(false);
 
   // Runs only after the user agrees in the consent modal
 
-  const handleAcceptConsent = async () => {
+const handleAcceptConsent = async () => {
+  setShowConsentModal(false);
 
-setShowConsentModal(false);
+  try {
+    const storedToken =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      token;
 
-    // TODO (backend): send the user's consent decision to the API here
+    if (!storedToken) {
+      setError("Authentication token not found.");
+      return;
+    }
 
-    // so it can be stored against their account, e.g.
+    const response = await fetch(`${API_BASE_URL}/users/me/ai-consent`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${storedToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        aiConsent: true,
+      }),
+    });
 
-    // await fetch(`${API_BASE_URL}/users/me/ai-consent`, { ... })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setError(data.message || "Failed to save AI consent.");
+      return;
+    }
 
     await handleUpload();
+  } catch (err) {
+    console.error("Failed to save AI consent:", err);
+    setError("Failed to save AI consent.");
+  }
+};
 
-  };
+   
 
   const handleUpload = async () => {
 
@@ -503,6 +531,11 @@ setShowConsentModal(false);
       target_job_description: targetJobDescription,
 
     });
+
+    resumeReviewFormData.append(
+      "hide_personal_info",
+      String(hidePersonalInfo)
+    );
 
     if (selectedJobUri) {
 
@@ -1328,9 +1361,9 @@ setShowSuggestions(false);
 
                       {language === "bn"
 
-                        ? "আপনার আপলোড করা ফাইলের বিষয়বস্তু (নাম, যোগাযোগের তথ্য ও কাজের ইতিহাস সহ) বিশ্লেষণের জন্য এআই পরিষেবায় পাঠানো হবে।"
+                        ? "আপনার আপলোড করা ফাইলের বিষয়বস্তু এআই পরিষেবায় পাঠানো হবে। গোপনীয়তা মাস্কিং চালু থাকলে নাম ও যোগাযোগের তথ্য আগে সরানো হবে।"
 
-                        : "The contents of your uploaded file — including your name, contact details and work history — will be sent to the AI service for analysis."}
+                        : "The contents of your uploaded file will be sent to the AI service. When privacy masking is enabled, your name and contact details are removed first."}
 
                     </span>
 
@@ -1399,6 +1432,24 @@ setShowSuggestions(false);
                   </p>
 
                 </div>
+
+                {/* Personal information masking option */}
+                <label className="flex items-start gap-3 cursor-pointer select-none rounded-2xl border border-slate-200 dark:border-slate-800 p-3.5 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={hidePersonalInfo}
+                    onChange={(e) =>
+                      setHidePersonalInfo(e.target.checked)
+                    }
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500/30 dark:border-slate-600 dark:bg-slate-800"
+                  />
+
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
+                    {language === "bn"
+                      ? "এআই-তে পাঠানোর আগে আমার নাম, ইমেইল এবং ফোন নম্বর লুকান।"
+                      : "Hide my name, email address and phone number before sending my resume to AI."}
+                  </span>
+                </label>
 
                 {/* Consent checkbox */}
 
