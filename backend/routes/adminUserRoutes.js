@@ -6,6 +6,7 @@ const adminMiddleware = require("../middleware/adminMiddleware");
 const router = express.Router();
 
 const allowedRoles = ["admin", "adminstaff", "user"];
+const MAX_SCANS = 1000;
 
 router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
   try {
@@ -18,6 +19,8 @@ router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
         u.is_active,
         u.deleted_at,
         u.created_at,
+        u.subscription_tier,
+        u.scans_remaining,
         up.id AS profile_id,
         up.user_id,
         up.first_name,
@@ -37,6 +40,8 @@ router.get("/", authMiddleware, adminMiddleware, async (req, res) => {
       is_active: row.is_active,
       deleted_at: row.deleted_at,
       created_at: row.created_at,
+      subscription_tier: row.subscription_tier,
+      scans_remaining: row.scans_remaining,
       profile: {
         id: row.profile_id,
         user_id: row.user_id,
@@ -75,6 +80,8 @@ router.get("/:id", authMiddleware, adminMiddleware, async (req, res) => {
         u.is_active,
         u.deleted_at,
         u.created_at,
+        u.subscription_tier,
+        u.scans_remaining,
         up.id AS profile_id,
         up.user_id,
         up.first_name,
@@ -106,6 +113,8 @@ router.get("/:id", authMiddleware, adminMiddleware, async (req, res) => {
         is_active: row.is_active,
         deleted_at: row.deleted_at,
         created_at: row.created_at,
+        subscription_tier: row.subscription_tier,
+        scans_remaining: row.scans_remaining,
         profile: {
           id: row.profile_id,
           user_id: row.user_id,
@@ -264,6 +273,82 @@ router.put("/:id", authMiddleware, adminMiddleware, async (req, res) => {
     });
   } finally {
     client.release();
+  }
+});
+
+// PATCH /api/admin/users/:id/scans - set a standard user's remaining resume review attempts (admin only)
+router.patch("/:id/scans", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const scansValue = req.body.scans_remaining;
+
+    if (!Number.isInteger(userId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid user ID",
+      });
+    }
+
+    if (
+      !Number.isInteger(scansValue) ||
+      scansValue < 0 ||
+      scansValue > MAX_SCANS
+    ) {
+      return res.status(400).json({
+        status: "error",
+        message: `Resume review attempts must be a whole number between 0 and ${MAX_SCANS}`,
+      });
+    }
+
+    const existing = await db.query(
+      "SELECT id, role FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found",
+      });
+    }
+
+    if (existing.rows[0].role !== "user") {
+      return res.status(400).json({
+        status: "error",
+        message: "Admin and admin staff accounts already have unlimited resume reviews",
+      });
+    }
+
+    const result = await db.query(
+      `
+      UPDATE users
+      SET scans_remaining = $1
+      WHERE id = $2 AND role = 'user'
+      RETURNING id, scans_remaining, subscription_tier
+      `,
+      [scansValue, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(409).json({
+        status: "error",
+        message: "User's role changed during the update. Please refresh and try again.",
+      });
+    }
+
+    return res.json({
+      status: "ok",
+      message: "Resume review attempts updated successfully",
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Admin update scans error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to update resume review attempts",
+      error: error.message,
+    });
   }
 });
 

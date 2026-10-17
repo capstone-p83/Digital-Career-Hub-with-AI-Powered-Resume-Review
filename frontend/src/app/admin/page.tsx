@@ -25,6 +25,8 @@ import {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
+const MAX_SCANS = 1000;
+
 type AdminUser = {
   id: number;
   email: string;
@@ -32,6 +34,8 @@ type AdminUser = {
   is_active: boolean;
   deleted_at: string | null;
   created_at: string;
+  subscription_tier?: string | null;
+  scans_remaining?: number | null;
   profile?: {
     first_name?: string | null;
     last_name?: string | null;
@@ -45,6 +49,11 @@ type EditingUserState = {
   email: string;
   role: "admin" | "adminstaff" | "user";
   is_active: boolean;
+} | null;
+
+type EditingScansState = {
+  id: number;
+  value: string;
 } | null;
 
 export default function AdminDashboard() {
@@ -62,6 +71,9 @@ export default function AdminDashboard() {
   const [savingUserId, setSavingUserId] = useState<number | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [restoringUserId, setRestoringUserId] = useState<number | null>(null);
+
+  const [editingScans, setEditingScans] = useState<EditingScansState>(null);
+  const [savingScansId, setSavingScansId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -194,6 +206,73 @@ export default function AdminDashboard() {
       setPageError(err.message || t("admin.failedUpdateUser"));
     } finally {
       setSavingUserId(null);
+    }
+  };
+
+  const startEditingScans = (selectedUser: AdminUser) => {
+    setPageError("");
+    setPageSuccess("");
+    setEditingScans({
+      id: selectedUser.id,
+      value: String(selectedUser.scans_remaining ?? 0),
+    });
+  };
+
+  const cancelEditingScans = () => {
+    setEditingScans(null);
+  };
+
+  const handleSaveScans = async () => {
+    if (!editingScans || !token) return;
+
+    const targetId = editingScans.id;
+    const trimmed = editingScans.value.trim();
+    const parsed = Number(trimmed);
+
+    if (
+      trimmed === "" ||
+      !Number.isInteger(parsed) ||
+      parsed < 0 ||
+      parsed > MAX_SCANS
+    ) {
+      setPageError(t("admin.invalidScans"));
+      return;
+    }
+
+    try {
+      setSavingScansId(targetId);
+      setPageError("");
+      setPageSuccess("");
+
+      const res = await fetch(`${API_BASE_URL}/admin/users/${targetId}/scans`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ scans_remaining: parsed }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || t("admin.failedUpdateScans"));
+      }
+
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === targetId
+            ? { ...item, scans_remaining: data.user.scans_remaining }
+            : item
+        )
+      );
+
+      setPageSuccess(t("admin.scansUpdated"));
+      setEditingScans(null);
+    } catch (err: any) {
+      setPageError(err.message || t("admin.failedUpdateScans"));
+    } finally {
+      setSavingScansId(null);
     }
   };
 
@@ -452,13 +531,14 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-sm text-left">
+              <table className="w-full min-w-[1250px] text-sm text-left">
                 <thead className="border-b border-slate-200/80 bg-slate-50/50 dark:border-slate-800/80 dark:bg-slate-900/50">
                   <tr className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <th className="px-6 py-3.5">ID</th>
                     <th className="px-6 py-3.5">{t("admin.email")}</th>
                     <th className="px-6 py-3.5">{t("admin.role")}</th>
                     <th className="px-6 py-3.5">{t("admin.status")}</th>
+                    <th className="px-6 py-3.5">{t("admin.resumeReviews")}</th>
                     <th className="px-6 py-3.5">{t("admin.createdAt")}</th>
                     <th className="px-6 py-3.5 text-right">{t("admin.actions")}</th>
                   </tr>
@@ -467,8 +547,10 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                   {filteredUsers.map((item) => {
                     const isEditing = editingUser?.id === item.id;
+                    const isEditingScans = editingScans?.id === item.id;
                     const isCurrentUser = user?.id === item.id;
                     const userInitial = (item.email.charAt(0) || "U").toUpperCase();
+                    const scansCount = item.scans_remaining ?? 0;
 
                     return (
                       <tr
@@ -572,6 +654,75 @@ export default function AdminDashboard() {
                                 ? t("admin.active")
                                 : t("admin.deactivated")}
                             </span>
+                          )}
+                        </td>
+
+                        {/* Resume Review Attempts */}
+                        <td className="px-6 py-4">
+                          {item.role !== "user" ? (
+                            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60">
+                              {t("admin.unlimited")}
+                            </span>
+                          ) : isEditingScans ? (
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min={0}
+                                max={MAX_SCANS}
+                                step={1}
+                                value={editingScans.value}
+                                autoFocus
+                                onChange={(e) =>
+                                  setEditingScans((prev) =>
+                                    prev ? { ...prev, value: e.target.value } : prev
+                                  )
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveScans();
+                                  if (e.key === "Escape") cancelEditingScans();
+                                }}
+                                disabled={savingScansId === item.id}
+                                className="w-20 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleSaveScans}
+                                disabled={savingScansId === item.id}
+                                className="inline-flex items-center justify-center rounded-full p-1.5 text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                                title={t("admin.save")}
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEditingScans}
+                                disabled={savingScansId === item.id}
+                                className="inline-flex items-center justify-center rounded-full p-1.5 text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                                title={t("admin.cancel")}
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                                  scansCount === 0
+                                    ? "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60"
+                                    : "bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60"
+                                }`}
+                              >
+                                {scansCount} {t("admin.remaining")}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => startEditingScans(item)}
+                                className="inline-flex items-center justify-center rounded-full p-1.5 text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                                title={t("admin.editScans")}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           )}
                         </td>
 

@@ -127,13 +127,16 @@ async function reviewResume(req, res) {
       });
     }
 
-    const isFreeTier = currentUser.subscription_tier === 'free';
     const isAdmin = isAdminRole(currentUser.role);
+    // Treat a missing tier as free, matching the frontend
+    const isFreeTier =
+      !currentUser.subscription_tier || currentUser.subscription_tier === "free";
+    const scansRemaining = Number(currentUser.scans_remaining ?? 0);
 
-    if (!isAdmin && isFreeTier && currentUser.scans_remaining <= 0) {
+    if (!isAdmin && isFreeTier && scansRemaining <= 0) {
       return res.status(403).json({
         status: "error",
-        message: "You have reached your 2 free resume reviews. Please upgrade to Pro for unlimited access.",
+        message: "You have no resume reviews remaining. Please upgrade to Pro for unlimited access.",
       });
     }
 
@@ -181,15 +184,24 @@ async function reviewResume(req, res) {
 
     await client.query("BEGIN");
 
-    if (currentUser.role === 'user' && currentUser.subscription_tier === 'free') {
-      console.log("BACKEND LOG B: Attempting to decrement scan for user ID:", currentUser.id);
+    if (!isAdmin && isFreeTier) {
+      // Only decrement if an attempt is still available, so two simultaneous
+      // requests can't push the count below zero
       const dbUpdate = await client.query(
-        "UPDATE users SET scans_remaining = scans_remaining - 1 WHERE id = $1 RETURNING scans_remaining",
+        `UPDATE users
+         SET scans_remaining = scans_remaining - 1
+         WHERE id = $1 AND scans_remaining > 0
+         RETURNING scans_remaining`,
         [currentUser.id]
       );
-      console.log("BACKEND LOG C: Database now says scans remaining:", dbUpdate.rows[0]?.scans_remaining);
-    } else {
-      console.log("BACKEND LOG D: Skipped decrement. Reason: Not a free user or admin role.");
+
+      if (dbUpdate.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(403).json({
+          status: "error",
+          message: "You have no resume reviews remaining. Please upgrade to Pro for unlimited access.",
+        });
+      }
     }
 
     const resumeInsert = await client.query(

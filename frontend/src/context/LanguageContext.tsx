@@ -341,6 +341,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.userDeactivated": "User deactivated successfully",
     "admin.failedRestoreUser": "Failed to restore user",
     "admin.userRestored": "User restored successfully",
+    "admin.resumeReviews": "Resume Reviews",
+    "admin.remaining": "remaining",
+    "admin.unlimited": "Unlimited",
+    "admin.editScans": "Edit resume review attempts",
+    "admin.scansUpdated": "Resume review attempts updated successfully",
+    "admin.failedUpdateScans": "Failed to update resume review attempts",
+    "admin.invalidScans": "Enter a whole number between 0 and 1000",
   },
 
   bn: {
@@ -666,6 +673,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.userDeactivated": "ব্যবহারকারী সফলভাবে নিষ্ক্রিয় হয়েছে",
     "admin.failedRestoreUser": "ব্যবহারকারী পুনরুদ্ধার করা যায়নি",
     "admin.userRestored": "ব্যবহারকারী সফলভাবে পুনরুদ্ধার হয়েছে",
+    "admin.resumeReviews": "রিজুমে রিভিউ",
+    "admin.remaining": "অবশিষ্ট",
+    "admin.unlimited": "সীমাহীন",
+    "admin.editScans": "রিজুমে রিভিউর সংখ্যা সম্পাদনা করুন",
+    "admin.scansUpdated": "রিজুমে রিভিউর সংখ্যা সফলভাবে আপডেট হয়েছে",
+    "admin.failedUpdateScans": "রিজুমে রিভিউর সংখ্যা আপডেট করা যায়নি",
+    "admin.invalidScans": "০ থেকে ১০০০ এর মধ্যে একটি পূর্ণ সংখ্যা লিখুন",
   },
 
   es: {
