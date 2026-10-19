@@ -1,6 +1,9 @@
 const pool = require("../config/db");
 const { parseResumeFile } = require("../utils/resumeParser");
 const { analyzeResumeWithAI } = require("../services/ai/aiService");
+const {
+  sanitizePersonalInfo,
+} = require("../services/privacy/sanitizePersonalInfo");
 
 const FREE_USER_DAILY_LIMIT = 3;
 
@@ -8,15 +11,29 @@ function getUserId(req) {
   return req.user?.id || req.user?.userId || req.user?.user_id;
 }
 
-// backend/controllers/resumeController.js
-
 async function getCurrentUser(req) {
   const userId = getUserId(req);
-  if (!userId) return null;
 
-  // Update query to include the new tier and scan columns
+  if (!userId) {
+    return null;
+  }
+
   const result = await pool.query(
-    "SELECT id, role, subscription_tier, scans_remaining FROM users WHERE id = $1",
+    `
+    SELECT
+      u.id,
+      u.role,
+      u.subscription_tier,
+      u.scans_remaining,
+      u.ai_consent,
+      u.ai_consent_at,
+      up.first_name,
+      up.last_name
+    FROM users u
+    LEFT JOIN user_profile up ON up.user_id = u.id
+    WHERE u.id = $1
+    LIMIT 1
+    `,
     [userId]
   );
 
@@ -43,16 +60,15 @@ function isAdminRole(role) {
 }
 
 async function checkScanLimit(user) {
-  // Admins still get a pass
   if (isAdminRole(user.role)) {
     return { allowed: true };
   }
 
-  // Check the new subscription_tier column
-  if (user.subscription_tier === 'free' && user.scans_remaining <= 0) {
+  if (user.subscription_tier === "free" && user.scans_remaining <= 0) {
     return {
       allowed: false,
-      message: "You have used your 2 free scans. Upgrade to Pro for unlimited access!"
+      message:
+        "You have used your 2 free scans. Upgrade to Pro for unlimited access!",
     };
   }
 
@@ -63,10 +79,17 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function normalizeAnalysis(aiResult, targetJobRole, targetJobDescription) {
+function normalizeAnalysis(
+  aiResult,
+  targetJobRole,
+  targetJobDescription
+) {
   return {
     score: Number.isFinite(Number(aiResult.score))
-      ? Math.max(0, Math.min(100, Math.round(Number(aiResult.score))))
+      ? Math.max(
+          0,
+          Math.min(100, Math.round(Number(aiResult.score)))
+        )
       : 0,
 
     summary:
@@ -78,16 +101,22 @@ function normalizeAnalysis(aiResult, targetJobRole, targetJobDescription) {
     target_job_description: targetJobDescription || null,
 
     confidence:
-      typeof aiResult.confidence === "string" ? aiResult.confidence : "medium",
+      typeof aiResult.confidence === "string"
+        ? aiResult.confidence
+        : "medium",
 
     evaluation_basis:
       typeof aiResult.evaluation_basis === "string"
         ? aiResult.evaluation_basis
         : "The resume was evaluated against the target position.",
 
-    missing_resume_sections: safeArray(aiResult.missing_resume_sections),
+    missing_resume_sections: safeArray(
+      aiResult.missing_resume_sections
+    ),
 
-    missing_job_information: Boolean(aiResult.missing_job_information),
+    missing_job_information: Boolean(
+      aiResult.missing_job_information
+    ),
 
     impact_explanation:
       typeof aiResult.impact_explanation === "string"
@@ -95,20 +124,32 @@ function normalizeAnalysis(aiResult, targetJobRole, targetJobDescription) {
         : "",
 
     strengths: safeArray(aiResult.strengths),
-    areas_for_improvement: safeArray(aiResult.areas_for_improvement),
-    actionable_suggestions: safeArray(aiResult.actionable_suggestions),
+
+    areas_for_improvement: safeArray(
+      aiResult.areas_for_improvement
+    ),
+
+    actionable_suggestions: safeArray(
+      aiResult.actionable_suggestions
+    ),
 
     matched_skills: safeArray(aiResult.matched_skills),
     missing_skills: safeArray(aiResult.missing_skills),
     extra_skills: safeArray(aiResult.extra_skills),
 
     resume_data: {
-      work_experience: safeArray(aiResult.resume_data?.work_experience),
+      work_experience: safeArray(
+        aiResult.resume_data?.work_experience
+      ),
       skills: safeArray(aiResult.resume_data?.skills),
       education: safeArray(aiResult.resume_data?.education),
       projects: safeArray(aiResult.resume_data?.projects),
-      certifications: safeArray(aiResult.resume_data?.certifications),
-      missing_sections: safeArray(aiResult.resume_data?.missing_sections),
+      certifications: safeArray(
+        aiResult.resume_data?.certifications
+      ),
+      missing_sections: safeArray(
+        aiResult.resume_data?.missing_sections
+      ),
     },
   };
 }
@@ -118,7 +159,13 @@ async function reviewResume(req, res) {
 
   try {
     const currentUser = await getCurrentUser(req);
-    console.log("BACKEND LOG A: Current User Role:", currentUser?.role, "Tier:", currentUser?.subscription_tier);
+
+    console.log(
+      "BACKEND LOG A: Current User Role:",
+      currentUser?.role,
+      "Tier:",
+      currentUser?.subscription_tier
+    );
 
     if (!currentUser) {
       return res.status(401).json({
@@ -127,18 +174,37 @@ async function reviewResume(req, res) {
       });
     }
 
-    const isFreeTier = currentUser.subscription_tier === 'free';
-    const isAdmin = isAdminRole(currentUser.role);
-
-    if (!isAdmin && isFreeTier && currentUser.scans_remaining <= 0) {
+    if (currentUser.ai_consent !== true) {
       return res.status(403).json({
         status: "error",
-        message: "You have reached your 2 free resume reviews. Please upgrade to Pro for unlimited access.",
+        code: "AI_CONSENT_REQUIRED",
+        message:
+          "You must agree to AI processing before submitting your resume.",
+      });
+    }
+
+    const isAdmin = isAdminRole(currentUser.role);
+    const isFreeTier =
+      !currentUser.subscription_tier ||
+      currentUser.subscription_tier === "free";
+    const scansRemaining = Number(
+      currentUser.scans_remaining ?? 0
+    );
+
+    if (!isAdmin && isFreeTier && scansRemaining <= 0) {
+      return res.status(403).json({
+        status: "error",
+        message:
+          "You have no resume reviews remaining. Please upgrade to Pro for unlimited access.",
       });
     }
 
     const file = req.file;
-    const targetJobRole = String(req.body.target_job_role || "").trim();
+
+    const targetJobRole = String(
+      req.body.target_job_role || ""
+    ).trim();
+
     const targetJobDescription = String(
       req.body.target_job_description || ""
     ).trim();
@@ -163,12 +229,23 @@ async function reviewResume(req, res) {
     if (!extractedText || extractedText.trim().length < 50) {
       return res.status(400).json({
         status: "error",
-        message: "Could not extract enough readable text from the resume. Please upload a clearer PDF or DOCX file.",
+        message:
+          "Could not extract enough readable text from the resume. Please upload a clearer PDF or DOCX file.",
       });
     }
 
+    // Remove personal information before sending the resume to AI.
+    // The original extracted text remains unchanged.
+    const hidePersonalInfo =
+      String(req.body.hide_personal_info ?? "true").toLowerCase() !==
+      "false";
+
+    const resumeTextForAI = hidePersonalInfo
+      ? sanitizePersonalInfo(extractedText, currentUser)
+      : extractedText;
+
     const aiResult = await analyzeResumeWithAI({
-      resumeText: extractedText,
+      resumeText: resumeTextForAI,
       targetJobRole,
       targetJobDescription,
     });
@@ -181,15 +258,27 @@ async function reviewResume(req, res) {
 
     await client.query("BEGIN");
 
-    if (currentUser.role === 'user' && currentUser.subscription_tier === 'free') {
-      console.log("BACKEND LOG B: Attempting to decrement scan for user ID:", currentUser.id);
+    if (!isAdmin && isFreeTier) {
       const dbUpdate = await client.query(
-        "UPDATE users SET scans_remaining = scans_remaining - 1 WHERE id = $1 RETURNING scans_remaining",
+        `
+        UPDATE users
+        SET scans_remaining = scans_remaining - 1
+        WHERE id = $1
+          AND scans_remaining > 0
+        RETURNING scans_remaining
+        `,
         [currentUser.id]
       );
-      console.log("BACKEND LOG C: Database now says scans remaining:", dbUpdate.rows[0]?.scans_remaining);
-    } else {
-      console.log("BACKEND LOG D: Skipped decrement. Reason: Not a free user or admin role.");
+
+      if (dbUpdate.rows.length === 0) {
+        await client.query("ROLLBACK");
+
+        return res.status(403).json({
+          status: "error",
+          message:
+            "You have no resume reviews remaining. Please upgrade to Pro for unlimited access.",
+        });
+      }
     }
 
     const resumeInsert = await client.query(
@@ -212,7 +301,8 @@ async function reviewResume(req, res) {
       )
       VALUES (
         $1, $2, $3, $4, $5, $6, $7,
-        $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb,
+        $8::jsonb, $9::jsonb, $10::jsonb,
+        $11::jsonb, $12::jsonb, $13::jsonb,
         NOW()
       )
       RETURNING id
@@ -224,13 +314,22 @@ async function reviewResume(req, res) {
         targetJobDescription || null,
         file.originalname,
         fileType,
+
+        // Keep the original extracted text for internal storage.
         extractedText,
-        JSON.stringify(analysis.resume_data.work_experience),
+
+        JSON.stringify(
+          analysis.resume_data.work_experience
+        ),
         JSON.stringify(analysis.resume_data.skills),
         JSON.stringify(analysis.resume_data.education),
         JSON.stringify(analysis.resume_data.projects),
-        JSON.stringify(analysis.resume_data.certifications),
-        JSON.stringify(analysis.resume_data.missing_sections),
+        JSON.stringify(
+          analysis.resume_data.certifications
+        ),
+        JSON.stringify(
+          analysis.resume_data.missing_sections
+        ),
       ]
     );
 
@@ -254,7 +353,8 @@ async function reviewResume(req, res) {
         created_at
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()
+        $1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10, $11, $12, NOW()
       )
       RETURNING id, created_at
       `,
@@ -300,8 +400,12 @@ async function reviewResume(req, res) {
       [
         feedbackId,
         JSON.stringify(analysis.strengths),
-        JSON.stringify(analysis.areas_for_improvement),
-        JSON.stringify(analysis.actionable_suggestions),
+        JSON.stringify(
+          analysis.areas_for_improvement
+        ),
+        JSON.stringify(
+          analysis.actionable_suggestions
+        ),
         JSON.stringify(analysis.matched_skills),
         JSON.stringify(analysis.missing_skills),
         JSON.stringify(analysis.extra_skills),
@@ -327,7 +431,8 @@ async function reviewResume(req, res) {
     return res.status(500).json({
       status: "error",
       message:
-        error.message || "Failed to analyze resume. Please try again later.",
+        error.message ||
+        "Failed to analyze resume. Please try again later.",
     });
   } finally {
     client.release();
@@ -340,28 +445,51 @@ function mapFeedbackRow(row) {
     resume_id: row.resume_id,
     created_at: row.created_at,
     score: row.score,
-    summary: row.summary || "Resume analysis completed.",
+
+    summary:
+      row.summary || "Resume analysis completed.",
 
     target_job_role: row.target_job_role,
-    target_job_description: row.target_job_description,
+
+    target_job_description:
+      row.target_job_description,
 
     confidence: row.confidence || "medium",
-    evaluation_basis: row.evaluation_basis || "",
 
-    missing_resume_sections: row.missing_sections || [],
-    missing_job_information: Boolean(row.missing_job_information),
+    evaluation_basis:
+      row.evaluation_basis || "",
 
-    resume_text_truncated: Boolean(row.resume_text_truncated),
-    resume_length_warning: row.resume_length_warning || "",
+    missing_resume_sections:
+      row.missing_sections || [],
 
-    job_description_truncated: Boolean(row.job_description_truncated),
-    job_description_warning: row.job_description_warning || "",
+    missing_job_information: Boolean(
+      row.missing_job_information
+    ),
 
-    impact_explanation: row.impact_explanation || "",
+    resume_text_truncated: Boolean(
+      row.resume_text_truncated
+    ),
+
+    resume_length_warning:
+      row.resume_length_warning || "",
+
+    job_description_truncated: Boolean(
+      row.job_description_truncated
+    ),
+
+    job_description_warning:
+      row.job_description_warning || "",
+
+    impact_explanation:
+      row.impact_explanation || "",
 
     strengths: row.strengths || [],
-    areas_for_improvement: row.improvements || [],
-    actionable_suggestions: row.suggestions || [],
+
+    areas_for_improvement:
+      row.improvements || [],
+
+    actionable_suggestions:
+      row.suggestions || [],
 
     matched_skills: row.matched_skills || [],
     missing_skills: row.missing_skills || [],
@@ -380,39 +508,40 @@ async function getLatestFeedback(req, res) {
       });
     }
 
-      const result = await pool.query(
-        `
-        SELECT
-          rf.id AS feedback_id,
-          rf.resume_id,
-          rf.score,
-          rf.target_job_role,
-          rf.confidence,
-          rf.evaluation_basis,
-          rf.missing_job_information,
-          rf.impact_explanation,
-          rf.resume_text_truncated,
-          rf.resume_length_warning,
-          rf.job_description_truncated,
-          rf.job_description_warning,
-          rf.created_at,
-          r.target_job_description,
-          r.missing_sections,
-          fd.strengths,
-          fd.improvements,
-          fd.suggestions,
-          fd.matched_skills,
-          fd.missing_skills,
-          fd.extra_skills
-        FROM resume_feedback rf
-        JOIN resumes r ON r.id = rf.resume_id
-        LEFT JOIN feedback_details fd ON fd.feedback_id = rf.id
-        WHERE rf.user_id = $1
-        ORDER BY rf.created_at DESC
-        LIMIT 1
-        `,
-        [currentUser.id]
-      );
+    const result = await pool.query(
+      `
+      SELECT
+        rf.id AS feedback_id,
+        rf.resume_id,
+        rf.score,
+        rf.target_job_role,
+        rf.confidence,
+        rf.evaluation_basis,
+        rf.missing_job_information,
+        rf.impact_explanation,
+        rf.resume_text_truncated,
+        rf.resume_length_warning,
+        rf.job_description_truncated,
+        rf.job_description_warning,
+        rf.created_at,
+        r.target_job_description,
+        r.missing_sections,
+        fd.strengths,
+        fd.improvements,
+        fd.suggestions,
+        fd.matched_skills,
+        fd.missing_skills,
+        fd.extra_skills
+      FROM resume_feedback rf
+      JOIN resumes r ON r.id = rf.resume_id
+      LEFT JOIN feedback_details fd
+        ON fd.feedback_id = rf.id
+      WHERE rf.user_id = $1
+      ORDER BY rf.created_at DESC
+      LIMIT 1
+      `,
+      [currentUser.id]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -426,7 +555,10 @@ async function getLatestFeedback(req, res) {
       analysis: mapFeedbackRow(result.rows[0]),
     });
   } catch (error) {
-    console.error("Get latest feedback error:", error);
+    console.error(
+      "Get latest feedback error:",
+      error
+    );
 
     return res.status(500).json({
       status: "error",
@@ -469,7 +601,10 @@ async function getAllFeedback(req, res) {
       feedbacks: result.rows,
     });
   } catch (error) {
-    console.error("Get all feedback error:", error);
+    console.error(
+      "Get all feedback error:",
+      error
+    );
 
     return res.status(500).json({
       status: "error",
@@ -524,7 +659,8 @@ async function getFeedbackById(req, res) {
         fd.extra_skills
       FROM resume_feedback rf
       JOIN resumes r ON r.id = rf.resume_id
-      LEFT JOIN feedback_details fd ON fd.feedback_id = rf.id
+      LEFT JOIN feedback_details fd
+        ON fd.feedback_id = rf.id
       WHERE rf.id = $1
       AND rf.user_id = $2
       LIMIT 1
@@ -544,7 +680,10 @@ async function getFeedbackById(req, res) {
       analysis: mapFeedbackRow(result.rows[0]),
     });
   } catch (error) {
-    console.error("Get feedback by ID error:", error);
+    console.error(
+      "Get feedback by ID error:",
+      error
+    );
 
     return res.status(500).json({
       status: "error",
@@ -552,6 +691,7 @@ async function getFeedbackById(req, res) {
     });
   }
 }
+
 async function deleteFeedbackById(req, res) {
   try {
     const currentUser = await getCurrentUser(req);
@@ -585,7 +725,8 @@ async function deleteFeedbackById(req, res) {
     if (result.rows.length === 0) {
       return res.status(404).json({
         status: "error",
-        message: "Feedback not found or you do not have permission to delete it.",
+        message:
+          "Feedback not found or you do not have permission to delete it.",
       });
     }
 
@@ -595,7 +736,10 @@ async function deleteFeedbackById(req, res) {
       deleted_id: feedbackId,
     });
   } catch (error) {
-    console.error("Delete feedback error:", error);
+    console.error(
+      "Delete feedback error:",
+      error
+    );
 
     return res.status(500).json({
       status: "error",

@@ -94,6 +94,80 @@ router.get("/me", authMiddleware, async (req, res) => {
 });
 
 // =========================================================================
+// AI CONSENT
+// =========================================================================
+
+// Get current user's AI consent status
+router.get("/me/ai-consent", authMiddleware, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT ai_consent, ai_consent_at
+       FROM users
+       WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      aiConsent: result.rows[0].ai_consent,
+      aiConsentAt: result.rows[0].ai_consent_at,
+    });
+  } catch (error) {
+    console.error("Get AI consent error:", error);
+    return res.status(500).json({
+      message: "Failed to get AI consent status",
+    });
+  }
+});
+
+// Update current user's AI consent status
+router.put("/me/ai-consent", authMiddleware, async (req, res) => {
+  try {
+    const { aiConsent } = req.body;
+
+    if (typeof aiConsent !== "boolean") {
+      return res.status(400).json({
+        message: "aiConsent must be true or false",
+      });
+    }
+
+    const result = await db.query(
+      `UPDATE users
+       SET ai_consent = $1,
+           ai_consent_at = CASE
+             WHEN $1 = TRUE THEN NOW()
+             ELSE NULL
+           END
+       WHERE id = $2
+       RETURNING ai_consent, ai_consent_at`,
+      [aiConsent, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      aiConsent: result.rows[0].ai_consent,
+      aiConsentAt: result.rows[0].ai_consent_at,
+    });
+  } catch (error) {
+    console.error("Update AI consent error:", error);
+    return res.status(500).json({
+      message: "Failed to update AI consent",
+    });
+  }
+});
+
+
+// =========================================================================
 // UPDATE USER PROFILE DATA TRANSACTION
 // =========================================================================
 router.put("/me", authMiddleware, async (req, res) => {

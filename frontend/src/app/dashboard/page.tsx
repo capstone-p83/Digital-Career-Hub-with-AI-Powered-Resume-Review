@@ -219,7 +219,7 @@ export default function Dashboard() {
           transition={{ delay: 0.1 }}
           className="h-full"
         >
-          <Card className="h-full min-h-[330px] flex flex-col rounded-3xl border-blue-200/80 bg-gradient-to-b from-blue-50/50 via-white to-white dark:border-blue-900/50 dark:from-blue-950/20 dark:to-slate-900 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="h-full min-h-[330px] flex flex-col rounded-3xl border-blue-200/80 bg-gradient-to-b from-blue-50/50 via-white to-white dark:border-blue-900/50 dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-950 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="flex-1 flex flex-col items-center text-center p-7">
               <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400 shadow-xs">
                 <FileText className="w-7 h-7" />
@@ -298,7 +298,7 @@ export default function Dashboard() {
           transition={{ delay: 0.2 }}
           className="h-full"
         >
-          <Card className="h-full min-h-[330px] flex flex-col rounded-3xl border-purple-200/80 bg-gradient-to-b from-purple-50/50 via-white to-white dark:border-purple-900/50 dark:from-purple-950/20 dark:to-slate-900 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="h-full min-h-[330px] flex flex-col rounded-3xl border-purple-200/80 bg-gradient-to-b from-purple-50/50 via-white to-white dark:border-purple-900/50 dark:from-purple-950/20 dark:via-slate-900 dark:to-slate-950 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="flex-1 flex flex-col items-center text-center p-7">
               <div className="w-14 h-14 rounded-2xl bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mb-4 text-purple-600 dark:text-purple-400 shadow-xs">
                 <PlayCircle className="w-7 h-7" />
@@ -345,7 +345,7 @@ export default function Dashboard() {
           transition={{ delay: 0.3 }}
           className="h-full"
         >
-          <Card className="h-full min-h-[330px] flex flex-col rounded-3xl border-emerald-200/80 bg-gradient-to-b from-emerald-50/50 via-white to-white dark:border-emerald-900/50 dark:from-emerald-950/20 dark:to-slate-900 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="h-full min-h-[330px] flex flex-col rounded-3xl border-emerald-200/80 bg-gradient-to-b from-emerald-50/50 via-white to-white dark:border-emerald-900/50 dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-950 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="flex-1 flex flex-col items-center text-center p-7">
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400 shadow-xs">
                 <FileEdit className="w-7 h-7" />

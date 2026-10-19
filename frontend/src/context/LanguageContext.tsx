@@ -341,6 +341,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.userDeactivated": "User deactivated successfully",
     "admin.failedRestoreUser": "Failed to restore user",
     "admin.userRestored": "User restored successfully",
+    "admin.resumeReviews": "Resume Reviews",
+    "admin.remaining": "remaining",
+    "admin.unlimited": "Unlimited",
+    "admin.editScans": "Edit resume review attempts",
+    "admin.scansUpdated": "Resume review attempts updated successfully",
+    "admin.failedUpdateScans": "Failed to update resume review attempts",
+    "admin.invalidScans": "Enter a whole number between 0 and 1000",
   },
 
   bn: {
@@ -666,6 +673,13 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.userDeactivated": "ব্যবহারকারী সফলভাবে নিষ্ক্রিয় হয়েছে",
     "admin.failedRestoreUser": "ব্যবহারকারী পুনরুদ্ধার করা যায়নি",
     "admin.userRestored": "ব্যবহারকারী সফলভাবে পুনরুদ্ধার হয়েছে",
+    "admin.resumeReviews": "রিজুমে রিভিউ",
+    "admin.remaining": "অবশিষ্ট",
+    "admin.unlimited": "সীমাহীন",
+    "admin.editScans": "রিজুমে রিভিউর সংখ্যা সম্পাদনা করুন",
+    "admin.scansUpdated": "রিজুমে রিভিউর সংখ্যা সফলভাবে আপডেট হয়েছে",
+    "admin.failedUpdateScans": "রিজুমে রিভিউর সংখ্যা আপডেট করা যায়নি",
+    "admin.invalidScans": "০ থেকে ১০০০ এর মধ্যে একটি পূর্ণ সংখ্যা লিখুন",
   },
 
   es: {
@@ -809,6 +823,13 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.jobTracker": "Seguimiento de Empleo",
     "dashboard.interviewDateOne": "Mañana, 10:00 AM",
     "dashboard.interviewDateTwo": "12 Abr, 2:30 PM",
+    "admin.resumeReviews": "Revisiones de currículum",
+    "admin.remaining": "restantes",
+    "admin.unlimited": "Ilimitado",
+    "admin.editScans": "Editar intentos de revisión",
+    "admin.scansUpdated": "Intentos de revisión actualizados correctamente",
+    "admin.failedUpdateScans": "No se pudieron actualizar los intentos de revisión",
+    "admin.invalidScans": "Introduce un número entero entre 0 y 1000",
   },
 
   hi: {
@@ -952,6 +973,13 @@ const translations: Record<Language, Record<string, string>> = {
     "dashboard.jobTracker": "नौकरी ट्रैकर",
     "dashboard.interviewDateOne": "कल, सुबह 10:00 बजे",
     "dashboard.interviewDateTwo": "12 अप्रैल, दोपहर 2:30 बजे",
+    "admin.resumeReviews": "रिज्यूमे समीक्षाएँ",
+    "admin.remaining": "शेष",
+    "admin.unlimited": "असीमित",
+    "admin.editScans": "रिज्यूमे समीक्षा प्रयास संपादित करें",
+    "admin.scansUpdated": "रिज्यूमे समीक्षा प्रयास सफलतापूर्वक अपडेट किए गए",
+    "admin.failedUpdateScans": "रिज्यूमे समीक्षा प्रयास अपडेट नहीं हो सके",
+    "admin.invalidScans": "0 से 1000 के बीच पूर्ण संख्या दर्ज करें",
   },
 };
 
